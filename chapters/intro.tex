@@ -27,9 +27,8 @@ Recent years have witnessed a growing academic interest in \textit{neural differ
 % CNFs, CDEs
 \begin{figure}
     \centering
-    \includegraphics[width=0.5\linewidth]{}
     \caption{Caption}
-    \label{fig:placeholder}
+    \label{fig:nde_overview}
 \end{figure}
 % focus on ODE, not the origin, one popular NN is resnet, this is like an ODE, not WHO, WHAT
 % h_u+1 = ?. h_u = h_u + f(h). ...
@@ -61,10 +60,10 @@ This form of update with a parametrised vector field is known as a \textit{neura
 A neural ODE is a flexible architecture that is easier to work with on certain tasks than non-continuous models. For example, a continuous-depth generative model can be constructed by bounding $u$ between 0 and $U$, then modelling a flow between a simple distribution at $u=U$ and a data distribution at $u=0$. This flow is optimised end-to-end by allocating a single set of parameters $\theta$ to support general $u$, rather than optimising a subset of the flow at discrete points. 
 
 % 
-This form of generative model is a \textit{continuous normalising flow}, and can be trained by maximum likelihood or a variational lower bound. There is much discussion on how to optimise a Neural ODE. A usual distinction is simulation vs simulation-free methods. Methods such as the continuous adjoint simulate the ODE forwards and backwards to compute gradient, whereas others construct a reference flow which can be sampled analytically and regressed. This thesis considers the many ways to optimise a simulation-free probabilistic flow e.g. diffusion, flow-matching. 
+This form of generative model is a \textit{continuous normalising flow}, and can be trained by maximum likelihood or a variational lower bound. There is much discussion on how to optimise a Neural ODE. A usual distinction is simulation vs simulation-free methods. Methods such as the continuous adjoint simulate the ODE forwards and backwards to compute gradients, whereas others construct a reference flow which can be sampled analytically and regressed. This thesis considers the many ways to optimise a simulation-free probabilistic flow e.g. diffusion, flow-matching.
 
 
-Another perspective considers the flexibility of continuously described dynamics, which is unsurprisingly useful for describing continuous dynamics. For example, the hidden state $\vh_u$ can be evaluated for any $u$, which allows the generation of irregularly sampled time-series e.g. $u\in\{1,3,4,6,7,11\}$. Examples of irregularly sampled data include medical data, stock market trading, and text labels aligned to speech recordings.
+Another perspective considers the flexibility of continuously described dynamics, which is useful for describing continuous dynamics. For example, the hidden state $\vh_u$ can be evaluated for any $u$, which allows the generation of irregularly sampled time-series e.g. $u\in\{1,3,4,6,7,11\}$. Examples of irregularly sampled data include medical data, stock market trading, and text labels aligned to speech recordings.
 
 
 
@@ -99,12 +98,12 @@ There is little to no detailed investigation into the generalisations of NDEs on
 \paragraph{RQ1}
 How well does diffusion model likelihood correspond to expected behaviour in image and speech synthesis?
 
-Diffusion models are an efficient way to train CNFs (\eqref{eq:cde}), and have been used for image and speech synthesis. How probabilistic is our model in this case? What are the semantics of ``likelihood'' in these contexts? Does a picture of a red ball with caption ``blue cube'' have a low likelihood? Does a spoken utterance and its transcript have a high likelihood?
+Diffusion models are an efficient way to train CNFs (\eqref{eq:cnf}), and have been used for image and speech synthesis. How probabilistic is the model in this case? What are the semantics of ``likelihood'' in these contexts? Does a picture of a red ball with caption ``blue cube'' have a low likelihood? Do a spoken utterance and its transcript have a high likelihood?
 
 \paragraph{RQ2}
 How well do CNFs generalise to data-to-data tasks such as deep noise suppression, and how important is Brownian motion?
 
-DNS deals with transforming a noise-speech mixture into a clean speech signal. Diffusion models exploit Brownian motion to learn this function. How necessary is Brownian motion? Flow matching is an alternative method that supports data-to-data transformations without Brownian motion, how well does this fit to the DNS task?
+DNS deals with transforming a noise-speech mixture into a clean speech signal. Diffusion models exploit Brownian motion to learn this function. How necessary is Brownian motion? Flow matching is an alternative method that supports data-to-data transformations without Brownian motion. How well does this fit the DNS task?
 
 \subsection{Continuous-time}
 % mention studies that have been made, 
@@ -118,9 +117,9 @@ Is modelling irregularly sampled time-series useful for describing text-speech a
 
 
 \paragraph{RQ4}
-How much memory requirement can be reduced when using continuous-time backpropogation for non-endpoint optimisation of neural ODEs?
+To what extent can memory requirements be reduced by using continuous-time backpropagation for non-endpoint optimisation of neural ODEs?
 
-Does a neural ODE require less parameters? Is the model quality the same? Does it take longer to train than gradient check-pointing or recurrent modules with backpropogation through time? 
+Does a neural ODE require fewer parameters? Is the model quality the same? Does it take longer to train than gradient check-pointing or recurrent modules with backpropagation through time?
 
 \section{Contributions}
 % design and methods
@@ -140,8 +139,8 @@ Chapter X answers RQ4 by training NDE decoders on top of pretrained ASR models, 
     \centering
     \includegraphics[width=\linewidth]{plots/thesis_contents.drawio.pdf}
     \caption{Enter Caption}
-    \label{fig:placeholder}
+    \label{fig:thesis_contents}
 \end{figure}
-The rest of this dissertation is organised into two parts. The first part is concerned with CNFs, which studies continuous-depth models for speech and image data. Chapter X provides a background on training CNFs with diffusion, and how this can be used for speech and image synthesis. Chapter X examines the empirical properties of diffusion likelihood. Chapter X builds further on CNFs by reviewing methods for data-to-data processes with Schr\"odinger bridge and flow matching models. These models are then used to explore the path design in continuous depth speech denoisers by observing the use of Brownian motion in chapter X. The second part considers continuous-time models for speech synthesis and recognition. Chapter X introduces a background to neural CDE's, which allow a neural ODE to react to an input stream of data. Neural CDE's are then used in chapter X and X for the aforementioned tasks. Concluding remarks to the new point of view found in this thesis are given in chapter X.
+The rest of this dissertation is organised into two parts. The first part is concerned with CNFs and studies continuous-depth models for speech and image data. Chapter X provides a background on training CNFs with diffusion, and how this can be used for speech and image synthesis. Chapter X examines the empirical properties of diffusion likelihood. Chapter X builds further on CNFs by reviewing methods for data-to-data processes with Schr\"odinger bridge and flow matching models. These models are then used to explore the path design in continuous depth speech denoisers by observing the use of Brownian motion in chapter X. The second part considers continuous-time models for speech synthesis and recognition. Chapter X introduces a background to neural CDEs, which allow a neural ODE to react to an input stream of data. Neural CDEs are then used in chapter X and X for the aforementioned tasks. Concluding remarks on the perspective developed in this thesis are given in chapter X.
 
 \section{Publications}

@@ -9,14 +9,14 @@ Instead of a variance preserving SDE, consider a variance exploding SDE
 \dd\rmX=\gamma(\bar\rmX - \rmX_u)\dd u + \sqrt{ck^{2u}}\dd\rmW_t.
 \]
 \[
-\rmM(\bar\rmX,\rmX,u;\gamma) = e^{-\gamma u}\rmX - (1- e^{-\gamma u})\bar\rmX \qquad \tSigma(u;\gamma,c,k) = \frac{c(k^{2u}-e^{-2\gamma u})}{2(\gamma + \log k)}\tI
+\rmM(\bar\rmX,\rmX,u;\gamma) = e^{-\gamma u}\rmX + (1- e^{-\gamma u})\bar\rmX \qquad \tSigma(u;\gamma,c,k) = \frac{c(k^{2u}-e^{-2\gamma u})}{2(\gamma + \log k)}\tI
 \]
-\section{Schr\"odinger bridge}
+\section{Schr\"odinger bridge}\label{sec:schr}
 \begin{figure}
     \centering
     \includegraphics[width=1\linewidth]{plots/schrodinger_bridge_sde.pdf}
     \caption{Enter Caption}
-    \label{fig:placeholder}
+    \label{fig:schrodinger_bridge}
 \end{figure}
 SB allows a Brownian path between data boundaries.
 \[
@@ -47,19 +47,20 @@ The loss is data prediction given a path sample
 \mS_\theta(\rmX_u|\bar\rmX,\ru)-\rmX_0
 \]
 
-\section{Notes on the SB design space}
+\section{Notes on the SB design space}\label{sec:sbsv}
 The mean $\rmM$ tends to linear interpolation as $k\rightarrow1$. The variance $\tSigma$ is $0$ at the boundaries and increases. This dynamic movement can make deep learning more difficult. Given that this variance is artificial, it is important to determine the benefits of this noise.
 
-\section{Conditional flow matching}
+\section{Conditional flow matching}\label{sec:icfm}
 \begin{figure}
     \centering
     \includegraphics[width=1\linewidth]{plots/independent_conditional_flow_matching.pdf}
     \caption{Enter Caption}
-    \label{fig:placeholder}
+    \label{fig:conditional_flow_matching}
 \end{figure}
 A less obvious yet simpler approach is a linearly interpolating mean and constant variance.
 \[
 \rmM(\rmX_0,\rmY,u) = u\rmY + (1-u)\rmX_0 \quad \sigma(u)^2=c
+\label{eq:icfm_mean_variance}
 \]
 \[
 \mS_\theta(\rmX_u|\bar\rmX,\ru)-(\rmX_0 -\bar\rmX)

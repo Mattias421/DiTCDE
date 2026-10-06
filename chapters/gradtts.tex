@@ -25,7 +25,7 @@ p_u(\rmX_u|\rmX_0,\vy) = \mathcal N(\rmX_u;\rmM(\rmX_0,u),\mathsf\Sigma(u))
 \mathsf\Sigma(u) = \left(1-e^{-\int_0^u\beta(s)\dd s}\right)\mI
 \]
 \[
-\int_0^u\beta(s)\dd s = \beta_{\min} + \frac{1}{2}(\beta_{\max}-\beta_{\min})u^2
+\int_0^u\beta(s)\dd s = \beta_{\min}u + \frac{1}{2}(\beta_{\max}-\beta_{\min})u^2
 \]
 
 \section{Estimating the gradients of the flow} 
@@ -34,7 +34,7 @@ p_u(\rmX_u|\rmX_0,\vy) = \mathcal N(\rmX_u;\rmM(\rmX_0,u),\mathsf\Sigma(u))
     \centering
     \includegraphics[width=\linewidth]{plots/gradtts/mean_reverting_sde-1.pdf}
     \caption{\textbf{1D example} A mean reverting SDE with $\bar x=0$ and $x_0=3$. The reverse process samples from a standard normal and produces $x_0=3$}
-    \label{fig:placeholder}
+    \label{fig:mean_reverting_sde}
 \end{figure}
 \[
 \dd\rmX = \mF(\rmX)\dd u + g(u)\dd\rmW_u
@@ -62,7 +62,7 @@ The gradient of the log-density $\nabla\log p_u(\rmX_u)$ is known as the \textit
 \dd \rmX = \left(\frac{1}{2}(\bar\rmX - \rmX_u) - \nabla\log p_u(\rmX_u)\right)\beta(u) \dd u + \sqrt{\beta(u)} \dd\hat\rmW_u
 \]
 \[
-\dd \rmX = \left(\frac{1}{2}(\bar\rmX - \rmX_u) - \mS_\theta(\rmX_u,u)\right)\beta(u) \dd u
+\dd \rmX = \left(\frac{1}{2}(\bar\rmX - \rmX_u) - \frac{1}{2}\mS_\theta(\rmX_u,u)\right)\beta(u) \dd u
 \]
 
 \section{Conditional generation}

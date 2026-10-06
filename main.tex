@@ -30,6 +30,8 @@
 %%% Packages %%%
 \usepackage{epsfig}
 \usepackage{subfigure}
+\usepackage{acronym}
+\usepackage{pifont}
 \usepackage[utf8]{inputenc}
 
 % Needed for some foreign characters
@@ -50,11 +52,7 @@
 % If we do not do this we end up with 2 digit subsection numbers colliding with
 % the title.
 % See https://tex.stackexchange.com/questions/7853/toc-text-numbers-alignment/7856#7856?newreg=d2632892dd0345f388619f12fa794b11
-% tocstyle isn't available on all TeX installs; use tocloft for basic ToC spacing tweaks.
-\usepackage{tocloft}
-% Ensure enough room between subsection numbers and titles in the ToC
-\setlength{\cftsubsecnumwidth}{3em}
-\setlength{\cftsubsubsecnumwidth}{4em}
+% The book class already provides the list-of-figures counters.
 
 \usepackage{bm}
 
@@ -105,9 +103,6 @@ pdfview=FitH,
 pdfstartview=FitH,
 pagebackref=true,
 breaklinks=true,
-\ifColor
-colorlinks,
-\fi
 bookmarks=false,
 plainpages=false]{hyperref}
 
@@ -125,6 +120,27 @@ plainpages=false]{hyperref}
 \definecolor{bestblue}{HTML}{BFD7EA}
 \definecolor{secondorange}{HTML}{F6D7A7}
 \definecolor{worstred}{HTML}{F4B6B6}
+\newacro{AM}{acoustic model}
+\newacro{ASR}{automatic speech recognition}
+\newacro{BPD}{bits per dimension}
+\newacro{CFG}{classifier-free guidance}
+\newacro{DDP}{direct data prediction}
+\newacro{ESD}{Emotional Speech Dataset}
+\newacro{FID}{Fr\'echet inception distance}
+\newacro{ICFM}{independent conditional flow matching}
+\newacro{MAE}{mean absolute error}
+\newacro{MCD}{mel-cepstral distortion}
+\newacro{MOS}{mean opinion score}
+\newacro{ODE}{ordinary differential equation}
+\newacro{RMSE}{root mean squared error}
+\newacro{SB-SV}{Schr\"odinger bridge with static variance}
+\newacro{SE}{speech enhancement}
+\newacro{SI-SDR}{scale-invariant signal-to-distortion ratio}
+\newacro{TTI}{text-to-image}
+\newacro{VB-DMD}{VoiceBank--DEMAND}
+\newacro{WER}{word error rate}
+\providecommand{\xmark}{\ding{55}}
+\providecommand{\checkmark}{\ding{51}}
 
 \begin{document}
 

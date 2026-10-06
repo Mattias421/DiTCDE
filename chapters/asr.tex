@@ -6,22 +6,22 @@ An RNN-T learns a joint probability of the next token conditioned on the text an
 \[
 P_t(y_{u+1}|\vy_{1:u},\vx_{1:t}) = \vj(\vp(\vy_{1:u}),\ve(\vx_{1:t})).
 \]
-There are many alignments between $\vy$ and $\vx$, RNN-T solves this by using dynamic programming to optimise over all possible alignments.
+There are many alignments between $\vy$ and $\vx$; RNN-T addresses this by using dynamic programming to optimise over all possible alignments.
 
 \section{Connection to coupled dynamical systems}
-Our problem stems from trying to describe the nature of $\vy$ and $\vx$.
+The problem concerns describing the nature of $\vy$ and $\vx$.
 \[
 y_u=? \qquad x_t=?
 \]
-First we know that $x_t$ is produced from speech production, and for the purposes of ASR we can leave a mystery. Second, $y$ depends on itself and $x$ through $P_t$, from here we can imagine an equation that could satisfy dependence
+First, $x_t$ arises from speech production, which can remain unspecified for the purposes of ASR. Second, $y$ depends on itself and $x$ through $P_t$. An equation that could satisfy this dependence is
 \[
 y_{u+1}=f(\vy_{1:u}) + g(\vx_{1:t}) + c.
 \]
-One form of coupling is specifying the rate of change of $u$ w.r.t. $t$
+One form of coupling is specifying the rate of change of $u$ with respect to $t$
 \[
 \frac{\dd u}{\dd t}=?
 \]
-This works nicely as we can specify that a token is emitted every $\Delta u = 1$, and knowing how $u$ depends on $t$ supports this.
+This formulation allows a token to be emitted every $\Delta u = 1$, with the timing determined by the dependence of $u$ on $t$.
 
 For a streaming model, consider a hidden state $\vz_t$ that emits tokens as $p(y_{u+1}|\vz_t)$ when $\Delta u = 1$. The progression of $u$ is slower than $t$, and could be optimised with a neural network. If this is the case, the chain rule becomes useful.
 \[
@@ -37,11 +37,11 @@ The choice of $\zeta$ gives control on how often a token is emitted. When solvin
 \[
 u_{t+1} = u + \zeta(\vz_t,u)
 \]
-Given that a hidden state is computed for every $t$, we could use CTC
+Given that a hidden state is computed for every $t$, CTC could be used
 \[
 \Ls = \mathbf{CTC}(P(\vy_{1:T}|\mZ_{1:T}),\vy^\mathbf{lbl}_{1:U})
 \]
-It is simple to add a rate penalty to steer towards correct emissions/spikes
+A rate penalty can be added to encourage correct emissions/spikes
 \[
 \Ls=\int_0^U\zeta(\vz)\dd t - U
 \]
@@ -71,7 +71,7 @@ It is simple to add a rate penalty to steer towards correct emissions/spikes
     & 7.17\% (frame CTC)
     & 2 & 4{,}000 & 1.62 h & 1.37 / 1.77 GiB \\
     ODE adjoint
-    & 9.93 & 1& 0.89 / 0.98 GiB \\
+    & 9.93 & 1 & -- & -- & 0.89 / 0.98 GiB \\
   \hline
   \end{tabular}
   \caption{VCTK validation results. GPU memory is peak allocated / reserved
@@ -81,4 +81,4 @@ It is simple to add a rate penalty to steer towards correct emissions/spikes
   \label{tab:streaming-asr-results}
   \end{table}
 
-  Encoder is frozen.
+  The encoder is frozen.
