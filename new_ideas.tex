@@ -1,0 +1,228 @@
+
+\chapter{New ideas}
+\label{chap:new_ideas}
+\typeout{START_CHAPTER "intro" \theabspage}
+
+This document is an example of my CDE idea.
+
+\section{Idea}
+\label{sec:examples}
+TTS is 
+\[
+\vo = \vf(\vw), \quad \vf:\sZ^L \rightarrow[-1,1]^\tau
+\]
+which can be computed as
+\[
+\vo = \textbf{iSTFT}\circ\mV\circ\mG(\vw)
+\]
+with acoustic model $\mG$ and vocoder $\mV$.
+The required acoustic frames $T$ is $\frac{\tau}{\textnormal{hop}}$
+Imagine $\mG$ is a CDE
+\[
+\vz_t=\vz_0 + \int_0^t \mF(\vz_s)\mathrm{d}\vx_s
+\label{eq:cde}
+\]
+where (for now) time represents the acoustic frame number. Sampling \eqref{eq:cde} at regular time intervals $\vt$ produces $\mZ\in\R^{D\times T}$ where $\mZ_{:,i}=\vz_{\evt_i}$. \Eqref{eq:cde} is realised though a matrix-vector product between $\mF(\vz)$ and $\frac{d \vx}{d s}(s)$. Since the  $\frac{d \vx}{d s}(s): \R_+ \rightarrow\R^{C}$ is a function of $s$, a parametric function of $s$ should satisfy \eqref{eq:cde}, and an appropriately optimised one should be a good control.
+Imagine a function $\vq(s;\vw)$ placed in the ODE
+\[
+\vz_t=\vz_0 + \int_0^t \mF(\vz_s)\vq(s;\vw)\mathrm{d}s
+\label{eq:ditode}
+\]
+$\vq$ implicitly becomes an approximation of $\frac{d \vx}{d s}$. The progression of $\vq(s), s\in[0,T]$ can be computed in batch.
+
+\section{DiT for control}
+Diffusion transformers are a scalable and effective way to model functions of data and time, and even a conditioning label e.g. speaker/style. They are like normal transformers but use adaptive layernorm-zero to adapt to changes in time. For a CDE $\vq$ must be a vector, but a DiT outputs a matrix $\mD$ of length $L$ and hidden dim $D$. One way to get a vector is to prepend a \texttt{CTRL} token to $\vw$ treat $\mD_{:,0}$ as $\frac{d \vx}{d s}$. There may be some constraints on $\vq$ that can be rectified with relu, tanh and snake activation functions.
+
+\section{Continuous Depth}
+The vector-field $\mF$ could be modelled as a vector-field. Imagine
+\[
+\mH_l=\mH_0 + \int_0^l\mW(\mH_s)\mathrm{d}s
+\]
+where $\mH_0$ is a function of $\vz_t$, and $\mH_N$ becomes the output of $\mF$.
+
+\section{PDEs to have a true time-layer space}
+Could we have $\frac{\partial \vz}{\partial t}$ and $\frac{\partial \vz}{\partial l}$? Would this allow space computable with dynamic programming where we only care about $l=N$?
+
+\section{CDEs as a continuous speech-language representation}
+Let $t\in[0,1]$, and $\vx(t)$ be some function conditioned on text $\vw\in\sZ^L$
+\[
+d\vz_t=\mF(\vz_t)d\vx_t
+\]
+\[
+\vz_t=\vz_0 + \int_0^t \mF(\vz_s)\mathrm{d}\vx_s
+\]
+if $\mZ_{:,i} = \vz_{t_i}$ and there exists an affine map $\evw_i=f(\mZ_{:,i})$, does this mean $\vz_t$ is a continuous-time representation of $\vw$? What if we change the discretisation of $\vz$? If we were to sample between $t_0$ and $t_1$, would we have an interpolation of $\evw_0$ and $\evw_1$, or something else? When we think of CTC ASR outputs, we have a sequence of over-sampled labels $\vm$ which then map to $\vw$, is this because CTC discretises continuous speech too frequently? Imagine a second CDE with a shared vector field and control $\vy$ depending on speech
+\[
+\vu_t=\vu_0 + \int_0^t \mF(\vu_s)\mathrm{d}\vy_s
+\]
+whose hidden state maps to speech tokens $\evo_i=g(\mU_{:,i})$. Does this produce a joint continuous latent space which can map both to speech and text, and possibly across modalities?
+
+What happens if we then define
+\[
+d\vz_t=\mF(\vz_t)d\vx_t + \mF(\vz_t)d\vy_t?
+\]
+Practically this defines the ordinary vector field as 
+\[
+\mF(\vz_t)(\frac{d\vx}{dt} + \frac{d\vu}{dt}).
+\]
+One could imagine this results in a path which jointly encodes both a speech and text sample, and maybe there's a way to evaluate it's likelihood.
+
+If the number of speech tokens $T$ and text tokens $L$ are always known, is there a way to map speech and text as continuous functions through time?
+
+\section{Coarse to fine structured trans-dimensional generation (2 step example)}
+Sequence of text and speech embeddings $\mW\in\R^{D\times L}$ and $\mO\in\R^{D\times T}$
+\[
+\vz_t=\vz_0 + \int_0^t \mF(\vz_s)\vq_s(\mW)ds
+\]
+sample intermediate length $L < l < T$ and $\mZ\in\R^{D\times l}$,$\mZ_{:,i}=\vz_{\evt_i}$, then 
+\[
+\vo_t=\vo_0 + \int_0^t \mF(\vo_s)\vq_s(\mZ)ds
+\]
+then treat $\hat\mO$ as an acoustic prediction to be optimised. This method uses the flexibility of the control $\vq$ to resolve alignment (through optimisation) at different stages, one can think of it as a special warping mechanism. This could work by flowing through time $t\in[0,1]$ and depth $k\in[0,1]$, the number of samples from $\vz_t$ would be a function of $k$ s.t. $l_0=L$, $l_1=T$, and $l_k\in[L,T]$. The floor operation is used to make sure $l$ is discrete. This could work by inefficiently solving each step and back propagating through all. Or use teacher forcing and make optimal transport assumptions of the state through $k$. One such way would be to model a reference interpolant as a function of $\mO,\mW,l$. 
+
+\section{Controlled Continuous Normalising flows}
+A classic CNF models $p_0(\mX)\rightarrow p_1(\mX)$ for $\mX$ of static shape. What if we want the support of different shape between $p0$ and $p_1$? Perhaps treating $\mX$ as a continuous time-span object with boundaries $t\in[0,1]$ solves this.
+Let $\mX_0\in\R^{D\times 1}$, and $p_0$ is a standard Normal, and we want to sample $\mX_1\in\R^{D\times T}$. If $T=1$ we can use a classic CNF
+\[
+\mX_1 = \int_0^1\mF_\theta(\mX_u)\dd u
+\]
+where $\mF$ estimates $\frac{\dd \mX}{\dd u}$, an example that satisfies the boundaries is $\mF_\theta(\mX_u)=\mX_1-\mX_0$. If $T>1$, what can we do? Let's redefine $\mX$ as a function of time $\mX(t)$ where $t\in[0,1]$, then perhaps we can define our probability path with partials $\partial_t$ and $\partial_u$
+We could define a discrete step as
+\[
+\mX_{u+\Delta u}(t)=\vz_0 + \int_0^t\mF_\theta(\vz_s)\dd\mX_u(s)
+\]
+but this doesn't support continuous $u$ as is. When we think of the boundaries of a CNF, we know that $u$ describes interpolation between a source and target signal, and $t$ describes progression within a signal.
+
+\section{A Gaussian Process Formulation of Normalising Flows}
+$\mX_0\in\R^{L\times D}$ and $\mX_1\in\R^{T}$, learn process $p(\mX, t, u) : \R^{L\times D}\rightarrow\R^{T\times D}$ with $\mX_u=\R^{l_u\times D}$ where $l_u=uT+(1-u)L$. More specifically, let $\mX$ be a sequence of observations from a Gaussian process where $\vx(t)=\vg(\mX, t)$ is a (possibly neural) interpolation of the observations.
+
+If $p$ is a Gaussian probability path with standard normal source then we have $\vmu_u=u\vx$ for every element of $\mX$. This property means we can sample $p_u(\mX)=\mathcal{N}(\mX|u\mX_1,\mSigma)$, this can be sampled as a Gaussian process with $l_u$ observations at points $\vt$. Then if we want to learn a general model, optimise
+\[
+\Ls=\mX_1 - \mF_\theta(\mX_u,u)
+\]
+where $\mF_\theta=\mZ$ is a sequence of observations as $\mZ_{:,i}=\vf_\theta(\mX_u, u, \evt_i)$
+
+$p(\mX,u,t|\mY)=\mathcal{N}(\mX(t)|u\mF(\mY,t),(u\sigma-u+1)^2)$, where $\mF$ is a function that interpolates $\mY$ through time. This process can be described as a differential equation
+\[
+p(\mX,u|\mY)=\GP(u\mY(t),k_u(t,t'))
+\]
+where $\mY$ is an interpolation derived from a speech sample and $k_u$ is a defined covariance kernel depending on $u$.
+
+
+
+Observations could be spaced out equally $\evt_i(u)=\frac{i}{l_u-i}$, or uniformly sampled.
+
+\subsection{Simple idea: $T$-sampled Signals}
+
+Let the acoustic coordinate be $t \in [0,1]$. The source sequence is
+represented as a time-stamped set of frames
+\[
+\mX_0
+=
+\left\{
+\left(t_i^{(0)}, \vx_i^{(0)}\right)
+\right\}_{i=1}^{L},
+\qquad
+\vx_i^{(0)} \in \mathbb{R}^{D},
+\]
+with uniformly (or randomly) spaced timestamps
+\[
+t_i^{(0)}
+=
+\frac{i-1}{L-1},
+\qquad
+i=1,\dots,L.
+\]
+At depth $u$, the state is a variable-length time-stamped sequence
+\[
+\mX_u
+=
+\left\{
+\left(t_i^{(u)}, \vx_i^{(u)}\right)
+\right\}_{i=1}^{l_u},
+\qquad
+\mX_u \in \mathbb{R}^{l_u \times D},
+\]
+where
+\[
+L \leq l_u \leq T,
+\qquad
+l_0 = L,
+\qquad
+l_1 = T.
+\]
+
+To evaluate the state at an arbitrary acoustic time $t$, define the
+piecewise-linear interpolation of $\mX_u$. Let $j$ be the index satisfying
+\[
+t_j^{(u)} \leq t \leq t_{j+1}^{(u)}.
+\]
+Then
+\[
+\mX_u(t)
+=
+(1-\lambda)\vx_j^{(u)}
++
+\lambda \vx_{j+1}^{(u)},
+\]
+where
+\[
+\lambda
+=
+\frac{
+t - t_j^{(u)}
+}{
+t_{j+1}^{(u)} - t_j^{(u)}
+}.
+\]
+
+Suppose the next depth step increases the sequence length,
+\[
+l_{u+\Delta u} = l_u + 1.
+\]
+A new acoustic coordinate is sampled as
+\[
+t^\star \sim \operatorname{Unif}(0,1),
+\qquad
+t^\star \notin
+\left\{
+t_i^{(u)}
+\right\}_{i=1}^{l_u}.
+\]
+The corresponding frame is obtained by evaluating the current interpolant:
+\[
+\vx^\star
+=
+\mX_u(t^\star).
+\]
+The refined state is then the sorted union
+\[
+\mX_{u+\Delta u}
+=
+\operatorname{sort}_{t}
+\left(
+\left\{
+\left(t_i^{(u)}, \vx_i^{(u)}\right)
+\right\}_{i=1}^{l_u}
+\cup
+\left\{
+\left(t^\star, \vx^\star\right)
+\right\}
+\right).
+\]
+
+Equivalently, adding a frame corresponds to sampling a new acoustic
+timestamp and assigning it the value of the current piecewise-linear
+interpolant. Thus the sequence is treated as a discretisation of a
+continuous signal over $[0,1]$, rather than as a fixed-index array.
+
+\paragraph{Static-grid continuous-time flow matching.} Let the acoustic coordinate be $t \in [0,1]$ and let $u \in [0,1]$ denote the flow depth. Consider first the special case where the source and target are evaluated on the same number of acoustic samples. For an utterance with natural mel length $N$, the observed target mel is \[ \mY = \left[ \vy_1,\dots,\vy_N \right]^\top \in \mathbb{R}^{N \times D}. \] The native acoustic grid is \[ \bar{\Gamma}_N = \left\{ \bar{t}_i \right\}_{i=1}^{N}, \qquad \bar{t}_i = \frac{i-1}{N-1}. \] We identify the discrete mel $\mY$ with its piecewise-linear interpolant $\mY(t)$ over $[0,1]$. During training, rather than always using the native grid, we sample a static acoustic grid of the same cardinality, \[ \Gamma_N = \left\{ t_i \right\}_{i=1}^{N} = \operatorname{sort} \left( \{0,1\} \cup \left\{ s_i \right\}_{i=1}^{N-2} \right), \qquad s_i \sim \operatorname{Unif}(0,1). \] Thus the endpoints are always included, while the interior timestamps are sampled uniformly. The target on this grid is obtained by evaluating the target interpolant: \[ \mX_1^{\Gamma_N} = \left[ \mY(t_1),\dots,\mY(t_N) \right]^\top \in \mathbb{R}^{N \times D}. \] Let $\mZ(t)$ denote a source process, such as a Gaussian source function, and define its evaluation on the same grid by \[ \mZ^{\Gamma_N} = \left[ \mZ(t_1),\dots,\mZ(t_N) \right]^\top \in \mathbb{R}^{N \times D}. \] The simulation-free interpolant is \[ \mX_u^{\Gamma_N} = \alpha(u)\mZ^{\Gamma_N} + u\mX_1^{\Gamma_N}, \qquad \alpha(u) = 1-(1-\sigma_{\min})u. \] The corresponding velocity field is \[ \frac{\partial \mX_u^{\Gamma_N}}{\partial u} = \mX_1^{\Gamma_N} - (1-\sigma_{\min})\mZ^{\Gamma_N}. \] A neural velocity field is trained to approximate this differential equation: \[ \frac{\mathrm{d}}{\mathrm{d}u} \mX_u^{\Gamma_N} = \vtheta \left( \mX_u^{\Gamma_N}, u, \Gamma_N, \rho_N \right), \] where $\rho_N$ is metadata describing the natural sampling resolution of the utterance, for example the natural mel length $N$ or an embedding of $N$. The training objective is \[ \mathcal{L}(\theta) = \mathbb{E}_{\mY,\mZ,u,\Gamma_N} \left[ \frac{1}{N} \sum_{i=1}^{N} \left\| \vtheta \left( \vx_i^{(u)}, u, t_i, \rho_N \right) - \left( \mY(t_i) - (1-\sigma_{\min})\mZ(t_i) \right) \right\|_2^2 \right], \] where \[ \vx_i^{(u)} = \alpha(u)\mZ(t_i) + u\mY(t_i). \] \paragraph{Mini-batching by supersampling to the largest mel.} For a mini-batch of $B$ utterances, let $N_b$ denote the natural mel length of utterance $b$. To batch variable-length mels without padding in index space, choose the batch resolution \[ M = \max_{1 \leq b \leq B} N_b. \] Each utterance is then evaluated on a batch grid of cardinality $M$, \[ \Gamma_M = \left\{ t_i \right\}_{i=1}^{M} = \operatorname{sort} \left( \{0,1\} \cup \left\{ s_i \right\}_{i=1}^{M-2} \right), \qquad s_i \sim \operatorname{Unif}(0,1). \] For utterances with $N_b < M$, this corresponds to supersampling the piecewise-linear mel interpolant from its natural grid to the larger batch grid. The target for utterance $b$ is \[ \mX_{1,b}^{\Gamma_M} = \left[ \mY_b(t_1),\dots,\mY_b(t_M) \right]^\top \in \mathbb{R}^{M \times D}. \] The source is evaluated on the same batch grid, \[ \mZ_b^{\Gamma_M} = \left[ \mZ_b(t_1),\dots,\mZ_b(t_M) \right]^\top \in \mathbb{R}^{M \times D}. \] The simulation-free path for utterance $b$ is therefore \[ \mX_{u,b}^{\Gamma_M} = \alpha(u)\mZ_b^{\Gamma_M} + u\mX_{1,b}^{\Gamma_M}. \] The model is conditioned on both the acoustic timestamps and the natural resolution of the utterance: \[ \vtheta = \vtheta \left( \mX_{u,b}^{\Gamma_M}, u, \Gamma_M, \rho_{N_b}, \rho_M \right), \] where $\rho_{N_b}$ describes the natural number of mel samples in the utterance, and $\rho_M$ describes the batch evaluation resolution. This allows the model to distinguish a naturally long mel from a shorter mel that has been supersampled onto a larger batch grid. The mini-batch objective is \[ \mathcal{L}(\theta) = \mathbb{E} \left[ \frac{1}{B} \sum_{b=1}^{B} \frac{1}{M} \sum_{i=1}^{M} \left\| \vtheta \left( \vx_{b,i}^{(u)}, u, t_i, \rho_{N_b}, \rho_M \right) - \left( \mY_b(t_i) - (1-\sigma_{\min})\mZ_b(t_i) \right) \right\|_2^2 \right], \] where \[ \vx_{b,i}^{(u)} = \alpha(u)\mZ_b(t_i) + u\mY_b(t_i). \] In this special case, there are no frame-insertion jumps and no trans-dimensional dynamics. The acoustic grid is static within each training sample, but the timestamps are continuous and randomly sampled. Mini-batching is handled by evaluating all utterances on the largest batch grid, while conditioning the model on each utterance's natural number of mel samples.
+
+
+
+
+
+\clearpage
+%%
+\typeout{END_CHAPTER "intro" \theabspage}
+\textit{Is there a way to compute forward and backward concurrently? Could we use audio tokens to encompass all of this to a CE or KLD loss? Maybe predict tokens directly? maybe have a probablistic loss on tokens? Perhaps with SDEs/SDEGAN to add variability to speech? use computational depth to predict codebooks levels.}

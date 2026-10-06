@@ -1,0 +1,98 @@
+\chapter{Thesis Summary}
+\label{chap:commentary}
+\typeout{START_CHAPTER "intro" \theabspage}
+
+\section{Introduction}
+
+% establish context
+% crafted examples to fit data/problem e.g. CNNs, RNNs.
+A central driver in the advancement of deep learning is crafting methods and architectures for task and data at hand. An image is structured in two dimensions, thus a two-dimensional convolutional kernel is a sensible modelling choice. Time series often have a causal relationship between past and future events, and recurrent neural networks share this property. Sequence-to-sequence tasks such as machine translation may require learning complex yet correlated structure, which attention mechanisms set out to solve. These modelling choices carefully consider the data, the form of the task, and scale required to compute a solution.
+
+
+
+% brief review
+% CNFs, CDEs
+
+% identify problem
+
+% aims, RQs, hypothesis
+
+% design and methods
+
+% value
+
+% structure overview
+
+\section{Introduction OLD}
+
+% plan:
+% speech technology is important + ai is the modern approach
+
+Speech and language are central to human communication. Technologies such as writing, the printing press, computers, and the internet have extended this capacity by allowing information to be stored, transmitted, and transformed at increasing scale. Artificial intelligence represents a further stage in this development, with modern systems now able to generate text, speech, and mappings between linguistic and acoustic representations. 
+
+In practice, however, speech technology begins with digitisation: an analogue acoustic signal is represented as a finite sequence of discrete samples or frames.
+
+% build up, find book that originates discrete audio
+
+This separation between the mathematical object of interest and its convenient discretisation introduces several abstractions that shape the design of speech models. Variable-length utterances are padded, continuous acoustic trajectories are represented on fixed grids, and explicit or implicit alignment mechanisms are used to connect linguistic units with acoustic observations. These abstractions are often effective, but they can also complicate learning by introducing discretisation-dependent choices into the model, the objective, and the training procedure. % no terminology
+
+Continuous-time models offer an alternative perspective. Rather than treating the sampled sequence as the primary object, they model speech as a function that can be evaluated over a continuous-time domain. This does not remove the need for sampled data, but it decouples the model from a single fixed resolution and allows training and inference to consider multiple discretisations of the same underlying signal. From this point of view, continuous-time modelling provides a natural way to represent irregularly sampled data, variable-length sequences, and speech signals whose relevant structure exists at multiple temporal scales. % irregular too out of there
+
+% topic c ode
+
+% topic depth ode
+
+A key development in data-driven continuous modelling was the introduction of neural ordinary differential equations, which showed how neural networks could define transformations through continuous depth. Subsequent work has developed along several related directions. Continuous-depth models, including continuous normalising flows and probability-path models trained with adjoint, flow matching or diffusion objectives, have become important tools for generative modelling. Continuous-time models have also been applied to irregularly sampled time-series, including neural controlled differential equations and continuous-time attention. More recently, function-space generative models have considered signals as objects that can be represented at arbitrary resolutions. However, these approaches often focus on generalisation across discretisations rather than directly modelling speech as a process that is continuous in both acoustic time and computational depth.
+
+This thesis investigates jointly continuous time and depth models for speech. The central idea is to treat both acoustic time and model depth as continuous variables bounded between zero and one. This creates a representation in which speech can be processed across a continuum of temporal and computational positions, rather than only at a fixed set of frames and layers. Such a formulation may improve generalisation by exposing the model to richer variation in the input domain, while also providing a closer match to the continuous nature of speech.
+
+% out of nowhere
+Alignment is a particularly important motivation. In speech synthesis, a short text sequence must be mapped to an acoustic sequence that is often much longer and whose duration varies across speakers, contexts, and speaking styles. In a continuous-time formulation, text and speech can be represented over a shared interval, so alignment can be viewed as a reparametrisation problem rather than only as a discrete matching problem. This offers a route to variable-resolution speech modelling, where coarse linguistic structure and fine acoustic detail can be represented within the same continuous framework.
+
+The thesis begins by reviewing continuous models and their relevance to speech technology. It then investigates the use of continuous-depth models for speech synthesis, followed by continuous-depth approaches to background noise suppression. The thesis next considers continuous-time models for speech synthesis, before introducing and evaluating a jointly continuous time and depth formulation for speech modelling.
+
+% big questions: continuous irregular good for 
+
+
+
+\section{Short Summary}
+Speech models such as text-to-speech and automatic speech recognition typically operate on discretised representations of both acoustic time and computational depth. Although speech is a continuous physical signal, it is usually represented as fixed-rate frames or tokens and processed by a fixed sequence of neural-network layers. In conditional generative speech models, text is also commonly introduced through auxiliary conditioning channels while the source distribution remains an abstract Gaussian, making the interpretation of the resulting conditional likelihood unclear. Continuous-depth models have nevertheless shown that neural transformations can be represented as invertible dynamical systems and evaluated using the change-of-variables formula.
+
+Here, we investigate speech modelling in which both acoustic time and computational depth are continuous. This formulation allows signals to be evaluated at arbitrary temporal resolutions, enabling variable-length utterances to be packed without padding and permitting resolution to increase progressively over depth from sparse linguistic inputs to dense acoustic outputs. More importantly, it creates a route towards defining an invertible transformation from a continuous representation of text to a continuous representation of speech, so that likelihood describes transport between the conditioning and target distributions more directly. Together, continuous time and continuous depth provide a unified framework for adaptive temporal resolution, coarse-to-fine alignment, efficient computation, and probabilistically grounded mappings between language and speech.
+
+% discretisation starts with digitisation of analouge signals, models are not for speech, even HMMs, adhoc rules, A continuous vs speech B thesis topic
+% how to make D continuous as well? matrix to scalar conversion? 
+
+\paragraph{Extra}
+Maybe continuous time can generalise better to different length utterances e.g. train on short samples, test on long samples.
+
+
+
+\section{Full Summary}
+% intro
+It is largely agreed that the acoustics of speech are a continuous signal, and text is a discrete sequence of labels. This conflict of form has been a grand challenge that highlights speech processing as a particular problem in deep learning.
+In today's society we can write with our tongue and speak with our fingers, but the resources powering these abilities are incredibly high and make inaccurate assumptions on how to process speech and language data. This thesis explores the use of continuous-depth and continuous-time models for speech and text, and argues they are worth reading about. Central to this is the concept of continuous normalising flows: models that construct a probability path between a normal distribution and a data distribution (hence the name \textit{normalising}). This path is continuous, which is good for XXXX.
+
+% Diffusion likelihoods
+An attractive property of continuous normalising flows is log-likelihood computation. Diffusion models are a form of CNF that are used in TTS. Here they model a probability path between a source distribution and a speech distribution. To condition synthesis on text, the source distribution is a Gaussian whose mean is a parametric function of text. Whether this practice maintains a useful likelihood, and whether this likelihood is conditional is unknown. Experiments show that likelihood is largely uncorrelated.
+
+% Speech enhancement with flow matching
+Generative speech enhancement is a useful tool for background noise suppression. These methods use CNFs between a noisy source distribution and a clean target distribution. The forms of CNFs used are suboptimal due to unnecessarily noisy target and assumption that the noisy source is a standard normal. By using ICFM, we show that a probability path between general distributions is more appropriate for the SE task. A finding from this is that the model can predict the target from the source directly, this makes us wonder if CNFs are secretly a fancy form of data augmentation and curriculum and regularisation.
+
+% MAYBE discrete flow matching for ASR
+Discrete sequence-to-sequence modelling is one of the most highest performing tasks in deep learning, and framing a problem like so often leads to good results. Therefore we explore how discrete flow matching can model speech and text transformations with continuous-time Markov chains. The result is a valid ASR model that gives okay results.
+
+% CDE for TTS
+Continuous-depth offered by CNFs is clearly a popular topic, an underrated one is continuous-time. Encoder--decoder models only structurally address the text-speech alignment problem. Duration does not affect the value of the encoder states, which is removed from the reality of speech production. Treating TTS as a sequence-to-sequence problem between a sequence of irregularly observed phone labels, and a regularly sampled sequence of acoustic frames. This form of problem is core to the theory of CDEs, and here we show that neural CDEs can be used as continuous-time acoustic models.
+
+% CDE for TTS with neural control
+The CDE theory is then further built upon to produce a really cool model that uses an optimal control derivative, and predicts speech tokens to allow an efficient and effective TTS model. The use of a single simple training objective makes the model easy to train. It doesn't require alignment, yet has a smart method to control acoustics based on text and speaker id. This idea and others are explored in the new ideas section.
+
+% conclusion
+Overall, this thesis shows that continuous-time modelling is most useful when the continuous process reflects the structure of the speech problem itself. Diffusion likelihoods were found to have limited value as quality measures, while flow matching provided a more suitable formulation for mapping noisy speech to clean speech. Neural CDEs were then used to represent speech as a continuously evolving acoustic process controlled by text and timing, leading to models that incorporate duration more directly and can be extended to efficient speech-token prediction. Together, these studies highlight both the limitations and the potential of continuous-time methods for speech processing.
+
+
+
+\clearpage
+%%
+\typeout{END_CHAPTER "intro" \theabspage}

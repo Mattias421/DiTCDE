@@ -1,0 +1,84 @@
+\chapter{Automatic speech recognition}
+
+\section{RNN-T}
+
+An RNN-T learns a joint probability of the next token conditioned on the text and acoustic history $P_t(y_{u+1}|\vy_{1:u},\vx_{1:t})$. The probability iterates over the acoustic dimension $t$, and each time the joint emits a token, $u$ increases by 1. The joint is typically implemented by representing the contexts $\vy$ and $\vx$ with two unimodal encoders e.g. a text predictor and an acoustic encoder
+\[
+P_t(y_{u+1}|\vy_{1:u},\vx_{1:t}) = \vj(\vp(\vy_{1:u}),\ve(\vx_{1:t})).
+\]
+There are many alignments between $\vy$ and $\vx$, RNN-T solves this by using dynamic programming to optimise over all possible alignments.
+
+\section{Connection to coupled dynamical systems}
+Our problem stems from trying to describe the nature of $\vy$ and $\vx$.
+\[
+y_u=? \qquad x_t=?
+\]
+First we know that $x_t$ is produced from speech production, and for the purposes of ASR we can leave a mystery. Second, $y$ depends on itself and $x$ through $P_t$, from here we can imagine an equation that could satisfy dependence
+\[
+y_{u+1}=f(\vy_{1:u}) + g(\vx_{1:t}) + c.
+\]
+One form of coupling is specifying the rate of change of $u$ w.r.t. $t$
+\[
+\frac{\dd u}{\dd t}=?
+\]
+This works nicely as we can specify that a token is emitted every $\Delta u = 1$, and knowing how $u$ depends on $t$ supports this.
+
+For a streaming model, consider a hidden state $\vz_t$ that emits tokens as $p(y_{u+1}|\vz_t)$ when $\Delta u = 1$. The progression of $u$ is slower than $t$, and could be optimised with a neural network. If this is the case, the chain rule becomes useful.
+\[
+\dd \vz= \vf(\vz, u)\frac{\dd u}{\dd t} \dd t + \vg(\vh,t)\dd t
+\]
+\[
+\frac{\dd u}{\dd t} = \zeta(\vz,\vh)
+\]
+The choice of $\zeta$ gives control on how often a token is emitted. When solving this equation for $\Delta t = 1$, the Euler update rule becomes simple
+\[
+\vz_{t+1}= \vz_t + \vf(\vz_t,u)\zeta(\vz_t,u) + \vg(\vh,t)
+\]
+\[
+u_{t+1} = u + \zeta(\vz_t,u)
+\]
+Given that a hidden state is computed for every $t$, we could use CTC
+\[
+\Ls = \mathbf{CTC}(P(\vy_{1:T}|\mZ_{1:T}),\vy^\mathbf{lbl}_{1:U})
+\]
+It is simple to add a rate penalty to steer towards correct emissions/spikes
+\[
+\Ls=\int_0^U\zeta(\vz)\dd t - U
+\]
+
+
+% have a bias to emit tokens depending on how many tokens left and 
+
+\section{Validation results}
+
+  \begin{table}[ht]
+  \centering
+  \small
+  \begin{tabular}{lccccc}
+  \hline
+  Model & WER & GPUs & Steps & Train time & Peak GPU memory \\
+  \hline
+  Streaming AED
+    & 14.89\% (AED) & 2 & 2{,}000 & $\sim$14 min
+    & 0.53 / 0.62 GiB \\
+  Compact MLP CTC
+    & 19.86\% (frame CTC) & 2 & 4{,}000 & 0.41 h
+    & 0.66 / 0.75 GiB \\
+  Pretrained CTC head
+    & 24.82\% (frame CTC) & -- & -- & --
+    & -- \\
+  Joint-clock ODE
+    & 7.17\% (frame CTC)
+    & 2 & 4{,}000 & 1.62 h & 1.37 / 1.77 GiB \\
+    ODE adjoint
+    & 9.93 & 1& 0.89 / 0.98 GiB \\
+  \hline
+  \end{tabular}
+  \caption{VCTK validation results. GPU memory is peak allocated / reserved
+  memory per GPU. The AED memory is estimated from a one-step replay and excludes
+  DDP communication buffers. The pretrained CTC score is from a separate
+  buffered-window diagnostic and is not directly matched to the other runs.}
+  \label{tab:streaming-asr-results}
+  \end{table}
+
+  Encoder is frozen.

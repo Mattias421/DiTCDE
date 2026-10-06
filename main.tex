@@ -10,8 +10,8 @@
 \usepackage{microtype} % Get rid of some frame busts automatically
 % Note: if microtype causes error on ubuntu, run
 % sudo apt-get install cm-super
-\title{Example Notation for Deep Learning}
-\author{Ian Goodfellow\\Yoshua Bengio\\Aaron Courville}
+\title{PhD thesis}
+\author{Mattias Cross \\ Anton Ragni}
 \date{}
 \setcounter{tocdepth}{1}
 
@@ -50,8 +50,11 @@
 % If we do not do this we end up with 2 digit subsection numbers colliding with
 % the title.
 % See https://tex.stackexchange.com/questions/7853/toc-text-numbers-alignment/7856#7856?newreg=d2632892dd0345f388619f12fa794b11
-\usepackage[tocindentauto]{tocstyle}
-\usetocstyle{standard}
+% tocstyle isn't available on all TeX installs; use tocloft for basic ToC spacing tweaks.
+\usepackage{tocloft}
+% Ensure enough room between subsection numbers and titles in the ToC
+\setlength{\cftsubsecnumwidth}{3em}
+\setlength{\cftsubsubsecnumwidth}{4em}
 
 \usepackage{bm}
 
@@ -117,6 +120,12 @@ plainpages=false]{hyperref}
 % before or after some long align environments.
 \allowdisplaybreaks
 
+% MY PACKAGES
+\usepackage[table]{xcolor}
+\definecolor{bestblue}{HTML}{BFD7EA}
+\definecolor{secondorange}{HTML}{F6D7A7}
+\definecolor{worstred}{HTML}{F4B6B6}
+
 \begin{document}
 
 \setlength{\parskip}{0.25 \baselineskip}
@@ -136,11 +145,21 @@ plainpages=false]{hyperref}
 
  \input{notation.tex}
  \mainmatter
- \input{commentary.tex}
+ \input{chapters/intro}
+ \part{Continuous depth}
+ % chapter deq
+ \input{chapters/gradtts}
+ \input{chapters/likelihoods}
+ \input{chapters/flow_matching}
+ \input{chapters/icfm_results}
+ \part{Continuous time}
+ \input{chapters/cde}
+ \input{chapters/styletts}
+ \input{chapters/asr}
 
 \small{
 \typeout{START_CHAPTER "bib" \theabspage}
-\bibliography{notation}
+\bibliography{bibliography}
 \bibliographystyle{natbib}
 \clearpage
 \typeout{END_CHAPTER "bib" \theabspage}
