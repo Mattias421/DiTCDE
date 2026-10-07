@@ -1,4 +1,5 @@
 \chapter{General source distributions}
+% draw cartoons, remember W is wiener, reread ICFM, give examples, customisable serving of information, write terms used throughout papers, find terms that need explanation, UNet and Transformer and optimisation in appendix, parametric function is non linear, 
 $p_1(\rmY)$?
 \section{Preliminaries on noise suppression with diffusion models}
 \[
@@ -34,11 +35,14 @@ Consider a purely variance-exploding reference process
 \dd \rmX = \bm 0 \dd u + \sqrt{ck^{2u}}\dd\rmW_u
 \]
 \[
-\tSigma(u) = \sigma_u^2 \left(1 - \frac{\sigma_u^2}{\sigma_1^2}\right)\tI, \quad \sigma_u^2 = \frac{c(k^{2u}-1)}{2 \log k},
+\sigma_u^2 = \frac{c(k^{2u}-1)}{2 \log k},
 \]
 \[
   \label{eq:sb_mean_variance}
   \rmM_u(\rmX_0, \rmY) = \left(1 - \frac{\sigma_u^2}{\sigma_1^2}\right) \rmX_0 + \frac{\sigma_u^2}{\sigma_1^2} \rmY ,
+\]
+\[
+\tSigma(u) = \sigma_u^2 \left(1 - \frac{\sigma_u^2}{\sigma_1^2}\right)\tI, 
 \]
 
 
@@ -58,6 +62,9 @@ The mean $\rmM$ tends to linear interpolation as $k\rightarrow1$. The variance $
     \label{fig:conditional_flow_matching}
 \end{figure}
 A less obvious yet simpler approach is a linearly interpolating mean and constant variance.
+\[
+\dd \rmX=\bar\rmX - \rmX \dd u
+\]
 \[
 \rmM(\rmX_0,\rmY,u) = u\rmY + (1-u)\rmX_0 \quad \sigma(u)^2=c
 \label{eq:icfm_mean_variance}

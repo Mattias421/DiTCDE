@@ -1,16 +1,17 @@
 \chapter{Continuous normalising flows}
 % include support for image generation
+% add background for SDEs
 
 \section{Probability flow}
 
 \[
-p_0=q_\mathrm{data} \quad p_U=q_\mathrm{src}
+p_0=q_\mathrm{data} \quad p_U=q_\mathrm{src} % write in text
 \]
 \[
 \rmX_0=\rmX_U + \int_U^0 p_u(\rmX_u)\dd u
 \]
 \[
-p_u(\rmX_u|\rmX_0,\vy) = \mathcal N(\rmX_u;\rmM(\rmX_0,u),\mathsf\Sigma(u))
+p_u(\rmX_u|\rmX_0) = \mathcal N(\rmX_u;\rmM(\rmX_0,u),\mathsf\Sigma(u))
 \]
 \[
 \rmM=? \qquad \mathsf\Sigma(u)=? \quad u\in[0,1]
@@ -82,6 +83,19 @@ p(\rmX|\vy)=?
 \end{bmatrix}
 ,u\right)
 \]
+
+\section{Training}
+
+\section{Sampling with ODE solvers}
+Euler sampler with step size $h$
+\[
+\mX_{u-h}=\mX_u -\frac{1}{2}(\bar\mX - \mX_u)\mS\beta(u)h
+\]
+\[
+\mX_{i-1} = \mX_i - \mF_i(\mX_i)+\frac{1}{2}\tG_i\tG_i^\top\mS_\theta(\mX_i,u_i)
+\]
+
+
 
 \section{Computing likelihood}
 Change of variables formula

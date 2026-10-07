@@ -73,10 +73,10 @@ Table \ref{tab:exp4_mcd_f0} shows the objective performance of short-context mod
 
 \begin{table}[t]
     \centering
-    \caption{Per-emotion reference-style tracking and calibration.}
-    \label{tab:emotion_corr_mae}
+    \caption{Per-emotion reference-style tracking: Spearman correlation with reference ($\uparrow$) ($p<0.05$ in \textbf{bold}).}
+    \label{tab:emotion_corr}
     \setlength{\tabcolsep}{3pt}
-    \resizebox{\columnwidth}{!}{
+    \resizebox{\columnwidth}{!}{%
     \begin{tabular}{lrrrrrr}
     \toprule
     \textbf{System}
@@ -87,12 +87,9 @@ Table \ref{tab:exp4_mcd_f0} shows the objective performance of short-context mod
     & \textbf{Sur.}
     & \textbf{Macro} \\
     \midrule
-    \multicolumn{7}{l}{\textit{Spearman correlation with reference ($\uparrow$) ($p<0.05$ in \textbf{bold})}} \\
     style reference& 1.00 & 1.00 & 1.00 & 1.00 & 1.00 & 1.00 \\
-
     ground truth
     & 0.29 & -0.15 & 0.33 & 0.29 & 0.14 & 0.18 \\
-
     F5
     & \cellcolor{bestblue}\textbf{0.66}
     & 0.16
@@ -100,7 +97,6 @@ Table \ref{tab:exp4_mcd_f0} shows the objective performance of short-context mod
     & 0.15
     & \cellcolor{worstred}-0.02
     & 0.26 \\
-
     LibriTTS
     & 0.05
     & 0.12
@@ -108,7 +104,6 @@ Table \ref{tab:exp4_mcd_f0} shows the objective performance of short-context mod
     & 0.48
     & 0.16
     & 0.18 \\
-
     ESD finetune
     & 0.35
     & \cellcolor{worstred}-0.20
@@ -116,7 +111,6 @@ Table \ref{tab:exp4_mcd_f0} shows the objective performance of short-context mod
     & \cellcolor{worstred}-0.30
     & 0.39
     & \cellcolor{worstred}0.08 \\
-
     h=1.0, 1 layer
     & 0.13
     & \cellcolor{bestblue}\textbf{0.64}
@@ -124,7 +118,6 @@ Table \ref{tab:exp4_mcd_f0} shows the objective performance of short-context mod
     & \cellcolor{bestblue}\textbf{0.70}
     & 0.19
     & \cellcolor{bestblue}\textbf{0.53} \\
-
     h=1.0, 2 layers
     & \cellcolor{worstred}-0.16
     & -0.07
@@ -132,7 +125,6 @@ Table \ref{tab:exp4_mcd_f0} shows the objective performance of short-context mod
     & 0.30
     & \cellcolor{bestblue}\textbf{0.83}
     & \textbf{0.38} \\
-
     h=0.5, 1 layer
     & 0.15
     & 0.14
@@ -140,7 +132,6 @@ Table \ref{tab:exp4_mcd_f0} shows the objective performance of short-context mod
     & \cellcolor{secondorange}0.55
     & 0.35
     & 0.30 \\
-
     h=0.5, 2 layers
     & \cellcolor{secondorange}\textbf{0.64}
     & \cellcolor{secondorange}0.20
@@ -148,16 +139,29 @@ Table \ref{tab:exp4_mcd_f0} shows the objective performance of short-context mod
     & 0.18
     & \cellcolor{secondorange}0.40
     & \cellcolor{secondorange}\textbf{0.43} \\
+    \bottomrule
+    \end{tabular}}
+\end{table}
 
+\begin{table}[t]
+    \centering
+    \caption{Per-emotion reference-style calibration: mean absolute rating error from reference ($\downarrow$).}
+    \label{tab:emotion_mae}
+    \setlength{\tabcolsep}{3pt}
+    \resizebox{\columnwidth}{!}{%
+    \begin{tabular}{lrrrrrr}
+    \toprule
+    \textbf{System}
+    & \textbf{Neu.}
+    & \textbf{Ang.}
+    & \textbf{Hap.}
+    & \textbf{Sad}
+    & \textbf{Sur.}
+    & \textbf{Macro} \\
     \midrule
-    \multicolumn{7}{l}{\textit{Mean absolute rating error from reference ($\downarrow$)}} \\
-    \addlinespace[2pt]
-
     style reference& 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
-
     ground truth
     & 0.227 & 0.499 & 0.292 & 0.447 & 0.268 & 0.347 \\
-
     F5
     & \cellcolor{worstred}0.473
     & 0.429
@@ -165,7 +169,6 @@ Table \ref{tab:exp4_mcd_f0} shows the objective performance of short-context mod
     & \cellcolor{worstred}0.521
     & \cellcolor{worstred}0.576
     & \cellcolor{worstred}0.451 \\
-
     LibriTTS
     & 0.305
     & \cellcolor{bestblue}0.343
@@ -173,7 +176,6 @@ Table \ref{tab:exp4_mcd_f0} shows the objective performance of short-context mod
     & 0.289
     & 0.572
     & 0.360 \\
-
     ESD finetune
     & 0.281
     & 0.482
@@ -188,7 +190,6 @@ Table \ref{tab:exp4_mcd_f0} shows the objective performance of short-context mod
     & \cellcolor{secondorange}0.225
     & 0.543
     & \cellcolor{secondorange}0.341 \\
-
     h=1.0, 2 layers
     & 0.311
     & \cellcolor{secondorange}0.405
@@ -196,7 +197,6 @@ Table \ref{tab:exp4_mcd_f0} shows the objective performance of short-context mod
     & 0.331
     & 0.555
     & 0.373 \\
-
     h=0.5, 1 layer
     & \cellcolor{secondorange}0.246
     & 0.419
@@ -204,7 +204,6 @@ Table \ref{tab:exp4_mcd_f0} shows the objective performance of short-context mod
     & \cellcolor{bestblue}0.157
     & \cellcolor{bestblue}0.403
     & \cellcolor{bestblue}0.316 \\
-
     h=0.5, 2 layers
     & \cellcolor{bestblue}0.157
     & \cellcolor{worstred}0.538
@@ -212,24 +211,38 @@ Table \ref{tab:exp4_mcd_f0} shows the objective performance of short-context mod
     & 0.310
     & 0.517
     & 0.376 \\
-  \midrule
-    \multicolumn{7}{l}{\textit{Absolute emotion intensity rating (MOS-EI)}} \\
-  style reference& 3.59 & 3.54 & 3.49 & 3.43 & 3.62 & 3.53 \\
-  ground truth   & 3.35 & 3.30 & 3.45 & 3.19 & 3.65 & 3.39 \\
-  F5             & \cellcolor{worstred}3.09 & \cellcolor{bestblue}3.51 & \cellcolor{secondorange}3.31 &
-  \cellcolor{worstred}2.96 & 3.10 & \cellcolor{worstred}3.20 \\
-  LibriTTS       & \cellcolor{bestblue}3.50 & \cellcolor{secondorange}3.39 & 3.19 & 3.14 &
-  \cellcolor{worstred}3.01 & \cellcolor{secondorange}3.24 \\
-  ESD finetune  & 3.31 & 3.20 & 3.20 & 3.20 & \cellcolor{bestblue}3.18 & 3.22 \\
-  h=1.0, 1 layer & \cellcolor{secondorange}3.43 & \cellcolor{worstred}3.12 & 3.28 & 3.21 & 3.05 & 3.21 \\
-  h=1.0, 2 layers & 3.37 & 3.29 & \cellcolor{bestblue}3.33 & 3.23 & 3.05 & \cellcolor{bestblue}3.25 \\
-  h=0.5, 1 layer & 3.41 & 3.21 & \cellcolor{worstred}3.18 & \cellcolor{bestblue}3.30 &
-  \cellcolor{secondorange}3.17 & \cellcolor{bestblue}3.25 \\
-  h=0.5, 2 layers & \cellcolor{secondorange}3.43 & 3.14 & 3.20 & \cellcolor{secondorange}3.26 & 3.08 & 3.22
-  \\
     \bottomrule
     \end{tabular}}
-    \end{table}
+\end{table}
+
+\begin{table}[t]
+    \centering
+    \caption{Absolute emotion intensity rating (MOS-EI).}
+    \label{tab:emotion_mosei}
+    \setlength{\tabcolsep}{3pt}
+    \resizebox{\columnwidth}{!}{%
+    \begin{tabular}{lrrrrrr}
+    \toprule
+    \textbf{System}
+    & \textbf{Neu.}
+    & \textbf{Ang.}
+    & \textbf{Hap.}
+    & \textbf{Sad}
+    & \textbf{Sur.}
+    & \textbf{Macro} \\
+    \midrule
+    style reference& 3.59 & 3.54 & 3.49 & 3.43 & 3.62 & 3.53 \\
+    ground truth   & 3.35 & 3.30 & 3.45 & 3.19 & 3.65 & 3.39 \\
+    F5             & \cellcolor{worstred}3.09 & \cellcolor{bestblue}3.51 & \cellcolor{secondorange}3.31 & \cellcolor{worstred}2.96 & 3.10 & \cellcolor{worstred}3.20 \\
+    LibriTTS       & \cellcolor{bestblue}3.50 & \cellcolor{secondorange}3.39 & 3.19 & 3.14 & \cellcolor{worstred}3.01 & \cellcolor{secondorange}3.24 \\
+    ESD finetune  & 3.31 & 3.20 & 3.20 & 3.20 & \cellcolor{bestblue}3.18 & 3.22 \\
+    h=1.0, 1 layer & \cellcolor{secondorange}3.43 & \cellcolor{worstred}3.12 & 3.28 & 3.21 & 3.05 & 3.21 \\
+    h=1.0, 2 layers & 3.37 & 3.29 & \cellcolor{bestblue}3.33 & 3.23 & 3.05 & \cellcolor{bestblue}3.25 \\
+    h=0.5, 1 layer & 3.41 & 3.21 & \cellcolor{worstred}3.18 & \cellcolor{bestblue}3.30 & \cellcolor{secondorange}3.17 & \cellcolor{bestblue}3.25 \\
+    h=0.5, 2 layers & \cellcolor{secondorange}3.43 & 3.14 & 3.20 & \cellcolor{secondorange}3.26 & 3.08 & 3.22 \\
+    \bottomrule
+    \end{tabular}}
+\end{table}
   
 Table \ref{tab:emotion_corr_mae} shows the results of the MUSHRA-style listening test. The first section is the Spearman rank correlation between a system's per-sample rating and the reference, with a macro correlation reported as an aggregate summary across emotions (computed by Fisher $z$-transforming the per-emotion correlations, averaging in $z$-space, and transforming back). The second section is the \ac{MAE}, between a system's intensity rating and the reference. The final section is the overall mean rating, where higher numbers indicate a higher intensity of emotion. Maximising emotion intensity does not indicate a better model, as controllable synthesis requires faithfulness to the reference emotion style, which is captured by the correlation and MAE metrics. The results show that no system is the best across all emotions, and all systems tend to under-express emotion relative to the reference, although the degree of under-expression varies across conditions. The ESD finetune baseline correlates well for surprise, is fair for neutral and happy, but negative for anger and sad. The proposed CDE models have different behaviour depending on their configuration. Using $h=1.0$ and a single layer hinders neutral speech but improves calibration in other emotions, with poorer performance for surprise. The macro correlation of this CDE (0.53) is higher than the ESD finetuned baseline (0.08). The dynamics of adjusting time step and stacking layers is non-monotonic, but it appears that stacking layers benefits correlation for $h=0.5$, albeit a single layer has less MAE from the reference, and provides grounds for further experimentation into the dynamics of continuous-time discretisation.
 \begin{table}[t]

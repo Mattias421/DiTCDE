@@ -1,0 +1,21 @@
+\chapter{Background}
+\section{Normalising flows}
+A normalising flow is a transformation from a simple probability distribution (the name \textit{normalising} comes from the standard normal) to an underlying data distribution. They are trained by transforming samples from the data distribution to samples from a normal and maximising the likelihood of the transformed samples. Assuming the transform is invertible, the learned transform can sample from the simple distribution and generate likely data samples. 
+
+A large factor in the success of a normalising flow is the choice of transform. It must be invertable, expressive, and computational tractable.
+
+\section{Stochastic differential equations}
+\subsection{The Wiener process}
+The Wiener process can be thought of as a random walk continuous in $u$. It starts from $W_0=0$ and ``walks'' with random increments $W_{0+\Delta u}\sim\mathcal N(0,\Delta u)$. The inspiration for this process comes from Robert Brown observing the motion of pollen in water. After placing a pollen particle into the centre $(0,0)$, it will begin to move randomly in all directions. This is known as diffusion.
+
+The Wiener process is useful here as it can be used to predict the likelihood of a particle position at a given time. The Wiener process is also easy to sample from
+\[
+W_u\sim\mathcal{N}(0,u),
+\]
+but only describes evolution of samples from the origin. For more complicated processes, more mechanisms are required.
+
+\section{Ornstein-Uhlenbeck processes}
+These processes are the first SDEs to be introduced in this dissertation. The key property is modelling a stationary stochastic process that will revert back to the mean despite diffusion perturbing samples randomly
+\[
+\dd \rx = \gamma(\mu - \rx)\dd u + \sigma\dd W_u
+\]
