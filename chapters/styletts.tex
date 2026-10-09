@@ -3,17 +3,17 @@
 \textbf{Emotional speech dataset:} Following the original work presented in the first version of StyleTTS\cite{li2025styletts}, the \ac{ESD} \cite{zhou2021emospeechdata} is used to measure emotional speech synthesis quality. The English subset of ESD comprises 350 sentences spoken by 10 speakers in 5 emotions (sad, happy, angry, neutral, surprised) totalling 10 hours. A subset of 30 minutes per speaker was selected as fine-tuning data.  Random subsets of 100 samples each were held out for validation and testing, split equally across speakers and emotions. For subjective tests, the test split is reduced to 50 samples which are also split equally. The validation and test sets also contain an accompanying reference split which provides each evaluation sample with an utterance from the same speaker and emotion for style prediction. This dataset is challenging because emotional speech relies on subtle prosodic cues, such as dynamic energy and pitch control, which are perceptually salient \cite{larrouy2025emoprosody} but only partially captured by TTS training losses. The use of a 5 hour subset further challenges models to capture nuanced patterns from limited data.
 
 \section{Training a CDE within Matcha-TTS}
-Matcha-TTS is an encoder-decoder architecture without style embeddings \cite{mehta2024matcha}. It uses a neural ODE decoder which offers continuous computational depth. To observe how CDEs interact within TTS pipelines, a CDE is configured to use the Matcha encoder as a control path and Matcha decoder as a readout layer from hidden state to Mel-spectrogram. Only the CDE is trainable, acting as a bridge between text and acoustic representation. This provides a practical test of whether a CDE can be inserted into an existing TTS pipeline without disrupting the pretrained encoder-decoder mapping.
+Matcha-TTS is an encoder-decoder architecture without style embeddings \cite{mehta2024matcha}. It uses a neural ODE decoder which offers continuous computational depth. To observe how CDEs interact within TTS pipelines, a CDE is configured to use the Matcha encoder as a control path and Matcha decoder as a readout layer from hidden state to mel-spectrogram. Only the CDE is trainable, acting as a bridge between text and acoustic representation. This provides a practical test of whether a CDE can be inserted into an existing TTS pipeline without disrupting the pretrained encoder-decoder mapping.
 
 \section{Emotional TTS Guided by Reference Style}
-The core challenge addressed in this chapter involves synthesising speech in the same style as a reference sample, with attention to emotion intensity. The system uses an encoder to produce a control path for a CDE, which is then sampled and transformed to a waveform by a decoder. The non-CDE modules are initialised by training StyleTTS 2 on LibriTTS (multi-speaker audiobook narration data, neutral emotion) \cite{li2023styletts2}. StyleTTS 2 introduces speech language model (SLM) training, where an adversarial objective is used with WavLM features \cite{chen2022wavlm}, an effective yet computationally demanding process. Several memory-efficient tools are used such as mixed precision, max acoustic length of 175/800 frames, batch size of 6 without SLM adversarial training, and a batch size of 4 with SLM training. The model is trained for a total of 5 epochs, with style diffusion being trained from the second epoch and SLM from the fourth. All modules are trainable. This approach allows finetuning on an NVIDIA A100/H100 GPU with less than 70 GB of video memory. StyleTTS 2 checkpoints before and after finetuning serve as baseline models. This setup uses an ASR-based text aligner. F5 TTS is considered as a strong baseline unrelated to StyleTTS, as it has demonstrated strong zero-shot high-quality synthesis \cite{chen-etal-2024-f5tts}. Studies with autoregressive models are left as future work. Neural CDEs can also be interpreted as continuous-time recurrent models \cite{kidger2020neuralcde}. To examine whether the observed behaviour arises from sequential capacity rather than continuous dynamics, an experiment compares several CDE configurations with an LSTM. Both models are trained with the \textit{duration-augmented control path} $\mX$ provided as input.
+The core challenge addressed in this chapter involves synthesising speech in the same style as a reference sample, with attention to emotion intensity. The system uses an encoder to produce a control path for a CDE, which is then sampled and transformed to a waveform by a decoder. The non-CDE modules are initialised by training StyleTTS 2 on LibriTTS (multi-speaker audiobook narration data, neutral emotion) \cite{li2023styletts2}. StyleTTS 2 introduces speech language model (SLM) training, where an adversarial objective is used with WavLM features \cite{chen2022wavlm}, an effective yet computationally demanding process. Several memory-efficient tools are used such as mixed precision, max acoustic length of 175/800 frames, batch size of 6 without SLM adversarial training, and a batch size of 4 with SLM training. The model is trained for a total of 5 epochs, with style diffusion being trained from the second epoch and SLM from the fourth. All modules are trainable. This approach allows fine-tuning on an NVIDIA A100/H100 GPU with less than 70 GB of video memory. StyleTTS 2 checkpoints before and after fine-tuning serve as baseline models, denoted as StyleTTS 2 (LibriTTS) and StyleTTS 2 (ESD), respectively. The LSTM baseline is a separate system using a recurrent module with duration-augmented inputs. This setup uses an ASR-based text aligner. F5-TTS is considered as a strong baseline unrelated to StyleTTS, as it has demonstrated strong zero-shot high-quality synthesis \cite{chen-etal-2024-f5tts}. Studies with autoregressive models are left as future work. Neural CDEs can also be interpreted as continuous-time recurrent models \cite{kidger2020neuralcde}. To examine whether the observed behaviour arises from sequential capacity rather than continuous dynamics, an experiment compares several CDE configurations with an LSTM. Both models are trained with the \textit{duration-augmented control path} $\mX$ provided as input.
 
 \section{Implementation Details}
-First, the initial hidden state $\emZ_0$ is predicted with an LSTM which takes the control sequence in reverse, and compresses the number of channels.  This encodes the full context of the control into the initial state with the initial control state (first phone) $\emX_0$ being observed last, $\emZ_0=\textnormal{LSTM}(\emX_{L,\dots,0})$, providing a strong bias to the CDE. To reduce variance of the control variable $\mX$, the time channel is normalised by the total sum of phone durations for the given utterance. The majority of CDE implementations \cite{kidger2020neuralcde} parametrise the vector-field $\mF_\theta$ with a multi-layer perceptron and a final hidden dimension $d C$, which is then reshaped to form a matrix shape satisfying the ODE in equation \ref{eq:ode}. When the number of control channels is 512 with a hidden dimension of 128, the final linear layer produces a vector of 65536 from 128, a prohibitive expansion. An alternative approach proposed in this chapter is to use a U-Net \cite{ronneberger2015unet} with 1 downsampling, 256 middle, and 512 upsampling channels. The U-Net strides along the hidden dimension $d$ and produces the required matrix to evaluate the CDE (Equation \ref{eq:ode}). The CDE is integrated with the fixed-step 4th order Runge-Kutta method \cite{Runge1895UeberDN,kutta1901beitrag}. Once the hidden sequence has been sampled $\emZ_{0,\dots,L}$, it is then upsampled to 512 channels with another U-Net striding frame-wise. A gated residual connection $\mH^\textnormal{cde}=\mH^\textnormal{txt}+\gamma\mZ$ , with trainable parameter $\gamma$, is used to smoothly integrate the CDE module with the rest of the pretrained model during finetuning. The $\beta_1$ hyperparameter of the Adam optimiser is set to 0.9 for the CDE, and 0 elsewhere. The rest of the setup remains unchanged from a typical Matcha-TTS/StyleTTS2 finetuning configuration \cite{mehta2024matcha,li2023styletts2}. Afterwards, the CDE-processed label embeddings are upsampled, ready for the decoder. Although the reparametrisation invariance theorem \cite{kidger2021thesis} suggests operating in label-space provides a sufficiently strong model, a question left unanswered in this chapter is whether a CDE operating one frame per step rather than one phone per step provides a richer temporal progression at the cost of more ODE solver steps.
+First, the initial hidden state $\emZ_0$ is predicted with an LSTM which takes the control sequence in reverse, and compresses the number of channels.  This encodes the full context of the control into the initial state with the initial control state (first phone) $\emX_0$ being observed last, $\emZ_0=\textnormal{LSTM}(\emX_{L,\dots,0})$, providing a strong bias to the CDE. To reduce variance of the control variable $\mX$, the time channel is normalised by the total sum of phone durations for the given utterance. The majority of CDE implementations \cite{kidger2020neuralcde} parametrise the vector-field $\mF_\theta$ with a multi-layer perceptron and a final hidden dimension $d C$, which is then reshaped to form a matrix shape satisfying the ODE in equation \ref{eq:ode}. When the number of control channels is 512 with a hidden dimension of 128, the final linear layer produces a vector of 65536 from 128, a prohibitive expansion. An alternative approach proposed in this chapter is to use a U-Net \cite{ronneberger2015unet} with 1 downsampling, 256 middle, and 512 upsampling channels. The U-Net strides along the hidden dimension $d$ and produces the required matrix to evaluate the CDE (Equation \ref{eq:ode}). The CDE is integrated with the fixed-step 4th order Runge-Kutta method \cite{Runge1895UeberDN,kutta1901beitrag}. Once the hidden sequence has been sampled $\emZ_{0,\dots,L}$, it is then upsampled to 512 channels with another U-Net striding frame-wise. A gated residual connection $\mH^\textnormal{cde}=\mH^\textnormal{txt}+\gamma\mZ$ , with trainable parameter $\gamma$, is used to smoothly integrate the CDE module with the rest of the pretrained model during fine-tuning. The $\beta_1$ hyperparameter of the Adam optimiser is set to 0.9 for the CDE, and 0 elsewhere. The rest of the setup remains unchanged from a typical Matcha-TTS/StyleTTS 2 fine-tuning configuration \cite{mehta2024matcha,li2023styletts2}. Afterwards, the CDE-processed phone-level representations are upsampled, ready for the decoder. Although the reparametrisation invariance theorem \cite{kidger2021thesis} suggests operating at the phone level provides a sufficiently strong model, a question left unanswered in this chapter is whether a CDE operating one frame per step rather than one phone per step provides a richer temporal progression at the cost of more ODE solver steps.
 
 \section{Evaluation}
-The subjective quality of the models is evaluated with emotion intensity mean opinion score (MOS-EI) through a MUSHRA-type set up on the MTurk crowdsourcing platform. A total of 25 participants were asked to listen to a reference recording, followed by synthetic and ground truth recordings presented in a random order. The listener is only aware which sample belongs to the reference split. The reference is given to the TTS model to condition style,  but not linguistic content. The participant then rates each clip on a 1-5 integer scale for how strongly the emotion is expressed in the audio e.g. ``how happy is this speech?''. This scheme is inspired by the valence-arousal model of emotion \cite{POSNER_RUSSELL_PETERSON_2005}, where the label, e.g. angry, gives a hint to the target valence-arousal, and the user judges a subjective level of arousal/intensity. The mean opinion of this test reveals how strongly different systems express a target emotion, and the correlation of subjective scores to the reference presents how well-calibrated a system is to the intensity of the reference. Overall, each sample was listened to by an average of 10 listeners.
-Although MUSHRA is effective at evaluating many systems, listeners pay less attention to subtle effects, motivating comparative MOS (CMOS)\cite{li2023styletts2,ju2024naturalspeech3,minixhofer2024ttsds}. CMOS is an A/B test which displays two samples at a time, and prompts the user to rate which one is better. This evaluation uses emotion quality CMOS (CMOS-EQ) with a +3/-3 integer scale to represent how much better the target emotion is expressed in system B than in system A, with negatives meaning system B is worse than system A. One of the systems will always be the candidate, and the other one of the designated baselines, displayed in random order. In both MOS tests, the listeners are prompted to focus on emotional content. Consistency was checked by duplicating 10 comparisons and swapping the A/B order without informing participants; all participants gave consistent responses for at least 5 comparisons. A question arising from these studies concerns how listeners perceive unlabelled emotional speech. This is answered by measuring emotion accuracy, which prompts the user with a simple data annotation task given both real and synthetic recordings to identify how well intended emotions are expressed by different systems, and how they are perceived. Each sample is classified by 20 participants. Objective metrics such as \ac{MCD} and log-F0 \ac{RMSE} are used to measure how different design choices affect model outputs. MCD measures the difference between a generated and ground truth Mel spectrogram, with lower values correlating with audio quality/similarity. Log-F0 RMSE measures the error of the pitch contour of the generated signal, lower values correlate with correct intonation, emotion and prosody.
+The subjective quality of the models is evaluated with emotion intensity mean opinion score (MOS-EI) through a MUSHRA-type set up on the MTurk crowdsourcing platform. A total of 25 participants were asked to listen to a reference recording, followed by synthetic and ground truth recordings presented in a random order. The listener is only aware which sample belongs to the reference split. The reference is given to the TTS model to condition style,  but not linguistic content. The participant then rates each clip on a 1-5 integer scale for how strongly the emotion is expressed in the audio e.g. ``how happy is this speech?''. This scheme is inspired by the valence-arousal model of emotion \cite{POSNER_RUSSELL_PETERSON_2005}, where the label, e.g. angry, gives a hint to the target valence-arousal, and the user judges a subjective level of arousal/intensity. The mean opinion of this test reveals how strongly different systems express a target emotion, and the Spearman rank correlation of subjective scores with the reference measures reference-style tracking, while the mean absolute error (MAE) measures reference-style calibration. Overall, each sample was listened to by an average of 10 listeners.
+Although MUSHRA is effective at evaluating many systems, listeners pay less attention to subtle effects, motivating comparative MOS (CMOS)\cite{li2023styletts2,ju2024naturalspeech3,minixhofer2024ttsds}. CMOS is an A/B test which displays two samples at a time, and prompts the user to rate which one is better. This evaluation uses emotion-expression quality CMOS (CMOS-EQ) with a +3/-3 integer scale to represent how much better the target emotion is expressed in system B than in system A, with negatives meaning system B is worse than system A. One of the systems will always be the candidate, and the other one of the designated baselines, displayed in random order. In both MOS tests, the listeners are prompted to focus on emotional content. Consistency was checked by duplicating 10 comparisons and swapping the A/B order without informing participants; all participants gave consistent responses for at least 5 comparisons. A question arising from these studies concerns how listeners perceive unlabelled emotional speech. This is answered by measuring emotion accuracy, which prompts the user with a simple data annotation task given both real and synthetic recordings to identify how well intended emotions are expressed by different systems, and how they are perceived. Each sample is classified by 20 participants. Objective metrics such as \ac{MCD} and log-$F_0$ \ac{RMSE} are used to measure how different design choices affect model outputs. MCD measures the difference between the mel-cepstra of generated and ground truth speech, with lower values correlating with audio quality/similarity. log-$F_0$ RMSE measures the error of the pitch contour of the generated signal, lower values correlate with correct intonation, emotion and prosody.
 
 \section{Results and Discussion}\label{sec:results}
 \begin{table}
@@ -21,7 +21,7 @@ Although MUSHRA is effective at evaluating many systems, listeners pay less atte
     \caption{Effect of training a CDE as a bridge between pre-trained encoder-decoder on LJSpeech.}
     \begin{tabular}{l c c c}
     \toprule
-    System & ODE Steps& MCD $\downarrow$ & $\log F_0$ RMSE $\downarrow$ \\
+    System & ODE Steps& MCD $\downarrow$ & log-$F_0$ RMSE $\downarrow$ \\
     \midrule
     Matcha-TTS & 10
         & $5.36 \pm 0.52$ & $0.30 \pm 0.08$ \\
@@ -35,17 +35,17 @@ Although MUSHRA is effective at evaluating many systems, listeners pay less atte
     \end{tabular}
     \label{tab:results_matcha}
 \end{table}
-The results on LJSpeech are displayed in Table \ref{tab:results_matcha}. Given that Matcha-TTS offers continuous computational-depth, evaluation is conducted with both 5 and 10 ODE solver steps. The CDE produces comparable objective scores to the pretrained mapping, with small numerical differences in favour of the CDE conditions. The CDE does not disrupt the encoder--decoder mapping.
+The results on LJSpeech are displayed in Table \ref{tab:results_matcha}. Given that Matcha-TTS offers continuous computational depth, evaluation is conducted with both 5 and 10 ODE solver steps. The CDE produces comparable objective scores to the pretrained mapping, with small numerical differences in favour of the CDE conditions. The CDE does not disrupt the encoder--decoder mapping.
 \begin{table}[t]
   \centering
   \caption{Objective evaluation results of ESD for the baseline systems and CDE (short and long context).}
   \label{tab:exp4_mcd_f0}
   \begin{tabular}{lcc}
     \toprule
-    System & MCD $\downarrow$ & log-F0 RMSE $\downarrow$ \\
+    System & MCD $\downarrow$ & log-$F_0$ RMSE $\downarrow$ \\
     \midrule
     \textit{Short-context (175 frames)} & & \\
-    Style-TTS 2 baseline & $5.30 \pm 0.99$ & \cellcolor{bestblue}$\mathbf{0.40} \pm 0.13$ \\
+    StyleTTS 2 (ESD) & $5.30 \pm 0.99$ & \cellcolor{bestblue}$\mathbf{0.40} \pm 0.13$ \\
     LSTM baseline & $5.28 \pm 0.98$ & \cellcolor{secondorange}$0.41 \pm 0.15$ \\
     % insert thin midrule here
     $h = 0.50$, 1 layer & \cellcolor{secondorange}$\mathbf{5.20} \pm 0.95$ & \cellcolor{bestblue}$\mathbf{0.40} \pm 0.13$ \\
@@ -55,9 +55,9 @@ The results on LJSpeech are displayed in Table \ref{tab:results_matcha}. Given t
     $h = 1.00$, 4 layers & \cellcolor{worstred}$5.50 \pm 1.03$ & \cellcolor{secondorange}$0.41 \pm 0.15$ \\
     \bottomrule
     \textit{Long-context (800 frames)} & & \\
-    Style-TTS 2 baseline & $5.18 \pm 0.93$ & \cellcolor{secondorange}$0.40 \pm 0.13$ \\
-    F5 baseline & \cellcolor{worstred}$6.24 \pm 1.46$ & \cellcolor{worstred}$0.47 \pm 0.18$ \\
-    LibriTTS baseline & $5.57 \pm 0.89$ & $0.41 \pm 0.16$ \\
+    StyleTTS 2 (ESD) & $5.18 \pm 0.93$ & \cellcolor{secondorange}$0.40 \pm 0.13$ \\
+    F5-TTS baseline & \cellcolor{worstred}$6.24 \pm 1.46$ & \cellcolor{worstred}$0.47 \pm 0.18$ \\
+    StyleTTS 2 (LibriTTS) & $5.57 \pm 0.89$ & $0.41 \pm 0.16$ \\
      $h = 0.50$, 1 layer & $5.20 \pm 0.97$ & \cellcolor{secondorange}$0.40 \pm 0.16$ \\
      $h = 0.50$, 2 layers & $5.15 \pm 0.97$ & \cellcolor{secondorange}$0.40 \pm 0.13$ \\
      $h = 0.50$, 4 layers & $5.26 \pm 0.92$ & \cellcolor{bestblue}$0.39 \pm 0.14$ \\
@@ -68,7 +68,7 @@ The results on LJSpeech are displayed in Table \ref{tab:results_matcha}. Given t
   \end{tabular}
 \end{table}
 
-Table \ref{tab:exp4_mcd_f0} shows the objective performance of short-context models (175 frames) over different step-sizes ($h$) and stacked CDE layers. The LSTM and CDE configurations yield different objective behaviour despite receiving the same duration-augmented inputs, indicating that the CDE is not behaving as a direct replacement for the discrete recurrent baseline. The \colorbox{bestblue}{best}, \colorbox{secondorange}{second-best}, and \colorbox{worstred}{worst} results are indicated by \colorbox{bestblue}{blue}, \colorbox{secondorange}{orange}, and \colorbox{worstred}{red}. All models benefitted from longer context. The F5 baseline suffered pacing inaccuracies.
+Table \ref{tab:exp4_mcd_f0} shows the objective performance of short-context models (175 frames) over different step sizes ($h$) and stacked CDE layers. The LSTM and CDE configurations yield different objective behaviour despite receiving the same duration-augmented inputs, indicating that the CDE is not behaving as a direct replacement for the discrete recurrent baseline. The \colorbox{bestblue}{best}, \colorbox{secondorange}{second-best}, and \colorbox{worstred}{worst} results are indicated by \colorbox{bestblue}{blue}, \colorbox{secondorange}{orange}, and \colorbox{worstred}{red}. All models benefitted from longer context. The F5-TTS baseline suffered pacing inaccuracies.
 
 
 \begin{table}[t]
@@ -90,21 +90,21 @@ Table \ref{tab:exp4_mcd_f0} shows the objective performance of short-context mod
     style reference& 1.00 & 1.00 & 1.00 & 1.00 & 1.00 & 1.00 \\
     ground truth
     & 0.29 & -0.15 & 0.33 & 0.29 & 0.14 & 0.18 \\
-    F5
+    F5-TTS
     & \cellcolor{bestblue}\textbf{0.66}
     & 0.16
     & 0.26
     & 0.15
     & \cellcolor{worstred}-0.02
     & 0.26 \\
-    LibriTTS
+    StyleTTS 2 (LibriTTS)
     & 0.05
     & 0.12
     & \cellcolor{worstred}0.05
     & 0.48
     & 0.16
     & 0.18 \\
-    ESD finetune
+    StyleTTS 2 (ESD)
     & 0.35
     & \cellcolor{worstred}-0.20
     & 0.15
@@ -162,21 +162,21 @@ Table \ref{tab:exp4_mcd_f0} shows the objective performance of short-context mod
     style reference& 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
     ground truth
     & 0.227 & 0.499 & 0.292 & 0.447 & 0.268 & 0.347 \\
-    F5
+    F5-TTS
     & \cellcolor{worstred}0.473
     & 0.429
     & \cellcolor{secondorange}0.255
     & \cellcolor{worstred}0.521
     & \cellcolor{worstred}0.576
     & \cellcolor{worstred}0.451 \\
-    LibriTTS
+    StyleTTS 2 (LibriTTS)
     & 0.305
     & \cellcolor{bestblue}0.343
     & 0.289
     & 0.289
     & 0.572
     & 0.360 \\
-    ESD finetune
+    StyleTTS 2 (ESD)
     & 0.281
     & 0.482
     & 0.288
@@ -233,9 +233,9 @@ Table \ref{tab:exp4_mcd_f0} shows the objective performance of short-context mod
     \midrule
     style reference& 3.59 & 3.54 & 3.49 & 3.43 & 3.62 & 3.53 \\
     ground truth   & 3.35 & 3.30 & 3.45 & 3.19 & 3.65 & 3.39 \\
-    F5             & \cellcolor{worstred}3.09 & \cellcolor{bestblue}3.51 & \cellcolor{secondorange}3.31 & \cellcolor{worstred}2.96 & 3.10 & \cellcolor{worstred}3.20 \\
-    LibriTTS       & \cellcolor{bestblue}3.50 & \cellcolor{secondorange}3.39 & 3.19 & 3.14 & \cellcolor{worstred}3.01 & \cellcolor{secondorange}3.24 \\
-    ESD finetune  & 3.31 & 3.20 & 3.20 & 3.20 & \cellcolor{bestblue}3.18 & 3.22 \\
+    F5-TTS         & \cellcolor{worstred}3.09 & \cellcolor{bestblue}3.51 & \cellcolor{secondorange}3.31 & \cellcolor{worstred}2.96 & 3.10 & \cellcolor{worstred}3.20 \\
+    StyleTTS 2 (LibriTTS) & \cellcolor{bestblue}3.50 & \cellcolor{secondorange}3.39 & 3.19 & 3.14 & \cellcolor{worstred}3.01 & \cellcolor{secondorange}3.24 \\
+    StyleTTS 2 (ESD)  & 3.31 & 3.20 & 3.20 & 3.20 & \cellcolor{bestblue}3.18 & 3.22 \\
     h=1.0, 1 layer & \cellcolor{secondorange}3.43 & \cellcolor{worstred}3.12 & 3.28 & 3.21 & 3.05 & 3.21 \\
     h=1.0, 2 layers & 3.37 & 3.29 & \cellcolor{bestblue}3.33 & 3.23 & 3.05 & \cellcolor{bestblue}3.25 \\
     h=0.5, 1 layer & 3.41 & 3.21 & \cellcolor{worstred}3.18 & \cellcolor{bestblue}3.30 & \cellcolor{secondorange}3.17 & \cellcolor{bestblue}3.25 \\
@@ -244,7 +244,7 @@ Table \ref{tab:exp4_mcd_f0} shows the objective performance of short-context mod
     \end{tabular}}
 \end{table}
   
-Table \ref{tab:emotion_corr_mae} shows the results of the MUSHRA-style listening test. The first section is the Spearman rank correlation between a system's per-sample rating and the reference, with a macro correlation reported as an aggregate summary across emotions (computed by Fisher $z$-transforming the per-emotion correlations, averaging in $z$-space, and transforming back). The second section is the \ac{MAE}, between a system's intensity rating and the reference. The final section is the overall mean rating, where higher numbers indicate a higher intensity of emotion. Maximising emotion intensity does not indicate a better model, as controllable synthesis requires faithfulness to the reference emotion style, which is captured by the correlation and MAE metrics. The results show that no system is the best across all emotions, and all systems tend to under-express emotion relative to the reference, although the degree of under-expression varies across conditions. The ESD finetune baseline correlates well for surprise, is fair for neutral and happy, but negative for anger and sad. The proposed CDE models have different behaviour depending on their configuration. Using $h=1.0$ and a single layer hinders neutral speech but improves calibration in other emotions, with poorer performance for surprise. The macro correlation of this CDE (0.53) is higher than the ESD finetuned baseline (0.08). The dynamics of adjusting time step and stacking layers is non-monotonic, but it appears that stacking layers benefits correlation for $h=0.5$, albeit a single layer has less MAE from the reference, and provides grounds for further experimentation into the dynamics of continuous-time discretisation.
+Tables \ref{tab:emotion_corr}, \ref{tab:emotion_mae}, and \ref{tab:emotion_mosei} show the results of the MUSHRA-style listening test. The first reports the Spearman rank correlation between a system's per-sample rating and the reference, with a macro correlation reported as an aggregate summary across emotions (computed by Fisher $z$-transforming the per-emotion correlations, averaging in $z$-space, and transforming back). The second reports the \ac{MAE} between a system's intensity rating and the reference. The third reports the overall mean rating, where higher numbers indicate a higher intensity of emotion. Maximising emotion intensity does not indicate a better model, as controllable synthesis requires faithfulness to the reference emotion style, which is captured by the correlation and MAE metrics. The results show that no system is the best across all emotions, and all systems tend to under-express emotion relative to the reference, although the degree of under-expression varies across conditions. The StyleTTS 2 (ESD) baseline correlates well for surprise, is fair for neutral and happy, but negative for anger and sad. The proposed CDE models have different behaviour depending on their configuration. Using $h=1.0$ and a single layer hinders neutral speech but improves reference-style tracking in other emotions, with poorer performance for surprise. The macro correlation of this CDE (0.53) is higher than the StyleTTS 2 (ESD) baseline (0.08). The dynamics of adjusting step size and stacking layers is non-monotonic, but it appears that stacking layers benefits correlation for $h=0.5$, albeit a single layer has less MAE from the reference, and provides grounds for further experimentation into the dynamics of continuous-time discretisation.
 \begin{table}[t]
   \centering
   \caption{CMOS-EQ results for CDE $h=1$, 1 layer. Positive values indicate preference for CDE. }
@@ -261,7 +261,7 @@ Table \ref{tab:emotion_corr_mae} shows the results of the MUSHRA-style listening
   & \textbf{Surprise}
   & \textbf{Overall} \\
   \midrule
-  ESD finetune& \cellcolor{bestblue}$+0.03$
+  StyleTTS 2 (ESD)& \cellcolor{bestblue}$+0.03$
   & \cellcolor{bestblue}$+0.37$
   & \cellcolor{bestblue}$+0.11$
   & \cellcolor{bestblue}$+0.37$
@@ -280,7 +280,8 @@ Table \ref{tab:emotion_corr_mae} shows the results of the MUSHRA-style listening
   }
   \end{table}
 
-Table \ref{tab:cmos_dt100_l1} shows the results of the emotion expression quality comparison for a 1-layer CDE with $h=1.0$. On average, listeners preferred the CDE method over the non-CDE baseline for anger and sadness, showed no preference for neutral and happy speech, and preferred the baseline for surprise. When scores were averaged per sample, the proposed and baseline systems were statistically indistinguishable under a Wilcoxon signed-rank test, indicating that the two systems produced comparable emotion-expression quality at the utterance-level. However, when averaged per listener, the results showed a significant ($p<0.05$) overall preference for the CDE system, suggesting that listeners exhibited a consistent, albeit modest, preference for the proposed system across the evaluation set. In contrast, the CDE is significantly further than ground truth, highlighting room for improvement. Comparison with Table \ref{tab:emotion_corr_mae} suggests a partial relationship between calibration and perceived expression quality. This trend follows for surprise.  Neutral-style speech contradicts this but can be considered a special case of non-emotion. A further observation is that the CDE has the lowest intensity rating for anger, yet has +0.37 CMOS-EQ. This could be a compromise where listeners prefer a less intense but more appropriately expressed realisation of anger. Finally, the results for emotion accuracy are in Table \ref{tab:emo_acc}. There is a clear difference between how listeners perceived real speech versus synthetic. The LibriTTS model overfits to neutral speech, yielding high recall. Between the other systems, the baseline is moderately favoured, with the best accuracy being the 2 layer half step CDE on sadness at $0.558$. From a deployment perspective, it seems that the best strategy is to train multiple model configurations and select the optimal model for a given intended style. Together, the results indicate that CDE-based finetuning can improve faithfulness to the reference emotion style and may also improve perceived expressive quality for some emotions, although these benefits remain dependent on emotion category and configuration.
+% TODO: Confirm the CMOS-EQ comparator: the table and summary identify the ESD-fine-tuned StyleTTS 2 system, but "non-CDE baseline" may mean the separate LSTM baseline.
+Table \ref{tab:cmos_dt100_l1} shows the results of the emotion-expression quality comparison for a 1-layer CDE with $h=1.0$. On average, listeners preferred the CDE method over the non-CDE baseline for anger and sadness, showed no preference for neutral and happy speech, and preferred the baseline for surprise. When scores were averaged per sample, the proposed and baseline systems were statistically indistinguishable under a Wilcoxon signed-rank test, indicating that the two systems produced comparable emotion-expression quality at the utterance-level. However, when averaged per listener, the results showed a significant ($p<0.05$) overall preference for the CDE system, suggesting that listeners exhibited a consistent, albeit modest, preference for the proposed system across the evaluation set. In contrast, the CDE is significantly further than ground truth, highlighting room for improvement. Comparison with Table \ref{tab:emotion_mae} suggests a partial relationship between calibration and perceived emotion-expression quality. This trend follows for surprise.  Neutral-style speech contradicts this but can be considered a special case of non-emotion. A further observation is that the CDE has the lowest intensity rating for anger, yet has +0.37 CMOS-EQ. This could be a compromise where listeners prefer a less intense but more appropriately expressed realisation of anger. Finally, the results for emotion accuracy are in Table \ref{tab:emo_acc}. There is a clear difference between how listeners perceived real speech versus synthetic. The StyleTTS 2 (LibriTTS) baseline overfits to neutral speech, yielding high recall. Between the other systems, the baseline is moderately favoured, with the best accuracy being the 2 layer half step CDE on sadness at $0.558$. From a deployment perspective, it seems that the best strategy is to train multiple model configurations and select the optimal model for a given intended style. Together, the results indicate that CDE-based fine-tuning can improve faithfulness to the reference emotion style and may also improve perceived emotion-expression quality for some emotions, although these benefits remain dependent on emotion category and configuration.
 
 \begin{table}[t]
   \centering
@@ -314,7 +315,7 @@ Table \ref{tab:cmos_dt100_l1} shows the results of the emotion expression qualit
   & 0.653
   & 0.691 \\
 
-  LibriTTS
+  StyleTTS 2 (LibriTTS)
   & \cellcolor{bestblue}0.606
   & \cellcolor{secondorange}0.437
   & \cellcolor{worstred}0.238
@@ -322,7 +323,7 @@ Table \ref{tab:cmos_dt100_l1} shows the results of the emotion expression qualit
   & \cellcolor{worstred}0.087
   & \cellcolor{worstred}0.353 \\
 
-  ESD finetune
+  StyleTTS 2 (ESD)
   & \cellcolor{secondorange}0.537
   & 0.399
   & \cellcolor{bestblue}0.304
@@ -353,4 +354,4 @@ Table \ref{tab:cmos_dt100_l1} shows the results of the emotion expression qualit
   \end{table}
 
 \section{Summary}\label{sec:conclusion}
-This chapter introduced neural controlled differential equations (CDEs) as a continuous-time mechanism for duration-aware acoustic modelling in text-to-speech. The proposed method augments phone-level representations with duration-derived timing information and uses a neural acoustic vector field to produce hidden states whose values evolve with phonetic content and temporal structure, rather than using duration only for length regulation. Experiments show that CDEs provide a small benefit on neutral audiobook-style speech, but can improve reference-style tracking in emotional TTS. In particular, a single-layer CDE with $h=1.0$ achieved the strongest macro Spearman correlation with reference emotion-intensity ratings, while CMOS-EQ results indicated comparable utterance-level emotion-expression quality and a modest listener-level preference over the finetuned StyleTTS 2 baseline. The results also show that step size and layer depth affect the trade-off between style tracking, calibration, and perceived emotion quality, suggesting that temporal resolution is a meaningful modelling choice in CDE-based TTS. These findings motivate future investigation into alternative interpolation schemes, solver choices, frame-level control paths, and larger-scale evaluation across more diverse speakers, styles, and data resources.
+This chapter introduced neural controlled differential equations (CDEs) as a continuous-time mechanism for duration-aware acoustic modelling in text-to-speech. The proposed method augments phone-level representations with duration-derived timing information and uses a neural acoustic vector field to produce hidden states whose values evolve with phonetic content and temporal structure, rather than using duration only for length regulation. Experiments show that CDEs provide a small benefit on neutral audiobook-style speech, but can improve reference-style tracking in emotional TTS. In particular, a single-layer CDE with $h=1.0$ achieved the strongest macro Spearman correlation with reference emotion-intensity ratings, while CMOS-EQ results indicated comparable utterance-level emotion-expression quality and a modest listener-level preference over the fine-tuned StyleTTS 2 baseline. The results also show that step size and layer depth affect the trade-off between style tracking, calibration, and perceived emotion-expression quality, suggesting that temporal resolution is a meaningful modelling choice in CDE-based TTS. These findings motivate future investigation into alternative interpolation schemes, solver choices, frame-level control paths, and larger-scale evaluation across more diverse speakers, styles, and data resources.
