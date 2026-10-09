@@ -3,19 +3,37 @@
 A normalising flow is a transformation from a simple probability distribution (the name \textit{normalising} comes from the standard normal) to an underlying data distribution. They are trained by transforming samples from the data distribution to samples from a normal and maximising the likelihood of the transformed samples. Assuming the transform is invertible, the learned transform can sample from the simple distribution and generate likely data samples. 
 
 A large factor in the success of a normalising flow is the choice of transform. It must be invertable, expressive, and computational tractable.
+\[
+\log p_1(\rvx)=\log p(\rvz) + \log\lVert\det \frac{\partial \vf^{-1}(\vx)}{\partial\vx} \rVert
+\]
 
 \section{Stochastic differential equations}
 \subsection{The Wiener process}
-The Wiener process can be thought of as a random walk continuous in $u$. It starts from $W_0=0$ and ``walks'' with random increments $W_{0+\Delta u}\sim\mathcal N(0,\Delta u)$. The inspiration for this process comes from Robert Brown observing the motion of pollen in water. After placing a pollen particle into the centre $(0,0)$, it will begin to move randomly in all directions. This is known as diffusion.
+The Wiener process can be thought of as a random walk continuous in $u$. It starts from $\rw_0=0$ and ``walks'' with random increments $\rw_{0+\Delta u}\sim\mathcal N(0,\Delta u)$. The inspiration for this process comes from Robert Brown observing the motion of pollen in water. After placing a pollen particle into the centre $(0,0)$, it will begin to move randomly in all directions. This is known as diffusion.
 
 The Wiener process is useful here as it can be used to predict the likelihood of a particle position at a given time. The Wiener process is also easy to sample from
 \[
-W_u\sim\mathcal{N}(0,u),
+\rw_u\sim\mathcal{N}(0,u),
 \]
 but only describes evolution of samples from the origin. For more complicated processes, more mechanisms are required.
 
-\section{Ornstein-Uhlenbeck processes}
-These processes are the first SDEs to be introduced in this dissertation. The key property is modelling a stationary stochastic process that will revert back to the mean despite diffusion perturbing samples randomly
+\subsection{It\^o SDE}
+An It\^o SDE is a summation of a ordinary drift and stochastic diffusion
 \[
-\dd \rx = \gamma(\mu - \rx)\dd u + \sigma\dd W_u
+\dd \rx = f(\rx,u)\dd u + g(\rx,u)\dd \rw_u
 \]
+These processes are the first example SDEs to be introduced in this dissertation. For example, take an Ornstein-Uhlenbeck process which aims to model a stationary process. The key property is modelling reversion back to the mean despite diffusion perturbing samples randomly
+\[
+\dd \rx = \gamma(y - \rx)\dd u + \sigma\dd \rw_u.
+\label{eq:ousde}
+\]
+SDEs are characterised by a deterministic component \textit{drift}, and non-deterministic diffusion. This process scales reversion to the selected mean $\mu$ with $\gamma$ and diffusion with $\sigma$. Although less obvious than the Wiener process, \eqref{eq:ousde} also has a closed-form solution
+\[
+\mathcal N \left(y,\frac{\sigma^2}{2\gamma}\right).
+\]
+Note how this solution does not depend on $u$.
+
+\section{Deep equilibrium models}
+This thesis focusses on neural DEs, but the reader should be aware that this is not the only way to achieve ``implicit layers''. Neural DEs are implicit because the parameters describe a single layer which can be used by black-box equation solvers to simulate depth. Another way to simulate depth is with DEQs.
+
+DEQs are solved by finding an equilibrium point, where the output of the layer is equal to or within a small margin of error from the input. 

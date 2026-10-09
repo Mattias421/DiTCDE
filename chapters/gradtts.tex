@@ -1,26 +1,56 @@
 \chapter{Continuous normalising flows}
 % include support for image generation
 % add background for SDEs
+As discussed in the intro, neural ODEs can be used to construct CNFs. A key limitation with the na\"ive predict then optimise strategy is that the ODE must be solved forwards and backwards to be optimised. Such models are known as \textit{simulation-based} models. This chapter looks into \textit{simulation-free} methods for training CNFs with score-based diffusion models.
+\begin{figure}
+    \centering
+    \includegraphics[width=1\linewidth]{plots/cartoon-1.pdf}
+    \caption{Enter Caption}
+    \label{fig:placeholder}
+\end{figure}
+\begin{figure}
+    \centering
+    \includegraphics[width=1\linewidth]{plots/cartoon-2.pdf}
+    \caption{Enter Caption}
+    \label{fig:placeholder}
+\end{figure}
+\section{Stochastic differential equations}
+\[
+\dd\rmX = \rmF(\rmX)\dd u + g(u)\dd\rmW_u
+\]
+\[
+\rmX_u = \rmX_0 + \int_0^u\rmF(\rmX_s)\dd s + \int_0^ug(u)\dd \rmW_s
+\label{eq:sdesolv}
+\]
 
-\section{Probability flow}
+\[
+\dd\rmX = \left[\rmF(\rmX) - g(u)^2\nabla\log p_t(\rmX)\right]\dd u + g(u)\dd\bar\rmW_u
+\]
+The gradient of the log-density $\nabla\log p_u(\rmX_u)$ is known as the \textit{stein score}, and models that use this are known as score-based generative models.
+\[
+\Ls=\E_{\ru,\rmX_0}\lVert\mS_\vtheta(\rmX_\ru,\ru) - \nabla\log p_\ru(\rmX_u)\rVert^2_2 \qquad \ru\sim\gU(0,1) \quad \rmX_0\sim \pdata(\rmX)
+\]
+By sampling $\mX_1$ and using the estimated score, data samples $\mX_0$ can be generated.
 
-\[
-p_0=q_\mathrm{data} \quad p_U=q_\mathrm{src} % write in text
-\]
-\[
-\rmX_0=\rmX_U + \int_U^0 p_u(\rmX_u)\dd u
-\]
-\[
-p_u(\rmX_u|\rmX_0) = \mathcal N(\rmX_u;\rmM(\rmX_0,u),\mathsf\Sigma(u))
-\]
-\[
-\rmM=? \qquad \mathsf\Sigma(u)=? \quad u\in[0,1]
-\]
+\section{Examples}
+Say we'd like a process that increases variance linearly, define a $\beta$-schedule
 \[
 \beta(u)=\beta_{\min}+\bigl(\beta_{\max}-\beta_{\min}\bigr)u
 \]
+This schedule is used to construct a variance preserving SDE
 \[
-\rmM(\rmX_0,u)=\left(1-e^{-\frac{1}{2}\int_0^u\beta(s)\dd s}\right)\bar\rmX +e^{-\frac{1}{2}\int_0^u\beta(s)\dd s}\rmX_0
+\dd \rmX = \frac{1}{2}(\mY - \rmX_u)\beta(u) \dd u + \sqrt{\beta(u)} \dd\rmW_u
+\]
+with equivalent reversal
+\[
+\dd \rmX = \left(\frac{1}{2}(\mY - \rmX_u) - \nabla\log p_u(\rmX_u)\right)\beta(u) \dd u + \sqrt{\beta(u)} \dd\hat\rmW_u
+\]
+A useful property of this SDE is that it's closed-form solution is known for an initial $\rmX_0$.
+\[
+p_u(\rmX_u|\rmX_0) = \mathcal N(\rmX_u;\rmM(\rmX_0,u,\mY),\mathsf\Sigma(u))
+\]
+\[
+\rmM(\rmX_0,u,\mY)=\left(1-e^{-\frac{1}{2}\int_0^u\beta(s)\dd s}\right)\mY +e^{-\frac{1}{2}\int_0^u\beta(s)\dd s}\rmX_0
 \]
 \[
 \mathsf\Sigma(u) = \left(1-e^{-\int_0^u\beta(s)\dd s}\right)\mI
@@ -28,43 +58,17 @@ p_u(\rmX_u|\rmX_0) = \mathcal N(\rmX_u;\rmM(\rmX_0,u),\mathsf\Sigma(u))
 \[
 \int_0^u\beta(s)\dd s = \beta_{\min}u + \frac{1}{2}(\beta_{\max}-\beta_{\min})u^2
 \]
+This allows sampling from $p_u$ instead of solving \eqref{eq:sdesolv}, resulting in \textit{simulation-free} training.
 
-\section{Estimating the gradients of the flow} 
+
 
 \begin{figure}
     \centering
     \includegraphics[width=\linewidth]{plots/gradtts/mean_reverting_sde-1.pdf}
-    \caption{\textbf{1D example} A mean reverting SDE with $\bar x=0$ and $x_0=3$. The reverse process samples from a standard normal and produces $x_0=3$}
+    \caption{\textbf{1D example} A mean reverting SDE with $\mY=0$ and $x_0=3$. The reverse process samples from a standard normal and produces $x_0=3$}
     \label{fig:mean_reverting_sde}
 \end{figure}
-\[
-\dd\rmX = \mF(\rmX)\dd u + g(u)\dd\rmW_u
-\]
-\[
-\dd\rmX = \left[\mF(\rmX) - g(u)^2\nabla\log p_t(\rmX)\right]\dd u + g(u)\dd\bar\rmW_u
-\]
-The gradient of the log-density $\nabla\log p_u(\rmX_u)$ is known as the \textit{stein score}, and models that use this are known as score-based generative models.
-\[
-\rmX_u=\rmM(\rmX_0,\bar\rmX,u)+\bm\varepsilon_u \qquad \bm \varepsilon_u\in\mathcal N(\bm 0,\mathsf\Sigma(u))
-\]
-\[
-\nabla\log p_u(\rmX_u|\rmX_0)=-\mathsf\Sigma(u)^{-1}\bm\varepsilon_u
-\]
-\[
-\Ls=\mS_\theta(\rmX_u,u) - (-\mathsf\Sigma(u)^{-1}\bm\varepsilon_u)
-\]
-\[
-\rmX_U\sim \mathcal N (\bar\rmX,\tSigma(U)) 
-\]
-\[
-\dd \rmX = \frac{1}{2}(\bar\rmX - \rmX_u)\beta(u) \dd u + \sqrt{\beta(u)} \dd\rmW_u
-\]
-\[
-\dd \rmX = \left(\frac{1}{2}(\bar\rmX - \rmX_u) - \nabla\log p_u(\rmX_u)\right)\beta(u) \dd u + \sqrt{\beta(u)} \dd\hat\rmW_u
-\]
-\[
-\dd \rmX = \left(\frac{1}{2}(\bar\rmX - \rmX_u) - \frac{1}{2}\mS_\theta(\rmX_u,u)\right)\beta(u) \dd u
-\]
+
 
 \section{Conditional generation}
 \[
@@ -72,27 +76,34 @@ p(\rmX|\vy)=?
 \]
 \subsection{Classifier-free guidance}
 \[
-\dd \rmX = \left(\frac{1}{2}(\bar\rmX - \rmX_u) - (1 + w)\mS_\theta(\rmX_u,u|\vy) + w\mS_\theta(\rmX_u,u)\right)\beta(u) \dd u
+\dd \rmX = \frac{1}{2}\left((\mY - \rmX_u) - (1 + w)\mS_\theta(\rmX_u,u|\vy) + w\mS_\theta(\rmX_u,u|\oslash)\right)\beta(u) \dd u
+\label{eq:cfg}
 \]
 
 \subsection{Mean reversion with conditional score}
+\begin{figure}
+    \centering
+    \includegraphics[width=1\linewidth]{plots/cartoon-3.pdf}
+    \caption{Enter Caption}
+    \label{fig:placeholder}
+\end{figure}
 \[
-\bar\rmX=\mE_\phi(\vy) \qquad \mS_{\theta,\phi}(\rmX,u|\vy)=\mD_\theta \left(
-\begin{bmatrix}
-    \rmX \\ \mE_\phi(\vy)
-\end{bmatrix}
-,u\right)
+\rmY=\mE_\phi(\rvy) 
 \]
-
-\section{Training}
+Note how $\rmY$ is a random variable of the conditioning $\rvy$, unlike a global $\mY$ left as a design choice in \eqref{eq:cfg}. This represents a key difference in image and speech generative models seen later.
 
 \section{Sampling with ODE solvers}
+To retrieve data samples, the following reverse initial value problem must be solved
+\[
+\rmX_0=\rmX_1 + \int_1^0\rmH(\rmX_u,u)\dd u
+\]
+Where $\rmH$ is the drift component of the trained reverse SDE. For the variance preserving example, it is
+\[
+\rmH(\rmX,u) = \frac{1}{2}\left(\mY - \rmX-\rmS_\vtheta(\rmX,u)\right)\beta(u)
+\]
 Euler sampler with step size $h$
 \[
-\mX_{u-h}=\mX_u -\frac{1}{2}(\bar\mX - \mX_u)\mS\beta(u)h
-\]
-\[
-\mX_{i-1} = \mX_i - \mF_i(\mX_i)+\frac{1}{2}\tG_i\tG_i^\top\mS_\theta(\mX_i,u_i)
+\mX_{u-h}=\mX_u -\rmH(\mX_u,u)h
 \]
 
 

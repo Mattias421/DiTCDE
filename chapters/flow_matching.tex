@@ -3,16 +3,22 @@
 $p_1(\rmY)$?
 \section{Preliminaries on noise suppression with diffusion models}
 \[
-\bar\rmX = \rmX\ast\mH + \rmZ
+\mY = \rmX\ast\mH + \rmZ
 \]
 Instead of a variance preserving SDE, consider a variance exploding SDE
 \[
-\dd\rmX=\gamma(\bar\rmX - \rmX_u)\dd u + \sqrt{ck^{2u}}\dd\rmW_t.
+\dd\rmX=\gamma(\mY - \rmX_u)\dd u + \sqrt{ck^{2u}}\dd\rmW_t.
 \]
 \[
-\rmM(\bar\rmX,\rmX,u;\gamma) = e^{-\gamma u}\rmX + (1- e^{-\gamma u})\bar\rmX \qquad \tSigma(u;\gamma,c,k) = \frac{c(k^{2u}-e^{-2\gamma u})}{2(\gamma + \log k)}\tI
+\rmM(\mY,\rmX,u;\gamma) = e^{-\gamma u}\rmX + (1- e^{-\gamma u})\mY \qquad \tSigma(u;\gamma,c,k) = \frac{c(k^{2u}-e^{-2\gamma u})}{2(\gamma + \log k)}\tI
 \]
 \section{Schr\"odinger bridge}\label{sec:schr}
+\begin{figure}
+    \centering
+    \includegraphics[width=1\linewidth]{plots/cartoon-4.pdf}
+    \caption{Enter Caption}
+    \label{fig:placeholder}
+\end{figure}
 \begin{figure}
     \centering
     \includegraphics[width=1\linewidth]{plots/schrodinger_bridge_sde.pdf}
@@ -48,7 +54,7 @@ Consider a purely variance-exploding reference process
 
 The loss is data prediction given a path sample
 \[
-\mS_\theta(\rmX_u|\bar\rmX,\ru)-\rmX_0
+\mS_\theta(\rmX_u|\mY,\ru)-\rmX_0
 \]
 
 \section{Notes on the SB design space}\label{sec:sbsv}
@@ -57,32 +63,38 @@ The mean $\rmM$ tends to linear interpolation as $k\rightarrow1$. The variance $
 \section{Conditional flow matching}\label{sec:icfm}
 \begin{figure}
     \centering
+    \includegraphics[width=1\linewidth]{plots/cartoon-5.pdf}
+    \caption{Enter Caption}
+    \label{fig:placeholder}
+\end{figure}
+\begin{figure}
+    \centering
     \includegraphics[width=1\linewidth]{plots/independent_conditional_flow_matching.pdf}
     \caption{Enter Caption}
     \label{fig:conditional_flow_matching}
 \end{figure}
 A less obvious yet simpler approach is a linearly interpolating mean and constant variance.
 \[
-\dd \rmX=\bar\rmX - \rmX \dd u
+\dd \rmX=\mY - \rmX \dd u
 \]
 \[
 \rmM(\rmX_0,\rmY,u) = u\rmY + (1-u)\rmX_0 \quad \sigma(u)^2=c
 \label{eq:icfm_mean_variance}
 \]
 \[
-\mS_\theta(\rmX_u|\bar\rmX,\ru)-(\rmX_0 -\bar\rmX)
+\mS_\theta(\rmX_u|\mY,\ru)-(\rmX_0 -\mY)
 \]
 
 \section{Inference schemes}
 The ODE sampler is defined as
 \[
-\mX_{u_{n-1}}=a_n\mX_{u_n} + b_n\mS_\theta(\mX_{u_n},\bar\mX,u_n) + c_n\bar\mX
+\mX_{u_{n-1}}=a_n\mX_{u_n} + b_n\mS_\theta(\mX_{u_n},\mY,u_n) + c_n\mY
 \]
 Direct data prediction with data prediction loss is
 \[
-\mX_0=\mS_\theta(\bar\mX, \bar\mX,1)
+\mX_0=\mS_\theta(\mY, \mY,1)
 \]
 and for flow-matching loss
 \[
-\mX_0=\mS_\theta(\bar\mX, \bar\mX,1) + \bar\mX
+\mX_0=\mS_\theta(\mY, \mY,1) + \mY
 \]
