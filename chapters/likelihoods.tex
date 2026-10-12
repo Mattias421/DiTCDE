@@ -136,7 +136,7 @@ The Euler method produces unintelligible audio, yet has high speaker similarity 
   \bottomrule
 \end{tabular}
 \end{table}
-Similar to Table~\ref{tab:gtts_over_t}, sample quality increases~(FID) during the generative process, as does likelihood. Although there is a clear trend that FID does decrease along the generative process, it is higher than typical.\footnote{The DM in \cite{songScoreBasedGenerativeModeling2021} yields 2.92 FID on CIFAR-10.} It is assumed that this is because SDXL was trained on more data than PACS, thus generating many samples absent in the PACS dataset. Unlike Grad-TTS, the conditional metric (CLIP) improves, showing that CFG expresses a more conditional likelihood than the MR-VP SDE used by Grad-TTS.
+Similar to Table~\ref{tab:gtts_over_t}, sample quality increases~(FID) during the generative process, as does likelihood. Although there is a clear trend that FID does decrease along the generative process, it is higher than typical.\footnote{The DM in \cite{song2021sde} yields 2.92 FID on CIFAR-10.} It is assumed that this is because SDXL was trained on more data than PACS, thus generating many samples absent in the PACS dataset. Unlike Grad-TTS, the conditional metric (CLIP) improves, showing that CFG expresses a more conditional likelihood than the MR-VP SDE used by Grad-TTS.
 
 \begin{table}[!htbp]
   \centering
