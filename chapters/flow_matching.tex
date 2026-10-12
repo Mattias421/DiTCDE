@@ -3,11 +3,11 @@
 $p_1(\rmY)$?
 \section{Preliminaries on noise suppression with diffusion models}
 \[
-\mY = \rmX\ast\mH + \rmZ
+\rmY = \rmX\ast\mH + \rmZ
 \]
 Instead of a variance preserving SDE, consider a variance exploding SDE
 \[
-\dd\rmX=\gamma(\mY - \rmX_u)\dd u + \sqrt{ck^{2u}}\dd\rmW_t.
+\dd\rmX=\gamma(\rmY - \rmX_u)\dd u + \sqrt{ck^{2u}}\dd\rmW_t.
 \]
 \[
 \rmM(\mY,\rmX,u;\gamma) = e^{-\gamma u}\rmX + (1- e^{-\gamma u})\mY \qquad \tSigma(u;\gamma,c,k) = \frac{c(k^{2u}-e^{-2\gamma u})}{2(\gamma + \log k)}\tI

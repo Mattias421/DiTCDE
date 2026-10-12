@@ -18,6 +18,24 @@
 % Source quirks retained: Table 4 has its label before its caption and
 % surplus column declarations; Table 7 includes three reference columns
 % that extend beyond the right edge of the published PDF.
+\textit{Image or speech first?}
+
+This chapter investigates the first research question: what are the properties diffusion model likelihood in practical implementations? The implementations considered are for high-quality image and speech generation. For images SDXL is chosen, which uses classifier-free guidance for text-to-image generation. The encoder-decoder mean-reversion GradTTS is used for speech. Using these to models provides a wide perspective on different paths and modalities.
+
+The mismatch between the original models developed in \cite{} and their practical realisations has an unknown effect on likelihood. For example, the probability-flow ODE in SDXL now contains a guidance scale parameter. Does the density shift towards images depicting the caption as guidance scale increases? GradTTS also introduces complications as the probability flow is unique to each utterance $\rvy$. How heavily does the model rely on the encoded mean of the distribution $\rmY$, or is it aware of the linguistic structure?
+
+The above questions are answered through a series of experiments. First the likelihood of a sample through a probability path is measured to confirm that likelihood increases during the generative process. The guidance scale is also varied to verify if the density changes. Then, special evaluations are taken to measure expected behaviour for the task. These tasks apply the density model for classification tasks e.g. which transcript fits a spoken utterance the best.
+
+The experiments show that likelihood increases as $u\rightarrow 0$, but at different rates e.g. Grad-TTS only increases likelihood in the last quarter, whereas SDXL decreases within the second quarter. Increasing guidance scale does increase likelihood.
+
+The rest of the evaluations suggest that the densities are not task-orientated. For example, using likelihood for ranking hypothesis transcriptions for speech recognition does not find the correct transcription. Given a list of confounding prompts, image likelihood struggles to find the correct prompt for an image. Such behaviours are unexpected for a high-quality density model.
+
+The rest of this chapter outlines the models used and data they are tested on. Then details of the evaluation metrics are given. Then the experimental results are presented and discussed. The chapter ends with a final summary paragraph tying everything learned together so far.
+
+\section{Models}
+SDXL is a latent diffusion model. It operates within the feature space of an image auto-encoder. Generation is controlled with classifier free guidance with zero mean ($\mY=\bm0$). The conditional score is implemented as a U-Net with cross-attention from the CLIP representation of an image prompt. Both the auto-encoder and score model are trained on LAION-5B.
+
+Grad-TTS uses a transformer encoder and U-Net diffusion decoder. The encoder predicts a coarse mel-spectrogram which is used as the mean $\rmY$. Although the mel-spectrogram has 80 dimensions, the input dimension of the U-Net is 160 to accommodate the encoder output for conditioning. Grad-TTS is trained on LJSpeech.
 
 \section{Data}
 \paragraph{Speech}
@@ -122,7 +140,7 @@ Similar to Table~\ref{tab:gtts_over_t}, sample quality increases~(FID) during th
 
 \begin{table}[!htbp]
   \centering
-  \caption{Impacts of CFG, reconstruction (-R) and image sizes.}
+  \caption{Impacts of CFG, reconstruction (-R) and image sizes. \textit{Divide in two}}
   \label{tab:sdxl_cfg_reconstruct}
     \begin{tabular}{l||l|rrrr|rrrr}
       \toprule

@@ -1,4 +1,13 @@
 \chapter{Deep noise suppression}
+The distribution of noisy speech is tightly coupled to clean speech, and may be a more relaxed problem then the tasks seen speech and image synthesis. This observation is what inspired diffusion and SB based models for noise suppression. A novel observation made here is that previous work artificially adds Brownian motion to the probability paths. From \chapref{2} we know that Brownian motion is a useful tool for constructing a path to a Gaussian with high variance, but interpolating two coupled data distributions may not require Brownian motion. This relaxation is the focus of this chapter. 
+
+It is no secret that the variance of training samples has an effect on the training efficacy of a deep learning model. Although variance can help regularise overfitting, too much can destabilise training. \Figureref{} shows that the gradient of the probability flow and the variance depend on $u$, meaning the trained velocity field must learn the dependence of $u$ on the probability path. Flow matching contrasts this with time-invariant gradient and variance.
+
+The main result is that a flow-matching model out performs an SB on additive noise suppression. An additional investigation introduces SB-SV, showing the similarity of SB to flow matching e.g. as $k\rightarrow1$, the interpolation becomes linear. 
+
+A further finding is that these models perform well as direct data predictors. This questions the benefits of continuous depth, as it seems that training as a neural ODE outperforms a direct regressor, but once trained it can be treated as a direct regressor. Such behaviour connects the properties of continuous-depth training with data augmentation and curriculum learning.
+
+The rest of this chapter explains metrics and the Voicebank-DEMAND dataset. Then specifics of the models are outlined. The results are displayed after with discussion. This chapter ends with concluding remarks.
 
 \section{Metrics}
 Standard practice measures speech quality with intrusive and non-intrusive metrics. The intrusive \ac{SE} metrics used are PESQ~\citep{rixPerceptualEvaluationSpeech2001} for predicting speech quality, ESTOI~\citep{jensen2016algorithm} as a measure of speech intelligibility and \ac{SI-SDR}~\citep{leroux2018sdr} measured in dB. The evaluation also includes non-intrusive metrics that predict quality from the predicted clean speech alone. The first is the common metric DNSMOS~\citep{reddy2021dnsmos},\footnote{https://github.com/microsoft/DNS-Challenge/tree/master/DNSMOS} which employs a neural network trained on human ratings (\ac{MOS}).  The second is WhiSQA, a non-intrusive \ac{MOS} prediction network shown to correlate well with human judgment \citep{closeHallucinationPerceptualMetricDriven2024,close2025whisqanonintrusivespeechquality}.\footnote{https://github.com/leto19/WhiSQA} All of the above metrics score higher for better quality speech.
@@ -13,6 +22,8 @@ The neural estimator $F_\theta$ employs the NCSN++ architecture \citep{song2021s
 
 
 The neural estimator $F_\theta$ employs the NCSN++ architecture \citep{song2021sde} using the same parameterisation described in \cite{richter2023speech}. All experiments use the time-domain auxiliary loss \citep{jukic2024schr}.
+
+\section{Results}
 
 \begin{table}[htbp]
 \centering

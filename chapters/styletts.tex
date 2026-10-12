@@ -1,4 +1,17 @@
 \chapter{Continuous-time acoustic models in speech synthesis}
+
+This chapter introduces neural CDEs to the speech synthesis task. This presents a new challenge as each sample from the continuous hidden state must be optimised, unlike more simple tasks such as speech emotion recognition where only the final state is optimised.
+
+CDEs are a promising tool for speech synthesis as they produce a hidden state that interacts with an irregularly sampled control path. An important stage in speech synthesis is expanding the hidden state from the number of phone labels to the number of acoustic frames. The mapping between the two is monotonic and irregularly aligned, different phones have different duration due to physiological, physical and speaking style. This is the core motivation for investigating CDEs as they share this irregular mapping property.
+
+In detail, the method lies between a text encoder and an acoustic decoder. The goal of the neural CDE is to produce time-informed features for the decoder. Such features vary with the predicted alignment of the utterance; Without a CDE, the phone features would not vary based on the time evolution of the signal, introducing a lack of variance.
+
+The models considered in this work resolve speech-text alignment by repeating each text feature by its duration. A phone's duration can have a significant effect on how it sounds. For example, an exceptionally long vowel may become tired over time. 
+
+The integration of CDEs is evaluated thoroughly in two experimental setups. The first is a basic test on read speech, then the time-aware properties of the neural CDE is evaluated more verbosely in style-reference guided emotional speech synthesis.
+
+The emotional speech synthesis task addressed here involves a text prompt and a speech prompt. The goal is to depict the text with the same speaker and emotion style as the speech prompt. 
+
 \section{Data}
 \textbf{Emotional speech dataset:} Following the original work presented in the first version of StyleTTS\cite{li2025styletts}, the \ac{ESD} \cite{zhou2021emospeechdata} is used to measure emotional speech synthesis quality. The English subset of ESD comprises 350 sentences spoken by 10 speakers in 5 emotions (sad, happy, angry, neutral, surprised) totalling 10 hours. A subset of 30 minutes per speaker was selected as fine-tuning data.  Random subsets of 100 samples each were held out for validation and testing, split equally across speakers and emotions. For subjective tests, the test split is reduced to 50 samples which are also split equally. The validation and test sets also contain an accompanying reference split which provides each evaluation sample with an utterance from the same speaker and emotion for style prediction. This dataset is challenging because emotional speech relies on subtle prosodic cues, such as dynamic energy and pitch control, which are perceptually salient \cite{larrouy2025emoprosody} but only partially captured by TTS training losses. The use of a 5 hour subset further challenges models to capture nuanced patterns from limited data.
 
