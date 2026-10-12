@@ -15,4 +15,23 @@
 \]
 
 \section{Optimisation}
-Neural ODEs and CDEs can be optimised with the continuous adjoint (predict-then-optimise) approach.
+Neural ODEs and CDEs can be optimised with the continuous adjoint (optimise-then-discretise) approach. 
+\[
+\frac{\dd \rvx}{\dd t}=\rvf_\vtheta(t,\rvx_t)
+\]
+\[
+\rva_\rvx(T)=\frac{\dd\Ls}{\dd \rvx_T} \quad \frac{\dd \rva_\rvx}{\dd t}=-\rva_\rvx(t)^\top \frac{\partial \rvf_\vtheta}{\dd \rvx}(t,\rvx_t)
+\]
+\[
+\rva_\vtheta(T)=0 \quad \frac{\dd \rva_\vtheta}{\dd t}=-\rva_\rvx(t)^\top \frac{\partial \rvf_\vtheta}{\dd \vtheta}(t,\rvx_t)
+\]
+ If the loss contributes non-terminal hidden states, the integration restarts from the new loss, with the accumulated adjoint $\hat\rva$added to the initialise the new ``terminal value''
+\[
+\rva_\rvx(T_i)=\hat\rva_\rvx(T_i)+\frac{\partial\Ls}{\partial\rvx{T_i}}
+\]
+\[
+\rva_\vtheta(T_i)=\hat\rva_\vtheta(T_i)
+\]
+\[
+\vtheta_{i+1}\leftarrow\vtheta_i - \eta\rva_\vtheta(0)
+\]
