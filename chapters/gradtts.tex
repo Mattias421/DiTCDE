@@ -1,7 +1,7 @@
 \chapter{Continuous normalising flows}
 % include support for image generation
 % add background for SDEs
-As discussed in the intro, neural ODEs can be used to construct CNFs. A key limitation with the na\"ive predict then optimise strategy is that the ODE must be solved forwards and backwards to be optimised. Such models are known as \textit{simulation-based} models. This chapter looks into \textit{simulation-free} methods for training CNFs with score-based diffusion models.
+As discussed in the intro, neural ODEs can be used to construct CNFs. A key limitation with the na\"ive optimise then discretise strategy is that the ODE must be solved forwards and backwards to be optimised. Such models are known as \textit{simulation-based} models. This chapter looks into \textit{simulation-free} methods for training CNFs with score-based diffusion models.
 \begin{figure}
     \centering
     \includegraphics[width=1\linewidth]{plots/cartoon-1.pdf}
@@ -15,33 +15,45 @@ As discussed in the intro, neural ODEs can be used to construct CNFs. A key limi
     \label{fig:placeholder}
 \end{figure}
 \section{Stochastic differential equations}
+Recall that the goal of a CNF is to learn a probability path between a simple/normal distribution and a data distribution. This is formalised as a time varying probability path with boundaries at the desired distributions e.g. $\gN(\bm0,\tSigma)\rightarrow\pdata$. As seen earlier, the reverse of this path can be described as a diffusion process. Starting from a structured initialisation at $u=0$, the Wiener process shifts points over time, and at the terminal time $u=1$ the distribution has the same density as a normal distribution.
+The formal description of this begins with an It\^o SDE
 \[
 \dd\rmX = \rmF(\rmX)\dd u + g(u)\dd\rmW_u
 \]
+where an initial value at $u=0$ is sampled from the data $\rmX_0\sim\pdata(\rmX_0)$ and at $u=1$ the probability path $p_u$ becomes similar to a normal. Any intermediate and final samples can be computed with the following solution
 \[
-\rmX_u = \rmX_0 + \int_0^u\rmF(\rmX_s)\dd s + \int_0^ug(u)\dd \rmW_s
+\rmX_u = \rmX_0 + \int_0^u\rmF(\rmX_s)\dd s + \int_0^ug(u)\dd \rmW_s,
 \label{eq:sdesolv}
 \]
+either with black-box ODE solvers or in closed form.
 
+The reverse process is core to finalising the CNF construction, which is written by the result of \cite{andersonReversetimeDiffusionEquation1982}
 \[
-\dd\rmX = \left[\rmF(\rmX) - g(u)^2\nabla\log p_t(\rmX)\right]\dd u + g(u)\dd\bar\rmW_u
+\dd\rmX = \left[\rmF(\rmX) - g(u)^2\nabla\log p_u(\rmX)\right]\dd u + g(u)\dd\bar\rmW_u
+\label{eq:sderev}
 \]
-The gradient of the log-density $\nabla\log p_u(\rmX_u)$ is known as the \textit{stein score}, and models that use this are known as score-based generative models.
-\[
-\Ls=\E_{\ru,\rmX_0}\lVert\mS_\vtheta(\rmX_\ru,\ru) - \nabla\log p_\ru(\rmX_u)\rVert^2_2 \qquad \ru\sim\gU(0,1) \quad \rmX_0\sim \pdata(\rmX)
-\]
-By sampling $\mX_1$ and using the estimated score, data samples $\mX_0$ can be generated.
+% TODO need to be consistent between \hat W and \bar W
+Where $\bar\rmW_u$ is the reverse Wiener process. The gradient of the log-density $\nabla\log p_u(\rmX_u)$ is known as the \textit{stein score}, and models that use this are known as score-based generative models. 
 
-\section{Examples}
-Say we'd like a process that increases variance linearly, define a $\beta$-schedule
+The score is only tractable if a data sample is known. This is not a general model, thus an additional method is required. An efficient solution is to train a neural network to estimate the score \citep{song2021sde}. The loss for this method is a simple 
+\[
+\Ls=\E_{\ru,\rmX_0}\lVert\mS_\vtheta(\rmX_\ru,\ru) - \nabla\log p_\ru(\rmX_\ru)\rVert^2_2 \qquad \ru\sim\gU(0,1) \quad \rmX_0\sim \pdata(\rmX)
+\]
+By sampling $\rmX_1\sim p_1$ and using the estimated score, data samples $\rmX_0$ can be generated.
+
+\section{Example: mean-reversion and variance preservation}
+Define a function of $u$, known as a  $\beta$-schedule
 \[
 \beta(u)=\beta_{\min}+\bigl(\beta_{\max}-\beta_{\min}\bigr)u
 \]
 This schedule is used to construct a variance preserving SDE
 \[
-\dd \rmX = \frac{1}{2}(\mY - \rmX_u)\beta(u) \dd u + \sqrt{\beta(u)} \dd\rmW_u
+\dd \rmX = \frac{1}{2}(\mY - \rmX_u)\beta(u) \dd u + \sqrt{\beta(u)} \dd\rmW_u.
 \]
-with equivalent reversal
+A consequence of the $\beta$-schedule is that the strength of the mean-reversion towards $\mY$ increases linearly with $u$. Secondly, the rate at which diffusion contributes variance increases linearly with $u$. Together, the drift and diffusion terms are balanced by the coefficients $\frac{1}{2}\beta(u)$ and $\sqrt{\beta(u)}$, resulting in a terminal distribution $p_1$ with approximately unit covariance given $\mY$.
+
+
+Substituting drift and diffusion into \eqref{eq:sderev}, the reverse SDE is
 \[
 \dd \rmX = \left(\frac{1}{2}(\mY - \rmX_u) - \nabla\log p_u(\rmX_u)\right)\beta(u) \dd u + \sqrt{\beta(u)} \dd\hat\rmW_u
 \]
@@ -53,12 +65,14 @@ p_u(\rmX_u|\rmX_0) = \mathcal N(\rmX_u;\rmM(\rmX_0,u,\mY),\mathsf\Sigma(u))
 \rmM(\rmX_0,u,\mY)=\left(1-e^{-\frac{1}{2}\int_0^u\beta(s)\dd s}\right)\mY +e^{-\frac{1}{2}\int_0^u\beta(s)\dd s}\rmX_0
 \]
 \[
-\mathsf\Sigma(u) = \left(1-e^{-\int_0^u\beta(s)\dd s}\right)\mI
+\mathsf\Sigma(u) = \left(1-e^{-\int_0^u\beta(s)\dd s}\right)\tI
 \]
 \[
 \int_0^u\beta(s)\dd s = \beta_{\min}u + \frac{1}{2}(\beta_{\max}-\beta_{\min})u^2
 \]
-This allows sampling from $p_u$ instead of solving \eqref{eq:sdesolv}, resulting in \textit{simulation-free} training.
+This allows sampling from $p_u$ instead of solving \eqref{eq:sdesolv}, resulting in \textit{simulation-free} training. 
+
+An important simplification here is the use of an isotropic covariance matrix. There are situations where the data might be better learned with non-isotropic Gaussians \citep{dhariwalDiffusionModelsBeat2021}, or non-diagonal \citep{xia2026improved,voleti2022scorebaseddenoisingdiffusionnonisotropic}. Such extra generalisations are beyond the topic of this thesis, but remain important to acknowledge.
 
 
 
@@ -71,12 +85,31 @@ This allows sampling from $p_u$ instead of solving \eqref{eq:sdesolv}, resulting
 
 
 \section{Conditional generation}
+An enhanced variant of the generative modelling task is conditional generation. This involves generating realistic data samples that are likely given a conditioning signal e.g. a text prompt. The notion of conditional distribution between two random variables becomes relevant here. 
 \[
 p(\rmX|\vy)=?
 \]
-\subsection{Classifier-free guidance}
+There are several ways to influence the generation process. One approach is to form a Bayesian score
 \[
-\dd \rmX = \frac{1}{2}\left((\mY - \rmX_u) - (1 + w)\mS_\theta(\rmX_u,u|\vy) + w\mS_\theta(\rmX_u,u|\oslash)\right)\beta(u) \dd u
+\nabla\log p_u(\rmX_u|\rvy)=\nabla\log p_u(\rmX_u) + \nabla\log p_u(\rvy|\rmX_u)
+\]
+$p_u(\rvy|\rmX_u)$ is known as the \textit{classifier}. Classifier-guided generation depends heavily on the quality of the classifier, which adds additional compute cost and often fails to generate high-quality samples.
+\subsection{Classifier-free guidance}
+One option is to provide conditioning labels during training to optimise $\nabla\log p_u(\rmX_u|\rvy)$, e.g. the score network could use cross-attention to be informed by the conditioning signal. In doing so, the score estimator is at risk of overfitting to the labelled data and no longer providing a diverse density possible with the unconditional model. 
+
+\textit{Classifier-free guidance} overcomes this by training a conditional-unconditional mixture. The ``classifier'' can be written as
+\[
+\nabla\log p_u(\rvy|\rmX_u) = \nabla\log p_u(\rmX_u) - \nabla\log p_u(\rmX_u|\rvy)
+\]
+Define a variable $\omega$ to control the mixture between conditional and unconditional score, then the guided score is defined as
+\begin{align}
+\nabla\log p_u(\rmX_u|\rvy,\omega)
+&\coloneqq \nabla\log p_u(\rmX_u) + \omega\bigl(\nabla\log p_u(\rmX_u) - \nabla\log p_u(\rmX_u|\rvy)\bigr) \\
+&= \omega\nabla\log p_u(\rmX_u|\rvy) + (1-\omega)\nabla\log p_u(\rmX_u)
+\end{align}
+The conditional and unconditional score can be trained under the same optimisation algorithm by randomly replacing the conditioning $\rvy$ with a null label $\oslash$ during training, then applying the following probability flow ODE
+\[
+\dd \rmX \coloneqq \frac{1}{2}\left((\mY - \rmX_u) - (1 + w)\mS_\theta(\rmX_u,u|\vy) + w\mS_\theta(\rmX_u,u|\oslash)\right)\beta(u) \dd u
 \label{eq:cfg}
 \]
 
@@ -87,13 +120,14 @@ p(\rmX|\vy)=?
     \caption{Enter Caption}
     \label{fig:placeholder}
 \end{figure}
+In some cases, a coarse representation of the data predictable, then diffusion is used to refine the features. Here, the predicted coarse representation defines the mean of the terminal distribution 
 \[
-\rmY=\mE_\phi(\rvy) 
+\rmY=\rmE_\rvphi(\rvy) 
 \]
-Note how $\rmY$ is a random variable of the conditioning $\rvy$, unlike a global $\mY$ left as a design choice in \eqref{eq:cfg}. This represents a key difference in image and speech generative models seen later.
+where $\rmE$ encodes $\rvy$, and is parametrised with $\rvphi$. Note how $\rmY$ is a random variable of the conditioning $\rvy$, unlike a global $\mY$ left as a design choice in \eqref{eq:cfg}. This represents a key difference in image and speech generative models seen later.
 
 \section{Sampling with ODE solvers}
-To retrieve data samples, the following reverse initial value problem must be solved
+To retrieve data samples, the following reverse initial value problem must be solved with black-box ODE solvers
 \[
 \rmX_0=\rmX_1 + \int_1^0\rmH(\rmX_u,u)\dd u
 \]

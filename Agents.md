@@ -8,6 +8,8 @@ This is a PhD thesis. It is important that the student writes the intellectual c
   - label references e.g. table, equations, chapters are correct
   - thesis is accessable to non-experts
   - Anything similar to a softly-structured find-and-replace task e.g. find all instances of random variables and ensure they use \rx or \rvx or \rmX
+  - fix any missed connection e.g. if something refers to something that is expanded in another chapter, signpost to that chapter to help the reader out.
+  - commas and full stops in equations are correct
 
 ## Notations
 Notation typically follows deep learning standards.

@@ -25,7 +25,7 @@ Neural ODEs and CDEs can be optimised with the continuous adjoint (optimise-then
 \[
 \rva_\vtheta(T)=0 \quad \frac{\dd \rva_\vtheta}{\dd t}=-\rva_\rvx(t)^\top \frac{\partial \rvf_\vtheta}{\dd \vtheta}(t,\rvx_t)
 \]
- If the loss contributes non-terminal hidden states, the integration restarts from the new loss, with the accumulated adjoint $\hat\rva$added to the initialise the new ``terminal value''
+ If the loss contributes non-terminal hidden states, the integration restarts from the new loss, with the accumulated adjoint $\hat\rva$ added to the initialise the new ``terminal value''
 \[
 \rva_\rvx(T_i)=\hat\rva_\rvx(T_i)+\frac{\partial\Ls}{\partial\rvx{T_i}}
 \]
@@ -33,5 +33,5 @@ Neural ODEs and CDEs can be optimised with the continuous adjoint (optimise-then
 \rva_\vtheta(T_i)=\hat\rva_\vtheta(T_i)
 \]
 \[
-\vtheta_{i+1}\leftarrow\vtheta_i - \eta\rva_\vtheta(0)
+\vtheta_{j+1}\leftarrow\vtheta_j - \eta\rva_\vtheta(0)
 \]
