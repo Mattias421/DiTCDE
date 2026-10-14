@@ -54,7 +54,7 @@ The desired relaxations can be supported by a continuous Euler update
 \]
 This form of update with a parametrised vector field is known as a \textit{neural ordinary differential equation}. Formally, this leads to the definition of the hidden state as
 \[
-\vh_u = \vh_0 + \int_0^u\vf_\theta(\vh_s, s)\dd s.
+\vh_u \coloneqq \vh_0 + \int_0^u\vf_\theta(\vh_s, s)\dd s.
 \label{eq:cnf}
 \]
 A neural ODE is a flexible architecture that is easier to work with on certain tasks than non-continuous models. For example, a continuous-depth generative model can be constructed by bounding $u$ between 0 and $U$, then modelling a flow between a simple distribution at $u=U$ and a data distribution at $u=0$. This flow is optimised end-to-end by allocating a single set of parameters $\theta$ to support general $u$, rather than optimising a subset of the flow at discrete points. 

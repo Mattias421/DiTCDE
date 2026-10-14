@@ -33,9 +33,9 @@ The reverse process is core to finalising the CNF construction, which is written
 \label{eq:sderev}
 \]
 % TODO need to be consistent between \hat W and \bar W
-Where $\bar\rmW_u$ is the reverse Wiener process. The gradient of the log-density $\nabla\log p_u(\rmX_u)$ is known as the \textit{stein score}, and models that use this are known as score-based generative models. 
+Where $\bar\rmW_u$ is the reverse Wiener process. The gradient of the log-density $\nabla\log p_u(\rmX_u)$ is known as the \textit{stein score}, and models that use this are known as score-based generative models.
 
-The score is only tractable if a data sample is known. This is not a general model, thus an additional method is required. An efficient solution is to train a neural network to estimate the score \citep{song2021sde}. The loss for this method is a simple 
+The score is only tractable if a data sample is known. This is not a general model, thus an additional method is required. An efficient solution is to train a neural network to estimate the score \citep{song2021sde}. The loss for this method is a simple
 \[
 \Ls=\E_{\ru,\rmX_0}\lVert\mS_\vtheta(\rmX_\ru,\ru) - \nabla\log p_\ru(\rmX_\ru)\rVert^2_2 \qquad \ru\sim\gU(0,1) \quad \rmX_0\sim \pdata(\rmX)
 \]
@@ -44,7 +44,7 @@ By sampling $\rmX_1\sim p_1$ and using the estimated score, data samples $\rmX_0
 \section{Example: mean-reversion and variance preservation}
 Define a function of $u$, known as a  $\beta$-schedule
 \[
-\beta(u)=\beta_{\min}+\bigl(\beta_{\max}-\beta_{\min}\bigr)u
+\beta(u)\coloneqq\beta_{\min}+\bigl(\beta_{\max}-\beta_{\min}\bigr)u
 \]
 This schedule is used to construct a variance preserving SDE
 \[
@@ -62,15 +62,15 @@ A useful property of this SDE is that it's closed-form solution is known for an 
 p_u(\rmX_u|\rmX_0) = \mathcal N(\rmX_u;\rmM(\rmX_0,u,\mY),\mathsf\Sigma(u))
 \]
 \[
-\rmM(\rmX_0,u,\mY)=\left(1-e^{-\frac{1}{2}\int_0^u\beta(s)\dd s}\right)\mY +e^{-\frac{1}{2}\int_0^u\beta(s)\dd s}\rmX_0
+\rmM(\rmX_0,u,\mY)\coloneqq \left(1-e^{-\frac{1}{2}\int_0^u\beta(s)\dd s}\right)\mY +e^{-\frac{1}{2}\int_0^u\beta(s)\dd s}\rmX_0
 \]
 \[
-\mathsf\Sigma(u) = \left(1-e^{-\int_0^u\beta(s)\dd s}\right)\tI
+\mathsf\Sigma(u) \coloneqq \left(1-e^{-\int_0^u\beta(s)\dd s}\right)\tI
 \]
 \[
 \int_0^u\beta(s)\dd s = \beta_{\min}u + \frac{1}{2}(\beta_{\max}-\beta_{\min})u^2
 \]
-This allows sampling from $p_u$ instead of solving \eqref{eq:sdesolv}, resulting in \textit{simulation-free} training. 
+This allows sampling from $p_u$ instead of solving \eqref{eq:sdesolv}, resulting in \textit{simulation-free} training.
 
 An important simplification here is the use of an isotropic covariance matrix. There are situations where the data might be better learned with non-isotropic Gaussians \citep{dhariwalDiffusionModelsBeat2021}, or non-diagonal \citep{xia2026improved,voleti2022scorebaseddenoisingdiffusionnonisotropic}. Such extra generalisations are beyond the topic of this thesis, but remain important to acknowledge.
 
@@ -85,7 +85,7 @@ An important simplification here is the use of an isotropic covariance matrix. T
 
 
 \section{Conditional generation}
-An enhanced variant of the generative modelling task is conditional generation. This involves generating realistic data samples that are likely given a conditioning signal e.g. a text prompt. The notion of conditional distribution between two random variables becomes relevant here. 
+An enhanced variant of the generative modelling task is conditional generation. This involves generating realistic data samples that are likely given a conditioning signal e.g. a text prompt. The notion of conditional distribution between two random variables becomes relevant here.
 \[
 p(\rmX|\vy)=?
 \]
@@ -95,7 +95,7 @@ There are several ways to influence the generation process. One approach is to f
 \]
 $p_u(\rvy|\rmX_u)$ is known as the \textit{classifier}. Classifier-guided generation depends heavily on the quality of the classifier, which adds additional compute cost and often fails to generate high-quality samples.
 \subsection{Classifier-free guidance}
-One option is to provide conditioning labels during training to optimise $\nabla\log p_u(\rmX_u|\rvy)$, e.g. the score network could use cross-attention to be informed by the conditioning signal. In doing so, the score estimator is at risk of overfitting to the labelled data and no longer providing a diverse density possible with the unconditional model. 
+One option is to provide conditioning labels during training to optimise $\nabla\log p_u(\rmX_u|\rvy)$, e.g. the score network could use cross-attention to be informed by the conditioning signal. In doing so, the score estimator is at risk of overfitting to the labelled data and no longer providing a diverse density possible with the unconditional model.
 
 \textit{Classifier-free guidance} overcomes this by training a conditional-unconditional mixture. The ``classifier'' can be written as
 \[
@@ -120,9 +120,9 @@ The conditional and unconditional score can be trained under the same optimisati
     \caption{Enter Caption}
     \label{fig:placeholder}
 \end{figure}
-In some cases, a coarse representation of the data predictable, then diffusion is used to refine the features. Here, the predicted coarse representation defines the mean of the terminal distribution 
+In some cases, a coarse representation of the data predictable, then diffusion is used to refine the features. Here, the predicted coarse representation defines the mean of the terminal distribution
 \[
-\rmY=\rmE_\rvphi(\rvy) 
+\rmY\coloneqq \rmE_\rvphi(\rvy)
 \]
 where $\rmE$ encodes $\rvy$, and is parametrised with $\rvphi$. Note how $\rmY$ is a random variable of the conditioning $\rvy$, unlike a global $\mY$ left as a design choice in \eqref{eq:cfg}. This represents a key difference in image and speech generative models seen later.
 
@@ -133,7 +133,7 @@ To retrieve data samples, the following reverse initial value problem must be so
 \]
 Where $\rmH$ is the drift component of the trained reverse SDE. For the variance preserving example, it is
 \[
-\rmH(\rmX,u) = \frac{1}{2}\left(\mY - \rmX-\rmS_\vtheta(\rmX,u)\right)\beta(u)
+\rmH(\rmX,u) \coloneqq \frac{1}{2}\left(\mY - \rmX-\rmS_\vtheta(\rmX,u)\right)\beta(u)
 \]
 Euler sampler with step size $h$
 \[

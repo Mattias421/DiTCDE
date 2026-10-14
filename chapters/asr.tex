@@ -28,7 +28,7 @@ For a streaming model, consider a hidden state $\vz_t$ that emits tokens as $p(y
 \dd \vz= \vf(\vz, u)\frac{\dd u}{\dd t} \dd t + \vg(\vh,t)\dd t
 \]
 \[
-\frac{\dd u}{\dd t} = \zeta(\vz,\vh)
+\frac{\dd u}{\dd t} \coloneqq \zeta(\vz,\vh)
 \]
 The choice of $\zeta$ gives control on how often a token is emitted. When solving this equation for $\Delta t = 1$, the Euler update rule becomes simple
 \[
@@ -39,11 +39,11 @@ u_{t+1} = u + \zeta(\vz_t,u)
 \]
 Given that a hidden state is computed for every $t$, CTC could be used
 \[
-\Ls = \mathbf{CTC}(P(\vy_{1:T}|\mZ_{1:T}),\vy^\mathbf{lbl}_{1:U})
+\Ls \coloneqq \mathbf{CTC}(P(\vy_{1:T}|\mZ_{1:T}),\vy^\mathbf{lbl}_{1:U})
 \]
 A rate penalty can be added to encourage correct emissions/spikes
 \[
-\Ls=\int_0^U\zeta(\vz)\dd t - U
+\Ls\coloneqq \int_0^U\zeta(\vz)\dd t - U
 \]
 
 

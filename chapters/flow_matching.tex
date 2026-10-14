@@ -1,16 +1,16 @@
 \chapter{General source distributions}
-% draw cartoons, remember W is wiener, reread ICFM, give examples, customisable serving of information, write terms used throughout papers, find terms that need explanation, UNet and Transformer and optimisation in appendix, parametric function is non linear, 
+% draw cartoons, remember W is wiener, reread ICFM, give examples, customisable serving of information, write terms used throughout papers, find terms that need explanation, UNet and Transformer and optimisation in appendix, parametric function is non linear,
 $p_1(\rmY)$?
 \section{Preliminaries on noise suppression with diffusion models}
 \[
-\rmY = \rmX\ast\mH + \rmZ
+\rmY \coloneqq \rmX\ast\mH + \rmZ
 \]
 Instead of a variance preserving SDE, consider a variance exploding SDE
 \[
 \dd\rmX=\gamma(\rmY - \rmX_u)\dd u + \sqrt{ck^{2u}}\dd\rmW_t.
 \]
 \[
-\rmM(\mY,\rmX,u;\gamma) = e^{-\gamma u}\rmX + (1- e^{-\gamma u})\mY \qquad \tSigma(u;\gamma,c,k) = \frac{c(k^{2u}-e^{-2\gamma u})}{2(\gamma + \log k)}\tI
+\rmM(\mY,\rmX,u;\gamma) \coloneqq e^{-\gamma u}\rmX + (1- e^{-\gamma u})\mY \qquad \tSigma(u;\gamma,c,k) \coloneqq \frac{c(k^{2u}-e^{-2\gamma u})}{2(\gamma + \log k)}\tI
 \]
 \section{Schr\"odinger bridge}\label{sec:schr}
 \begin{figure}
@@ -41,14 +41,14 @@ Consider a purely variance-exploding reference process
 \dd \rmX = \bm 0 \dd u + \sqrt{ck^{2u}}\dd\rmW_u
 \]
 \[
-\sigma_u^2 = \frac{c(k^{2u}-1)}{2 \log k},
+\sigma_u^2 \coloneqq \frac{c(k^{2u}-1)}{2 \log k},
 \]
 \[
   \label{eq:sb_mean_variance}
-  \rmM_u(\rmX_0, \rmY) = \left(1 - \frac{\sigma_u^2}{\sigma_1^2}\right) \rmX_0 + \frac{\sigma_u^2}{\sigma_1^2} \rmY ,
+  \rmM_u(\rmX_0, \rmY) \coloneqq \left(1 - \frac{\sigma_u^2}{\sigma_1^2}\right) \rmX_0 + \frac{\sigma_u^2}{\sigma_1^2} \rmY ,
 \]
 \[
-\tSigma(u) = \sigma_u^2 \left(1 - \frac{\sigma_u^2}{\sigma_1^2}\right)\tI, 
+\tSigma(u) \coloneqq \sigma_u^2 \left(1 - \frac{\sigma_u^2}{\sigma_1^2}\right)\tI,
 \]
 
 
@@ -78,7 +78,7 @@ A less obvious yet simpler approach is a linearly interpolating mean and constan
 \dd \rmX=\mY - \rmX \dd u
 \]
 \[
-\rmM(\rmX_0,\rmY,u) = u\rmY + (1-u)\rmX_0 \quad \sigma(u)^2=c
+\rmM(\rmX_0,\rmY,u) \coloneqq u\rmY + (1-u)\rmX_0 \quad \sigma(u)^2\coloneqq c
 \label{eq:icfm_mean_variance}
 \]
 \[
