@@ -1,17 +1,43 @@
 \chapter{Background}
-\section{Normalising flows}
-A normalising flow is a transformation from a simple probability distribution (the name \textit{normalising} comes from the standard normal) to an underlying data distribution. They are trained by transforming samples from the data distribution to samples from a normal and maximising the likelihood of the transformed samples. Assuming the transform is invertible, the learned transform can sample from the simple distribution and generate likely data samples. 
+\section{Normalising flows and continuous-depth}
+A generative model is a sampleable probability distribution $p_0(x)$ of an underlying data distribution $\pdata$. Normalising flows are a type of generative model that learn a transform $\rf$ (flow) from the data to a simple distribution (normal). The inverse of this transform then becomes a generative model. The rest of this section will explain the details of normalising flows and motivation for continuous-depth.
 
-A large factor in the success of a normalising flow is the choice of transform. It must be invertable, expressive, and computational tractable.
+Normalising flows are appropriately named given that they learn a flow (transform) to a normal (simple distribution), and hence ``normalise'' $\pdata$. Key to this definition is the change-of-variables formula \citep{rudin,bogachev}. For a density $p_0(\rx)$, the change-of-variables formula states that the density of any $\rz=\rf^{-1}(\rx)$ is
 \[
-\log p_1(\rvx)=\log p(\rvz) + \log\lVert\det \frac{\partial \vf^{-1}(\vx)}{\partial\vx} \rVert
+p_0(\rx)=p_1(\rz)\left| \det \frac{\partial \rf(\rz)}{\partial \rz} \right|^{-1}
 \]
+where $p_0$ models $\pdata$ and $p_1$ is simple e.g. normal.
+Provided that $\rf$ is invertable, the density can be written in terms of $\rx$ 
+\[
+p_0(\rx)=p_1(\rf^{-1}(\rx))\left| \det \frac{\partial \rf^{-1}(\rx)}{\partial \rx} \right|
+\]
+This has the log form
+\[
+\log p_0(\rx)=\log p_1(\rf^{-1}(\rx)) + \log\left|\det \frac{\partial \rf^{-1}(\rx)}{\partial\rx} \right|
+\label{eq:nfll}
+\]
+The density $p_0$ can finally be trained by specifying a transform $\rf_\vtheta$ and then maximising likelihood over samples from the data $x\sim\pdata$
+\[
+\vtheta^\ast=\underset{\vtheta}{\arg\max} \,\E_{p_1,\pdata}\log p_0(x;\vtheta)
+\]
+The optimal parameters $\vtheta^\ast$ will yield the desired density model $p_0$.
+
+A large factor in the success of a normalising flow is the choice of transform $\rf$. It must be invertable, expressive, and computational tractable. A challenge when using discrete-depth neural networks i.e. $f_1\circ f_2\circ f_3$ is that \eqref{eq:nfll} scales depth and compute. This scaling is a consequence of the quadratic cost of the Jacobian determinant.
+
+A central motivation for continuous-depth normalising flows is that the change-of-variables becomes easier to compute. The instantaneous-change-of-variables formula \cite{NEURIPS2018_69386f6b, song2021sde} rewrites \eqref{eq:nfll} for vector-field $\rf_\vtheta$ as
+\[
+\log p_0(\rx)=\log p_1(\rx_1) + \int_0^1\nabla\cdot\rf_\vtheta(\rx_u,u)\dd u
+\label{eq:cnfll}
+\]
+Invertability is easy to satisfy since an ODE can be evaluated forwards and backwards in time. Additionally, computation becomes lighter as it is now tied to the divergence computation and black-box ODE solver.
+
+A remaining critique would be that the ODE must be solved between $0$ and $1$ for every optimisation iteration. In other words, the ODE must be simulated during training. This problem has been alleviated through \textit{simulation-free} training, which aims to sample intermediate states $\rx_\ru$ through closed-form solutions and optimises the vector-field at the sampled point $\ru$. A method for defining differential equations from a structured initialisation towards a normal distribution is through stochastic differential equations.
 
 \section{Stochastic differential equations}
 \subsection{The Wiener process}
-The Wiener process can be thought of as a random walk continuous in $u$. It starts from $\rw_0=0$ and ``walks'' with random increments $\rw_{0+\Delta u}\sim\mathcal N(0,\Delta u)$. The inspiration for this process comes from Robert Brown observing the motion of pollen in water. After placing a pollen particle into the centre $(0,0)$, it will begin to move randomly in all directions. This is known as diffusion.
+The Wiener process (AKA Brownian Motion) can be thought of as a random walk continuous in $u$. It starts from $\rw_0=0$ and ``walks'' with random increments $\rw_{0+\Delta u}\sim\mathcal N(0,\Delta u)$. The inspiration for this process comes from Robert Brown observing the motion of pollen in water. After placing a pollen particle into the centre $(0,0)$, it will begin to move randomly in all directions. This is known as diffusion.
 
-The Wiener process is useful here as it can be used to predict the likelihood of a particle position at a given time. The Wiener process is also easy to sample from
+The Wiener process is useful here as it can be used to predict the likelihood of a particle position at a given time. The Wiener process is also easy to sample from in closed-form
 \[
 \rw_u\sim\mathcal{N}(0,u),
 \]
@@ -20,11 +46,11 @@ but only describes evolution of samples from the origin. For more complicated pr
 \subsection{It\^o SDE}
 An It\^o SDE is a summation of a ordinary drift and stochastic diffusion
 \[
-\dd \rx = f(\rx,u)\dd u + g(\rx,u)\dd \rw_u
+\dd \rx \coloneqq f(\rx,u)\dd u + g(\rx,u)\dd \rw_u
 \]
 These processes are the first example SDEs to be introduced in this dissertation. For example, take an Ornstein-Uhlenbeck process which aims to model a stationary process. The key property is modelling reversion back to the mean despite diffusion perturbing samples randomly
 \[
-\dd \rx = \gamma(y - \rx)\dd u + \sigma\dd \rw_u.
+\dd \rx \coloneqq \gamma(y - \rx)\dd u + \sigma\dd \rw_u.
 \label{eq:ousde}
 \]
 SDEs are characterised by a deterministic component \textit{drift}, and non-deterministic diffusion. This process scales reversion to the selected mean $y$ with $\gamma$ and diffusion with $\sigma$. Although less obvious than the Wiener process, \eqref{eq:ousde} also has a closed-form solution

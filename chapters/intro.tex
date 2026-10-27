@@ -34,11 +34,11 @@ Recent years have witnessed a growing academic interest in \textit{neural differ
 % h_u+1 = ?. h_u = h_u + f(h). ...
 The development of a deep learning model considers the definition of a successive hidden state
 \[
-\vh_{u+1} = \quad ?.
+\vh_{u+1} \coloneqq \quad ?.
 \]
 A strong option is a residual layer
 \[
-\vh_{u+1} = \vh_u + \vf(\vh_u; \theta_u),
+\vh_{u+1} \coloneqq \vh_u + \vf(\vh_u; \theta_u),
 \]
 which is the current hidden state plus the output of a learned neural network $\vf$, with trainable parameters $\theta_u$. This equation is similar to an Euler discretisation with step-size $\Delta u = 1$
 \[
@@ -46,15 +46,15 @@ which is the current hidden state plus the output of a learned neural network $\
 \]
 Through this observation, $\vf$ becomes a \textit{vector field}. This vector field is variant to depth $u$ through specific parameters at each layer $\theta_u$, although a typical vector field would simply depend on depth $u$ directly. In addition to depending on $u$, another relaxation would be to support continuous $u$ and arbitrary step-size $\Delta u$, 
 \[
-\vh_{u+\Delta u} = \quad ?.
+\vh_{u+\Delta u} \coloneq \quad ?.
 \]
 The desired relaxations can be supported by a continuous Euler update
 \[
-\vh_{u+\Delta u} = \vh_u + \vf(\vh_u, u; \theta)\cdot \Delta u.
+\vh_{u+\Delta u} \coloneq \vh_u + \vf(\vh_u, u; \theta)\cdot \Delta u.
 \]
 This form of update with a parametrised vector field is known as a \textit{neural ordinary differential equation}. Formally, this leads to the definition of the hidden state as
 \[
-\vh_u \coloneqq \vh_0 + \int_0^u\vf_\theta(\vh_s, s)\dd s.
+\vh_u = \vh_0 + \int_0^u\vf_\theta(\vh_s, s)\dd s.
 \label{eq:cnf}
 \]
 A neural ODE is a flexible architecture that is easier to work with on certain tasks than non-continuous models. For example, a continuous-depth generative model can be constructed by bounding $u$ between 0 and $U$, then modelling a flow between a simple distribution at $u=U$ and a data distribution at $u=0$. This flow is optimised end-to-end by allocating a single set of parameters $\theta$ to support general $u$, rather than optimising a subset of the flow at discrete points. 

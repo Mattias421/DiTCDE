@@ -1,17 +1,5 @@
-\chapter{General source distributions}
+\chapter{Not so simple terminal distributions}
 % draw cartoons, remember W is wiener, reread ICFM, give examples, customisable serving of information, write terms used throughout papers, find terms that need explanation, UNet and Transformer and optimisation in appendix, parametric function is non linear,
-$p_1(\rmY)$?
-\section{Preliminaries on noise suppression with diffusion models}
-\[
-\rmY \coloneqq \rmX\ast\mH + \rmZ
-\]
-Instead of a variance preserving SDE, consider a variance exploding SDE
-\[
-\dd\rmX=\gamma(\rmY - \rmX_u)\dd u + \sqrt{ck^{2u}}\dd\rmW_t.
-\]
-\[
-\rmM(\mY,\rmX,u;\gamma) \coloneqq e^{-\gamma u}\rmX + (1- e^{-\gamma u})\mY \qquad \tSigma(u;\gamma,c,k) \coloneqq \frac{c(k^{2u}-e^{-2\gamma u})}{2(\gamma + \log k)}\tI
-\]
 \section{Schr\"odinger bridge}\label{sec:schr}
 \begin{figure}
     \centering
@@ -25,32 +13,71 @@ Instead of a variance preserving SDE, consider a variance exploding SDE
     \caption{Enter Caption}
     \label{fig:schrodinger_bridge}
 \end{figure}
-SB allows a Brownian path between data boundaries.
+The original SB problem explains the path between two observations of particles at $u=0$ and $u=1$. The particles are assumed to move by an SDE yet the observations are unlikely under this model. The space of probability paths that satisfy the observed boundaries $\gP_{[0,1]}$ is infinite, and contains many unlikely paths under the SDE. The conflict between the assumed model and the observations is resolved by finding the path with minimum Kullback-Leibler divergence to the reference $p_\mathrm{ref}$
 \[
-\min _{p \in \mathcal{P}_{\left[0, 1\right]}} D_{\text{KL}}(p, p_{ref}) \quad s.t. \quad p_0=p_x, p_1=p_y
+\min _{p \in \mathcal{P}_{\left[0, 1\right]}} D_{\text{KL}}(p, p_\mathrm{ref}) 
+\]
+Finding the solution $p$ begins by assuming optimal forward and reverse probability flows $\mPsi$ and $\hat\mPsi$ within the following forward-backward SDEs
+\[
+\dd\rmX \coloneqq \left[\rmF(\rmX,u) + g^2(u)\nabla\log\mPsi_u\right]\dd u + g(u)\dd \rmW_u
 \]
 \[
-\dd\rmX = \left[\mF + g^2(u)\nabla\log\mPsi_u\right]\dd u + g(u)\dd \rmW_u
+\dd\rmX \coloneqq \left[\rmF(\rmX,u) - g^2(u)\nabla\log\hat\mPsi_u\right]\dd u + g(u)\dd \hat\rmW_u
+\]
+The solution then becomes $p=\hat\mPsi\mPsi$.
+Assume linear drift $\rmF(\rmX)=f(u)\rmX$ and Gaussian boundaries
+\[
+p_0=\gN(\rmX,\epsilon_0^2\tI) \quad p_1=\gN(\rmY,\epsilon_1^2\tI)
+\]
+where $\epsilon_1=e^{\int_0^1f(u)\dd u}\epsilon_0$. As $\epsilon_0\rightarrow 0$, the closed-form solution \citep{bunne2023schrodinger} is expressed as 
+\[
+\hat\mPsi_u=\gN\left(e^{\int_0^uf(s)\dd s}\rmX,e^{2\int_0^uf(s)\dd s}\int_0^u\frac{g^2(s)}{e^{2\int_0^sf(v)\dd v}}\dd s\tI\right)
 \]
 \[
-\dd\rmX = \left[\mF - g^2(u)\nabla\log\hat\mPsi_u\right]\dd u + g(u)\dd \hat\rmW_u
+\mPsi_u=\gN\left(\frac{e^{\int_0^uf(s)\dd s}}{e^{\int_0^1f(s)\dd s}}\rmY,e^{2\int_0^uf(s)\dd s}\left[\int_0^1\frac{g^2(s)}{e^{2\int_0^sf(v)\dd v}}\dd s - \int_0^u\frac{g^2(s)}{e^{2\int_0^sf(v)\dd v}}\dd s\right]\tI\right)
 \]
-Where $\mPsi$ and $\hat\mPsi$ are optimal forward and reverse probability flows. The coupled distribution then becomes $p_u=\mPsi\hat\mPsi$.
+Given that the forward $\mPsi$ is guaranteed to have mean $\rmY$ at $u=1$, and the reverse is guaranteed to have mean $\rmX$ at $u=0$, the solution can be simplified by considering reference paths with zero drift $f(u)=0$, leading to
+\[
+\hat\mPsi_u=\gN\left(\rmX,\int_0^ug^2(s)\dd s\tI\right)
+\]
+\[
+\mPsi_u=\gN\left(\rmY,\int_0^1g^2(s)\dd s - \int_0^ug^2(s)\dd s\tI\right)
+\]
+the mean and standard deviation of the solution $p$ becomes
+\[
+\rmM(\rmX,\rmY,u)=\left(1-\frac{\int_0^ug^2(s)\dd s}{\int_0^1g^2(s)\dd s}\right)\rmX + \left(\frac{\int_0^ug^2(s)\dd s}{\int_0^1g^2(s)\dd s}\right)\rmY
+\]
+\[
+\tSigma = \int_0^ug^2(s)\dd s\left(1-\frac{\int_0^ug^2(s)\dd s}{\int_0^1g^2(s)\dd s}\right)\tI
+\]
+The solution here is complementary to the diffusion frame work described in \chapref{chap:diffusion} yet SB has some advantages when dealing with non-simple terminal distributions. Having zero variance at the boundaries means there is less data prediction error. This is considered an improvement over the mean-reverting SDE seen earlier which is subject to lack of generalisation.
+
+An important distinction with supervised learning is that samples from the boundaries are paired
+\[
+(\rmX^{(i)},\rmY^{(i)})\sim\pi(\rmX,\rmY)
+\]
+
+\section{Example: variance-exploding SB}
 Consider a purely variance-exploding reference process
 \[
-\dd \rmX = \bm 0 \dd u + \sqrt{ck^{2u}}\dd\rmW_u
+\dd \rmX \coloneqq \bm 0 \dd u + \sqrt{ck^{2u}}\dd\rmW_u
 \]
 \[
 \sigma_u^2 \coloneqq \frac{c(k^{2u}-1)}{2 \log k},
 \]
 \[
   \label{eq:sb_mean_variance}
-  \rmM_u(\rmX_0, \rmY) \coloneqq \left(1 - \frac{\sigma_u^2}{\sigma_1^2}\right) \rmX_0 + \frac{\sigma_u^2}{\sigma_1^2} \rmY ,
+  \rmM_u(\rmX_0, \rmY) = \left(1 - \frac{\sigma_u^2}{\sigma_1^2}\right) \rmX_0 + \frac{\sigma_u^2}{\sigma_1^2} \rmY ,
 \]
 \[
-\tSigma(u) \coloneqq \sigma_u^2 \left(1 - \frac{\sigma_u^2}{\sigma_1^2}\right)\tI,
+\tSigma(u) = \sigma_u^2 \left(1 - \frac{\sigma_u^2}{\sigma_1^2}\right)\tI,
 \]
-
+\begin{figure}
+    \centering
+    \includegraphics[width=1\linewidth]{plots/k_c_plot-11.pdf}
+    \caption{The choice of base $k$ and scale $c$ affects interpolation weight $\frac{\sigma_u^2}{\sigma_1^2}$ and variance $\tSigma$. Interpolation becomes linear as $k\rightarrow1$. Variance is always $0$ at the boundaries, and scales with $c$.}
+    \label{fig:sb_kc}
+\end{figure}
 
 The loss is data prediction given a path sample
 \[
@@ -58,7 +85,7 @@ The loss is data prediction given a path sample
 \]
 
 \section{Notes on the SB design space}\label{sec:sbsv}
-The mean $\rmM$ tends to linear interpolation as $k\rightarrow1$. The variance $\tSigma$ is $0$ at the boundaries and increases. This dynamic movement can make deep learning more difficult. Given that this variance is artificial, it is important to determine the benefits of this noise.
+As seen in \figref{fig:sb_kc}, the mean $\rmM$ tends to linear interpolation as $k\rightarrow1$. The variance $\tSigma$ is $0$ at the boundaries and increases towards the centre. This dynamic movement can make deep learning more difficult. Given that this variance is artificial, it is important to determine the benefits of this noise.
 
 \section{Conditional flow matching}\label{sec:icfm}
 \begin{figure}
@@ -75,26 +102,98 @@ The mean $\rmM$ tends to linear interpolation as $k\rightarrow1$. The variance $
 \end{figure}
 A less obvious yet simpler approach is a linearly interpolating mean and constant variance.
 \[
-\dd \rmX=\mY - \rmX \dd u
+\dd \rmX\coloneqq\mY - \rmX \dd u
 \]
+In other words, use straight paths. Formally this is McCann's interpolation \citep{mccannConvexityPrincipleInteracting1997}. The conditional path is described as
 \[
-\rmM(\rmX_0,\rmY,u) \coloneqq u\rmY + (1-u)\rmX_0 \quad \sigma(u)^2\coloneqq c
+\rmM(\rmX_0,\rmY,u) = u\rmY + (1-u)\rmX_0 \quad \tSigma(u)^2= c\tI
 \label{eq:icfm_mean_variance}
 \]
 \[
-\mS_\theta(\rmX_u|\mY,\ru)-(\rmX_0 -\mY)
+\vtheta^\ast=\arg\min_\vtheta\E_{u,\rmX_u,\rmX_0,\rmY}||\rmF_\vtheta(\rmX_u|\mY,\ru)-(\rmX_0 -\mY)||^2
 \]
 
 \section{Inference schemes}
-The ODE sampler is defined as
+The ODE sampler that solves the SB-VE problem is defined as
 \[
-\mX_{u_{n-1}}=a_n\mX_{u_n} + b_n\mS_\theta(\mX_{u_n},\mY,u_n) + c_n\mY
+\begin{aligned}
+\mX_{u_{i-1}}
+={}&
+\frac{
+    \sigma_{u_{i-1}}\sqrt{\sigma_1^2-\sigma_{u_{i-1}}^2}
+}{
+    \sigma_{u_i}\sqrt{\sigma_1^2-\sigma_{u_i}^2}
+}
+\mX_{u_i}
+\\
+&+
+\frac{1}{\sigma_1^2}
+\left(
+    \sigma_1^2-\sigma_{u_{i-1}}^2
+    -
+    \frac{
+        \sqrt{\sigma_1^2-\sigma_{u_i}^2}
+        \sigma_{u_{i-1}}
+        \sqrt{\sigma_1^2-\sigma_{u_{i-1}}^2}
+    }{
+        \sigma_{u_i}
+    }
+\right)
+\mD_\vtheta(\mX_{u_i},\mY,u_{i-1})
+\\
+&+
+\frac{1}{\sigma_1^2}
+\left(
+    \sigma_{u_{i-1}}^2
+    -
+    \frac{
+        \sigma_{u_i}\sigma_{u_{i-1}}
+        \sqrt{\sigma_1^2-\sigma_{u_{i-1}}^2}
+    }{
+        \sqrt{\sigma_1^2-\sigma_{u_i}^2}
+    }
+\right)
+\mY .
+\end{aligned}
 \]
+for an increasing sequence of $u_i$.
+
+An alternative to the SB-ODE proposed in this thesis is \textit{direct data prediction}. In \chapref{ch:gradtts} the data prediction objective is used to make the estimator well conditioned to clean data across all noise levels. An added benefit of the data prediction loss is that the estimator becomes a data predictor, and may be a sufficiently strong model without the need to solve an ODE. Here the term ``direct data prediction'' is used to describe the use of a noise conditional model as a data predictor instead of an ODE.
+
 Direct data prediction with data prediction loss is
 \[
-\mX_0=\mS_\theta(\mY, \mY,1)
+\mX_0=\mD_\vtheta(\mY, \mY,1)
 \]
 and for flow-matching loss
 \[
-\mX_0=\mS_\theta(\mY, \mY,1) + \mY
+\mX_0=\mF_\vtheta(\mY, \mY,1) + \mY
+\]
+Direct data prediction is distinctly different from solving the SB-ODE because the index passed to the estimator is $u_{i-1}$ for the SB-ODE but $u_{i}$ for DDP. The motivation behind this is that during training the estimator will never see a sample from the noise distribution $\rmX_1$ with index $u=0$. Such an input to the model may act as an adversarial example that the model has not generalised to. Some software include settings for whether the estimator receives $u_i$ or $u_{i-1}$, but there is not much discussion around this. 
+
+% TODO flow needs to be F, and data predictor needs to be D
+
+
+\section{Example: noise suppression}
+Noisy speech is defined as a clean signal $\rmX$ convolved with a room impulse response $\mH$ and additive noise $\rmZ$
+\[
+\rmY \coloneqq \rmX\ast\mH + \rmZ
+\]
+The goal of noise suppression is to retrieve $\rmX$ given $\rmY$.
+
+\[
+q_1(\rmY)=\int p_z(\rmY - \rmX\ast\mH) q_0(\dd\rmX)
+\]
+
+The distributional nature of $\rmX$ and $\rmY$ motivate a general model 
+Instead of a variance preserving SDE, consider a variance exploding SDE
+\[
+\dd\rmX\coloneqq\gamma(\rmY - \rmX_u)\dd u + \sqrt{ck^{2u}}\dd\rmW_t.
+\]
+\[
+\rmM(\mY,\rmX,u;\gamma) = e^{-\gamma u}\rmX + (1- e^{-\gamma u})\mY \qquad \tSigma(u;\gamma,c,k) = \frac{c(k^{2u}-e^{-2\gamma u})}{2(\gamma + \log k)}\tI
+\]
+
+One notable property here is that the flow-matching loss recovers background noise estimation
+\[
+\rmZ = \rmY - \rmX
 \]

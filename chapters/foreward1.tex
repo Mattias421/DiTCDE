@@ -1,0 +1,26 @@
+\chapter*{Forward}
+\begin{figure}[t!]
+    \centering
+    \subfigure[Cartoon 2]{\includegraphics[width=0.3\linewidth]{plots/cartoon-2.pdf}\label{fig:cartoon2}}
+    \hfill
+    \subfigure[Cartoon 3]{\includegraphics[width=0.3\linewidth]{plots/cartoon-3.pdf}\label{fig:cartoon3}}
+    \hfill
+    \subfigure[Cartoon 4]{\includegraphics[width=0.3\linewidth]{plots/cartoon-4.pdf}\label{fig:cartoon4}}
+    \caption{Cartoons 2--4.}
+    \label{fig:cartoons2to4}
+\end{figure}
+
+Part I explores the nature of continuous-depth models. The models considered are score-based generative models, Schr\"odinger bridges, and flow-matching models. Score-based models use the framework of SDEs to couple the generative data distribution to a simple distribution through a diffusion process, hence these models are also called diffusion models. Schr\"odinger bridges and flow-matching models generalise diffusion models to non-simple terminal distributions.
+
+Another useful property of these models is that they are \textit{simulation-free} methods for training CNFs. In the examples given in chapters 1 and 2, the CNF must solve (simulate) the integral with a black-box ODE solver to compute likelihood. This compute cost makes training difficult to scale to larger data distributions. Simulation-free methods are those that do not require solving ODEs during training e.g. by closed-form solutions to improve compute scaling. The first example of this is included in \chapref{ch:diffusion}.
+
+Since these methods result in some form of CNF, likelihood of samples can be computed. This is an important feature as it allows the learnt density model to be understood and diagnose generalisation errors. \Chapref{ch:ll} presents the results of several experiments involving the likelihood density. For example, does the density distinguish between an image of a red ball with the correct text caption and one captioned ``blue cube''?
+
+The design of SBs and CFMs are mutually exclusive, and raise an interesting discussion for what design choices are important. The key difference between the two methods is that SBs model a stochastically evolving path whereas FM restricts the path to be as optimal as possible. On one hand, stochasticity is motivated as an entropic regulariser. On the other hand, too much variance in neural network input and output features can lead to unstable training. The methods are outlined in \chapref{ch:cfm} and then experimented on in \chapref{ch:cfmse}. 
+
+An additional investigation on SBs and CFMs concerns their ability to directly predict data from an input sample. This removes the continuous-depth aspect to these models, and introduces similarities to curriculum learning and data augmentation. A typical simulation-free objective for SB and CFM involves predicting a data sample given a sample from the probability path. If by this training the end-to-end data prediction is accurate, then the advantage of continuous-depth may not be increased capacity but instead through improved parameter optimisation.
+
+This thesis makes an important distinction of the variable $u$. In the literature it is common to use $t$ to denote depth as this is consistent with the differential equations literature. The use of $t$ for depth becomes problematic in this thesis as the concept of time is better suited to the time-progression of a series, as is later described in part II. As a result, $u$ is used in part I to represent the level of depth through the DE, and $t$ is used to represent time within a series.
+
+
+

@@ -1,7 +1,7 @@
-\chapter{Continuous normalising flows}
+\chapter{Simulation-free training of continuous normalising flows with score-based generative models}
 % include support for image generation
 % add background for SDEs
-As discussed in the intro, neural ODEs can be used to construct CNFs. A key limitation with the na\"ive optimise then discretise strategy is that the ODE must be solved forwards and backwards to be optimised. Such models are known as \textit{simulation-based} models. This chapter looks into \textit{simulation-free} methods for training CNFs with score-based diffusion models.
+As discussed in the \chapref{ch:intro}, neural ODEs can be used to construct CNFs. A key limitation with the na\"ive optimise then discretise strategy is that the ODE must be solved forwards and backwards to be optimised. Such models are known as \textit{simulation-based} models. This chapter looks into \textit{simulation-free} methods for training CNFs with score-based diffusion models.
 \begin{figure}
     \centering
     \includegraphics[width=1\linewidth]{plots/cartoon-1.pdf}
@@ -15,17 +15,17 @@ As discussed in the intro, neural ODEs can be used to construct CNFs. A key limi
     \label{fig:placeholder}
 \end{figure}
 \section{Stochastic differential equations}
-Recall that the goal of a CNF is to learn a probability path between a simple/normal distribution and a data distribution. This is formalised as a time varying probability path with boundaries at the desired distributions e.g. $\gN(\bm0,\tSigma)\rightarrow\pdata$. As seen earlier, the reverse of this path can be described as a diffusion process. Starting from a structured initialisation at $u=0$, the Wiener process shifts points over time, and at the terminal time $u=1$ the distribution has the same density as a normal distribution.
+Recall that the goal of a CNF is to learn a probability path between a simple/normal distribution and a data distribution. This is formalised as a time varying probability path with boundaries at the desired distributions e.g. $\gN(\bm0,\tSigma)\rightarrow\pdata$. As seen earlier, the reverse of this path can be described as a diffusion process. Starting from a structured initialisation at $u=0$, the Wiener process $\rmW$ shifts points over time, and at the terminal time $u=1$ the distribution has the same density as a normal distribution.
 The formal description of this begins with an It\^o SDE
 \[
-\dd\rmX = \rmF(\rmX)\dd u + g(u)\dd\rmW_u
+\dd\rmX \coloneqq \rmF(\rmX)\dd u + g(u)\dd\rmW_u
 \]
 where an initial value at $u=0$ is sampled from the data $\rmX_0\sim\pdata(\rmX_0)$ and at $u=1$ the probability path $p_u$ becomes similar to a normal. Any intermediate and final samples can be computed with the following solution
 \[
-\rmX_u = \rmX_0 + \int_0^u\rmF(\rmX_s)\dd s + \int_0^ug(u)\dd \rmW_s,
+\rmX_u = \rmX_0 + \int_0^u\rmF(\rmX_s)\dd s + \int_0^ug(s)\dd \rmW_s,
 \label{eq:sdesolv}
 \]
-either with black-box ODE solvers or in closed form.
+either with black-box SDE solvers or in closed form.
 
 The reverse process is core to finalising the CNF construction, which is written by the result of \cite{andersonReversetimeDiffusionEquation1982}
 \[
@@ -33,56 +33,46 @@ The reverse process is core to finalising the CNF construction, which is written
 \label{eq:sderev}
 \]
 % TODO need to be consistent between \hat W and \bar W
-Where $\bar\rmW_u$ is the reverse Wiener process. The gradient of the log-density $\nabla\log p_u(\rmX_u)$ is known as the \textit{stein score}, and models that use this are known as score-based generative models.
+Where $\bar\rmW_u$ is the reverse Wiener process. The gradient of the log-density $\nabla\log p_u(\rmX_u)$ is known as the \textit{Stein score}, and models that use this are known as score-based generative models.
 
-The score is only tractable if a data sample is known. This is not a general model, thus an additional method is required. An efficient solution is to train a neural network to estimate the score \citep{song2021sde}. The loss for this method is a simple
+\section{Optimisation}
+
+The marginal score is typically intractable, yet the conditional score $\nabla\log p_{\ru|0}(\rmX_\ru|\rmX_0)$ is available through \eqref{eq:sdesolv}. The conditional score depends on $\rmX_0$, which is unavailable during generation. An efficient solution to learn the marginal score is to train a neural network to estimate the conditional score \citep{song2021sde}. An optimal estimator $\rmS_{\vtheta^\ast}(\rmX_u,u)$ may act as a marginal score permitted it does not depend on $\rmX_0$ and that the parameters $\vtheta$ offer sufficient capacity. The optimal parameters satisfy
 \[
-\Ls=\E_{\ru,\rmX_0}\lVert\mS_\vtheta(\rmX_\ru,\ru) - \nabla\log p_\ru(\rmX_\ru)\rVert^2_2 \qquad \ru\sim\gU(0,1) \quad \rmX_0\sim \pdata(\rmX)
+\vtheta^\ast=\underset{\vtheta}{\arg\min} \,\E_{\ru,\rmX_0,\rmX_\ru}\lVert\rmS_\vtheta(\rmX_\ru,\ru) - \nabla\log p_{\ru|0}(\rmX_\ru|\rmX_0)\rVert^2_2 
 \]
-By sampling $\rmX_1\sim p_1$ and using the estimated score, data samples $\rmX_0$ can be generated.
+Where depth is sampled uniformly $\ru\sim\gU(0,1)$ and initial data points are sampled from the training data $\rmX_0\sim \ptrain(\rmX)$. Intermediate states $\rmX_\ru$ are sampled through \eqref{eq:sdesolv}.
+By sampling $\rmX_1\sim p_1$ and using the estimated score within a black-box ODE solver (\secref{sec:odesolv}), data samples $\rmX_0$ can be generated.
 
-\section{Example: mean-reversion and variance preservation}
-Define a function of $u$, known as a  $\beta$-schedule
+
+In the case where the SDE has a closed-form Gaussian solution, the conditional score becomes easy to compute. By assuming that the conditional probability path is Gaussian
 \[
-\beta(u)\coloneqq\beta_{\min}+\bigl(\beta_{\max}-\beta_{\min}\bigr)u
+p_{u|0}(\rmX_u|\rmX_0) = \gN(\rmX_u;\rmM(\rmX_0,u),\mathsf\Sigma(u))
 \]
-This schedule is used to construct a variance preserving SDE
+where $\rmM$ is the mean and $\tSigma$ the covariance,
+the score then becomes a function of $u$ and random variable $\rmZ_u$
 \[
-\dd \rmX = \frac{1}{2}(\mY - \rmX_u)\beta(u) \dd u + \sqrt{\beta(u)} \dd\rmW_u.
+\nabla\log p_{\ru|0}(\rmX_\ru|\rmX_0) = -\tSigma(u)^{-\frac{1}{2}}\rmZ_u \quad \rmZ_u\sim\gN(\bm0,\tSigma(u))
 \]
-A consequence of the $\beta$-schedule is that the strength of the mean-reversion towards $\mY$ increases linearly with $u$. Secondly, the rate at which diffusion contributes variance increases linearly with $u$. Together, the drift and diffusion terms are balanced by the coefficients $\frac{1}{2}\beta(u)$ and $\sqrt{\beta(u)}$, resulting in a terminal distribution $p_1$ with approximately unit covariance given $\mY$.
+this form is useful as it becomes a simple training objective for the score estimator.
 
-
-Substituting drift and diffusion into \eqref{eq:sderev}, the reverse SDE is
+An alternative to predicting the score is to predict the clean data given the noisy sample 
 \[
-\dd \rmX = \left(\frac{1}{2}(\mY - \rmX_u) - \nabla\log p_u(\rmX_u)\right)\beta(u) \dd u + \sqrt{\beta(u)} \dd\hat\rmW_u
+\vtheta^\ast=\underset{\vtheta}{\arg\min} \,\E_{\ru,\rmX_0,\rmX_\ru}\lVert\rmD_\vtheta(\rmX_\ru,\ru) - \rmX_0\rVert^2_2 
 \]
-A useful property of this SDE is that it's closed-form solution is known for an initial $\rmX_0$.
+the score can then be recovered with
 \[
-p_u(\rmX_u|\rmX_0) = \mathcal N(\rmX_u;\rmM(\rmX_0,u,\mY),\mathsf\Sigma(u))
+\nabla\log p_u(\rmX_u)=\frac{1}{u^2}(\rmD_\vtheta(\rmX_u,u) - \rmX_u)
 \]
-\[
-\rmM(\rmX_0,u,\mY)\coloneqq \left(1-e^{-\frac{1}{2}\int_0^u\beta(s)\dd s}\right)\mY +e^{-\frac{1}{2}\int_0^u\beta(s)\dd s}\rmX_0
-\]
-\[
-\mathsf\Sigma(u) \coloneqq \left(1-e^{-\int_0^u\beta(s)\dd s}\right)\tI
-\]
-\[
-\int_0^u\beta(s)\dd s = \beta_{\min}u + \frac{1}{2}(\beta_{\max}-\beta_{\min})u^2
-\]
-This allows sampling from $p_u$ instead of solving \eqref{eq:sdesolv}, resulting in \textit{simulation-free} training.
+this has the advantage that the network is always predicting clean data, and the variance of the labels scales with training data rather than a normal. Additionally, the label is constant for any $u$ \citep{karras2022elucidating}.
 
-An important simplification here is the use of an isotropic covariance matrix. There are situations where the data might be better learned with non-isotropic Gaussians \citep{dhariwalDiffusionModelsBeat2021}, or non-diagonal \citep{xia2026improved,voleti2022scorebaseddenoisingdiffusionnonisotropic}. Such extra generalisations are beyond the topic of this thesis, but remain important to acknowledge.
+There are many ways to develop an architecture for score estimators $\rmS_\vtheta$. An identifying feature of a score estimator is that it depends on the depth variable $u$ in addition to the current sample $\rmX_u$. There are many ways to achieve this, two popular examples are NCSN++ and DiT. 
 
+An NCSN++ is a modified U-Net \citep{ronneberger2015unet} with a learnt $u$-step embedding applied to each Resnet block. The U-Net remains similar to the original implementation as a series of downsampling layers, a bottleneck, and then a series of upsampling layers. As with all convolutional neural networks, contextual dependence can only be modelled within the kernels receptive field.
 
+A more modern approach is to use a DiT. A DiT uses the transformer architecture with adaptive layer-norm to condition on the $u$-step. Since transformers are sequence models, modalities such as images require tokenisation. A strong method for this is to segment the image into patches and compute a patch embedding for each patch.
 
-\begin{figure}
-    \centering
-    \includegraphics[width=\linewidth]{plots/gradtts/mean_reverting_sde-1.pdf}
-    \caption{\textbf{1D example} A mean reverting SDE with $\mY=0$ and $x_0=3$. The reverse process samples from a standard normal and produces $x_0=3$}
-    \label{fig:mean_reverting_sde}
-\end{figure}
-
+Both the NCSN++ and DiT have a dimensionality-reduction step for features such as images and spectrograms. The NCSN++ uses down-sampling layers and DiT uses patch embeddings. Such steps are interesting as the noise typically exists on the highest dimensional manifold whereas the data may lie on a much lower manifold e.g. an image of a blue sphere has much less variance than a standard normal sample. It might be the case that dimensionality reduction offers a denoising bias as it forces local correlation during the learned reverse process which is beneficial for a data-generating score network.
 
 \section{Conditional generation}
 An enhanced variant of the generative modelling task is conditional generation. This involves generating realistic data samples that are likely given a conditioning signal e.g. a text prompt. The notion of conditional distribution between two random variables becomes relevant here.
@@ -93,7 +83,7 @@ There are several ways to influence the generation process. One approach is to f
 \[
 \nabla\log p_u(\rmX_u|\rvy)=\nabla\log p_u(\rmX_u) + \nabla\log p_u(\rvy|\rmX_u)
 \]
-$p_u(\rvy|\rmX_u)$ is known as the \textit{classifier}. Classifier-guided generation depends heavily on the quality of the classifier, which adds additional compute cost and often fails to generate high-quality samples.
+$p_u(\rvy|\rmX_u)$ is known as the \textit{classifier}. Classifier-guided generation depends heavily on the quality of the classifier, which adds additional compute cost and often fails to generate high-quality samples. Two advanced techniques considered in this thesis are classifier-free guidance and mean-reverting SDEs.
 \subsection{Classifier-free guidance}
 One option is to provide conditioning labels during training to optimise $\nabla\log p_u(\rmX_u|\rvy)$, e.g. the score network could use cross-attention to be informed by the conditioning signal. In doing so, the score estimator is at risk of overfitting to the labelled data and no longer providing a diverse density possible with the unconditional model.
 
@@ -107,11 +97,7 @@ Define a variable $\omega$ to control the mixture between conditional and uncond
 &\coloneqq \nabla\log p_u(\rmX_u) + \omega\bigl(\nabla\log p_u(\rmX_u) - \nabla\log p_u(\rmX_u|\rvy)\bigr) \\
 &= \omega\nabla\log p_u(\rmX_u|\rvy) + (1-\omega)\nabla\log p_u(\rmX_u)
 \end{align}
-The conditional and unconditional score can be trained under the same optimisation algorithm by randomly replacing the conditioning $\rvy$ with a null label $\oslash$ during training, then applying the following probability flow ODE
-\[
-\dd \rmX \coloneqq \frac{1}{2}\left((\mY - \rmX_u) - (1 + w)\mS_\theta(\rmX_u,u|\vy) + w\mS_\theta(\rmX_u,u|\oslash)\right)\beta(u) \dd u
-\label{eq:cfg}
-\]
+The conditional and unconditional score can be trained under the same optimisation algorithm by randomly replacing the conditioning $\rvy$ with a null label $\oslash$ during training.
 
 \subsection{Mean reversion with conditional score}
 \begin{figure}
@@ -122,36 +108,139 @@ The conditional and unconditional score can be trained under the same optimisati
 \end{figure}
 In some cases, a coarse representation of the data predictable, then diffusion is used to refine the features. Here, the predicted coarse representation defines the mean of the terminal distribution
 \[
-\rmY\coloneqq \rmE_\rvphi(\rvy)
+\rmY\coloneqq \rmE_\vphi(\rvy)
 \]
-where $\rmE$ encodes $\rvy$, and is parametrised with $\rvphi$. Note how $\rmY$ is a random variable of the conditioning $\rvy$, unlike a global $\mY$ left as a design choice in \eqref{eq:cfg}. This represents a key difference in image and speech generative models seen later.
+where $\rmE$ encodes $\rvy$, and is parametrised with $\vphi$, and $\rmY$ is the desired mean of $p_1$. 
+Then for any SDE with a mean reverting drift e.g. $\rmF(u)=\rmY-\rmX_u$ the score estimator is constrained to flows that revert to the mean $\rmY$.
+
+
+
+\section{Computing likelihood}
+An attractive feature of CNFs is that the change of variables formula becomes easier to compute. So far the reverse process has been presented in SDE form, but for generation it is possible to use an equivalent ODE
+\[
+\rmH_\vtheta(\rmX,u)\coloneqq \left[ \rmF(\rmX,u) - \frac{1}{2}g(u)^2\rmS_\vtheta(\rmX,u)\right]\dd u
+\]
+this expression is a \textit{probability flow} ODE. The conversion to ODE constructs a CNF, whose likelihood is rewritten below
+\[
+\log p_0(\rmX_0)=\log p_1(\rmX_1) +\int_1^0\nabla\cdot \rmH(\rmX_u,u)\dd u
+\]
+The divergence can evaluated with a trace
+estimator \citep{skillingEigenvaluesMegadimensionalMatrices1989,hutchinsonStochasticEstimatorTrace1989}
+\[
+\nabla\cdot\rmH(\rmX,u)=\E_{p(\rmZ)}\left[\rmZ^\top\nabla\rmH(\rmX,u)\rmZ\right] \quad \rmZ\in\mathcal{N}(0,1)
+\]
+Although score-based modelling is simulation-free, it removes the ability to maximise likelihood directly. Despite this, the learnt density outperforms non-continuous-depth alternatives \citep{song2021sde}. Interestingly, there are methods for maximum likelihood training \cite{songMaximumLikelihoodTraining2021}, yet these do not produce higher quality samples. Such research emphasises the fact that evaluating generative models is a non-trivial task.
+
+
+A computable likelihood allows the model to be robustly evaluated. Despite this advantage, evaluating likelihood on practical tasks such as controllable image and speech generation is not commonplace. The following chapter explores this gap.
+
+% TODO maybe mention theis et al here, maybe mention how we talk about log- and likelihood as the same
 
 \section{Sampling with ODE solvers}
 To retrieve data samples, the following reverse initial value problem must be solved with black-box ODE solvers
 \[
 \rmX_0=\rmX_1 + \int_1^0\rmH(\rmX_u,u)\dd u
 \]
-Where $\rmH$ is the drift component of the trained reverse SDE. For the variance preserving example, it is
+As stated earlier, this form of CNF is a probability-flow ODE. The lack of diffusion is useful as it constrains the input variance of the neural estimator $\rmS_\vtheta$.  
+
+A simple method is the Euler sampler
+\[
+\rmX_{u-h}=\rmX_u -\rmH(\rmX_u,u)h
+\]
+where $h\leq 1$ is the step size. The number of steps required is $\frac{1}{h}$. This method has a fixed number of steps per solve. Typically, more steps improve accuracy, presenting a compute-accuracy trade-off. 
+
+There are many options for ODE solvers. For example, the fourth-order Runge-Kutta method evaluates the vector-field four times per step \citep{Runge1895UeberDN,kutta1901beitrag}. Adaptive methods dynamically increase or decrease the step size under select criteria such as an error tolerance between fourth and fifth order evaluations \citep{dormandFamilyEmbeddedRungeKutta1980}. The development of diffusion models has lead to customised solvers for the generative task e.g. with special weighting schemes \citep{cheng2022dpmsolvr}.
+
+A key area of research here is improving quality with less steps.
+
+\section{Support for variable length data}
+Some data types such as speech have an associated length $\rl$ with each sample $\rmX_0\in\R^{d\times\rl}$, where $d$ is the static dimension of the data e.g. number of Mel-spectrogram channels. This means the sampled terminal distribution $\hat p_1$ must also sample or predict a length to operate in. The length of a sample remains constantly for any $u$.
+
+% working out bayes
+The constraints 
+\begin{table}[]
+    \centering
+    \begin{tabular}{c|c}
+        1 & Sample length $\rl\sim p_l(\rl)$ \\
+        2 & Sample terminal distribution $\hat p_1\sim\gW_\rl$ \\
+        3 & Sample data $\hat\rmX\sim \pdata$ \\
+        4 & Define initial $\hat p_0 = \gN(\hat\rmX,\tSigma_0)$ \\
+        5 & Sample path $p\sim\gP_{[0,1]}$ with boundaries $\hat p_0$ and $\hat p_1$ \\
+        6 & Single step MC $\E_{\rmX_0\sim p_0}$
+    \end{tabular}
+    \caption{Algorithm for variable length generation}
+    \label{tab:placeholder}
+\end{table}
+
+\[
+p_0(\rmX_0) = \int p(\rmX)\dd \gP \dd\gW(\rl) \dd \rl
+\]
+
+\[
+p_0(\rmX_0)=p_L(\rl)\int\int \rp_{u=0}(\rmX_0)\dd\gP_{\rp_1\#\rmX_0}(\rp_u)\dd\gW( \rp_1)
+\]
+
+\[
+p_0(\rmX_0)= \int\int\int p_0(\rmX_0|\rmX_1)\gN(\dd \rmX_1;\rmY,\tSigma)\gW_{\R^{d\times\rl}}(\dd\rmY,\dd\tSigma)p_l(\dd\rl)
+\]
+
+\section{Example: mean-reversion and variance preservation}
+Define a function of $u$, known as a  $\beta$-schedule
+\[
+\beta(u)\coloneqq\beta_{\min}+\bigl(\beta_{\max}-\beta_{\min}\bigr)u
+\]
+This schedule is used to construct a variance preserving SDE
+\[
+\dd \rmX \coloneqq \frac{1}{2}(\mY - \rmX_u)\beta(u) \dd u + \sqrt{\beta(u)} \dd\rmW_u.
+\]
+A consequence of the $\beta$-schedule is that the strength of the mean-reversion towards $\mY$ increases linearly with $u$. Secondly, the rate at which diffusion contributes variance increases linearly with $u$. Together, the drift and diffusion terms are balanced by the coefficients $\frac{1}{2}\beta(u)$ and $\sqrt{\beta(u)}$, resulting in a terminal distribution $p_1$ with approximately unit covariance given $\mY$.
+
+
+Substituting drift and diffusion into \eqref{eq:sderev}, the reverse SDE is
+\[
+\dd \rmX = \left(\frac{1}{2}(\mY - \rmX_u) - \nabla\log p_u(\rmX_u)\right)\beta(u) \dd u + \sqrt{\beta(u)} \dd\hat\rmW_u
+\]
+A useful property of this SDE is that it's closed-form solution is known for an initial $\rmX_0$.
+\[
+p_u(\rmX_u|\rmX_0) = \mathcal N(\rmX_u;\rmM(\rmX_0,u,\mY),\mathsf\Sigma(u))
+\]
+\[
+\rmM(\rmX_0,u,\mY) = \left(1-e^{-\frac{1}{2}\int_0^u\beta(s)\dd s}\right)\mY +e^{-\frac{1}{2}\int_0^u\beta(s)\dd s}\rmX_0
+\]
+\[
+\mathsf\Sigma(u) = \left(1-e^{-\int_0^u\beta(s)\dd s}\right)\tI
+\]
+\[
+\int_0^u\beta(s)\dd s = \beta_{\min}u + \frac{1}{2}(\beta_{\max}-\beta_{\min})u^2
+\]
+This allows sampling from $p_u$ instead of solving \eqref{eq:sdesolv}, resulting in \textit{simulation-free} training.
+
+An important simplification here is the use of an isotropic covariance matrix. There are situations where the data might be better learned with non-isotropic Gaussians \citep{dhariwalDiffusionModelsBeat2021}, or non-diagonal \citep{xia2026improved,voleti2022scorebaseddenoisingdiffusionnonisotropic}. Such extra generalisations are beyond the topic of this thesis, but remain important to acknowledge.
+
+For classifier-free guidance, apply the following probability flow ODE
+\[
+\dd \rmX \coloneqq \frac{1}{2}\left((\mY - \rmX_u) - (1 + w)\mS_\theta(\rmX_u,u|\vy) + w\mS_\theta(\rmX_u,u|\oslash)\right)\beta(u) \dd u
+\label{eq:cfg}
+\]
+For a conditional mean reversion, note how $\rmY$ is a random variable of the conditioning $\rvy$, unlike a global $\mY$ left as a design choice in \eqref{eq:cfg}. This represents a key difference between image and speech generative models seen later.
+
+
+
+\begin{figure}
+    \centering
+    \includegraphics[width=\linewidth]{plots/gradtts/mean_reverting_sde-1.pdf}
+    \caption{\textbf{1D example} A mean reverting SDE with $\mY=0$ and $x_0=3$. The reverse process samples from a standard normal and produces $x_0=3$}
+    \label{fig:mean_reverting_sde}
+\end{figure}
+
+For the variance preserving example, the probability-flow ODE is
 \[
 \rmH(\rmX,u) \coloneqq \frac{1}{2}\left(\mY - \rmX-\rmS_\vtheta(\rmX,u)\right)\beta(u)
 \]
-Euler sampler with step size $h$
-\[
-\mX_{u-h}=\mX_u -\rmH(\mX_u,u)h
-\]
 
+% TODO how to scatter ll foretelling into this chapter to make next chapter more desired?
 
+\section{Summary}
+This chapter introduced methods for training CNFs by sampling intermediate states of a target probability path and optimising the gradient/score estimate at that point. This is simulation-free training. Two methods for conditional generation pointed out are CFG and mean reversion. Likelihood is tractable by using trace estimators. Data generation is possible through ODE solvers, which are a motivated design space. The support for variable length data is disambiguated, an important view for tasks such as TTS. Finally, an example of an SDE with mean reversion and variance preservation is given.
 
-\section{Computing likelihood}
-Change of variables formula
-\[
-\log p_0(\rmX_0)=\log p_U(\rmX_U) +\int_0^U\nabla\cdot \mF_\theta(\rmX_u,u)\dd u
-\]
-Skilling-Hutchinson estimator
-\[
-\nabla\cdot\mF_\theta(\rmX,u)=\E_{p(\boldsymbol{\epsilon})}\left[\boldsymbol{\epsilon}^\top\nabla\mF_\theta(\rmX,u)\boldsymbol{\epsilon}\right] \quad \boldsymbol{\epsilon}\in\mathcal{N}(0,1)
-\]
-
-\[
-\log p_0(\rmX_0|\vy)=?
-\]
+Likelihood is important. In addition to evaluation, likelihood is an informed method for learning about what features are represented by the model and what the optimal density is within the solution. In seminal pieces likelihood is important for determining the quality of a model. In practical solutions, it is not investigated. This paucity motivates the next chapter.

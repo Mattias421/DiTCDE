@@ -10,7 +10,10 @@ This is a PhD thesis. It is important that the student writes the intellectual c
   - Anything similar to a softly-structured find-and-replace task e.g. find all instances of random variables and ensure they use \rx or \rvx or \rmX
   - fix any missed connection e.g. if something refers to something that is expanded in another chapter, signpost to that chapter to help the reader out.
   - commas and full stops in equations are correct
+  - variables are correctly introduced
+  - suggest latin/greek derived words/phrases over English
 
 ## Notations
 Notation typically follows deep learning standards.
 The time index for depth is $u$, and for time $t$, this is different from usual diffusion convention.
+

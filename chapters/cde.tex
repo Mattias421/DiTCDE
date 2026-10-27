@@ -1,17 +1,17 @@
 \chapter{Controlled differential equations}
-
+So far, the DEs covered do not dynamically support sequence-to-sequence tasks.
 \[
-\rvz_t = \rvz_0 + \int_0^t\mF_\theta(\rvz,s)\dd\rvx_s
-\label{eq:ode}
+\rvz_t = \rvz_0 + \int_0^t\rmF_\theta(\rvz,s)\dd\rvx_s
+\label{eq:ode_ct}
 \]
 \[
-\rvz_t = \rvz_0 + \int_0^t\mF_\theta(\rvz,s)\frac{\dd\rvx_s}{\dd s}\dd s
+\rvz_t = \rvz_0 + \int_0^t\rmF_\vtheta(\rvz,s)\frac{\dd\rvx_s}{\dd s}\dd s
 \]
 \[
 \Ls\coloneqq D_\mathrm{KL}(\rvy||\vg_\phi(\rvz_T))
 \]
 \[
-\Ls=\mY - \mZ_{1:T}?
+\Ls=\rmY - \rmZ_{1:T}?
 \]
 
 \section{Optimisation}

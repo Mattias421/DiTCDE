@@ -18,7 +18,6 @@
 % Source quirks retained: Table 4 has its label before its caption and
 % surplus column declarations; Table 7 includes three reference columns
 % that extend beyond the right edge of the published PDF.
-\textit{Image or speech first?}
 
 This chapter investigates the first research question: what are the properties diffusion model likelihood in practical implementations? The implementations considered are for high-quality image and speech generation. For images SDXL is chosen, which uses classifier-free guidance for text-to-image generation. The encoder-decoder mean-reversion GradTTS is used for speech. Using these to models provides a wide perspective on different paths and modalities.
 
@@ -42,7 +41,18 @@ Grad-TTS uses a transformer encoder and U-Net diffusion decoder. The encoder pre
 The datasets considered are the validation sets of LJSpeech \citep{LJSpeechDataset} and TED-LIUM \citep{rousseauTEDLIUMAutomaticSpeech2012}. The LJSpeech split contains around 1 hour of audiobooks read by a US-English female speaker. The TED-LIUM split contains around 3 hours of male speakers and 1 hour of female speaker TED conference audio.
 %
 To observe how likelihood changes during the denoising diffusion process, the LJSpeech set is generated and likelihood is measured at various values of the depth coordinate $u$. Likelihood is expected to increase as $u$ decreases. Likelihood is measured in \ac{BPD}, $-\log p(\x)\log_2\exp \cdot (\Pi_{i} \mathbf{d}_i)^{-1}$, where $d$ is the shape of $\x$. Lower BPD means higher likelihood.
-
+\begin{figure}
+    \centering
+    \includegraphics[width=0.5\linewidth]{plots//gradtts/pacs.png}
+    \caption{Enter Caption}
+    \label{fig:placeholder}
+\end{figure}
+\begin{figure}
+    \centering
+    \includegraphics[width=0.5\linewidth]{red_sphere.png}
+    \caption{Enter Caption}
+    \label{fig:placeholder}
+\end{figure}
 \paragraph{Image}
 Datasets considered are PACS \citep{liDeeperBroaderArtier2017}, a domain generalisation dataset that includes images of 9 classes in 4 domains (photo, art, cartoon, sketch) and CLEVR \citep{johnsonCLEVRDiagnosticDataset2017}, a diagnostic dataset containing synthetic images of 3 3D objects of 8 colours. The images used are generated from \cite{lewisDoesCLIPBind2023}, including a ``red sphere'' example. A subset of CLEVR consisting of single objects is used. For both datasets, each class-domain/shape-colour pair is repeated 20 times. Images are resized to $512^2$/$1024^2$.
 The likelihood of SDXL is reported, with \ac{CFG} used to generate PACS. Image quality and compatibility are measured using \ac{FID} and CLIP similarity, respectively (Table~\ref{tab:sdxl_over_t}).
@@ -59,7 +69,18 @@ FID measures the distance between real and synthetic image distributions. CLIP m
 
 \subsection{Text-to-speech}
 \label{sec:Grad-TTS encoder and decoder output}
-
+\begin{figure}
+    \centering
+    \includegraphics[width=1\linewidth]{plots/gradtts/trajectory.pdf}
+    \caption{Enter Caption}
+    \label{fig:placeholder}
+\end{figure}
+\begin{figure}
+    \centering
+    \includegraphics[width=\linewidth]{plots/gradtts/combined_comparison.pdf}
+    \caption{Enter Caption}
+    \label{fig:placeholder}
+\end{figure}
 \begin{table}[htbp]
     \centering
     \caption{Quantitative assessment of Grad-TTS from depth $u=1$ to $u=0$.}%Various metrics as depth decreases from 1 to 0. These are likelihood (BPD), intonation error (log-$F_0$ RMSE), spectral distortion (MCD), intelligibility (WER), and speaker similarity (ASV). These results show that likelihood is correlated with smoother spectrograms and speaker accurate speech, but the diffusion generative process decreases intelligibility. There is a negligible change in intonation error.}
@@ -120,7 +141,18 @@ The Euler method produces unintelligible audio, yet has high speaker similarity 
 
 \subsection{Text-to-image}
 \label{sec:SDXL Images}
-
+\begin{figure}
+    \centering
+    \includegraphics[width=0.5\linewidth]{plots//gradtts/panda_a.png}
+    \caption{Enter Caption}
+    \label{fig:placeholder}
+\end{figure}
+\begin{figure}
+    \centering
+    \includegraphics[width=0.5\linewidth]{plots//gradtts/panda_b.png}
+    \caption{Enter Caption}
+    \label{fig:placeholder}
+\end{figure}
 \begin{table}[!htbp]
 \centering
 \caption{The SDXL generative process from $u=1$ to 0 with CFG=7 at 1024 resolution.}
