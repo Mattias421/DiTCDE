@@ -1,5 +1,6 @@
 \chapter{Controlled differential equations}
 So far, the DEs covered do not dynamically support sequence-to-sequence tasks.
+Let $\rvx_t\in\mathbb R^m$ be a control path and $\rvz_t\in\mathbb R^d$ the hidden state. The vector field is matrix-valued, $\rmF_\theta(\rvz,t)\in\mathbb R^{d\times m}$, so its product with the control increment is a hidden-state increment.
 \[
 \rvz_t = \rvz_0 + \int_0^t\rmF_\theta(\rvz,s)\dd\rvx_s
 \label{eq:ode_ct}
@@ -20,14 +21,14 @@ Neural ODEs and CDEs can be optimised with the continuous adjoint (optimise-then
 \frac{\dd \rvx}{\dd t}=\rvf_\vtheta(t,\rvx_t)
 \]
 \[
-\rva_\rvx(T)=\frac{\dd\Ls}{\dd \rvx_T} \quad \frac{\dd \rva_\rvx}{\dd t}=-\rva_\rvx(t)^\top \frac{\partial \rvf_\vtheta}{\dd \rvx}(t,\rvx_t)
+\rva_\rvx(T)=\nabla_{\rvx_T}\Ls \quad \frac{\dd \rva_\rvx}{\dd t}=-\left(\frac{\partial \rvf_\vtheta}{\partial \rvx}(t,\rvx_t)\right)^\top\rva_\rvx(t)
 \]
 \[
-\rva_\vtheta(T)=0 \quad \frac{\dd \rva_\vtheta}{\dd t}=-\rva_\rvx(t)^\top \frac{\partial \rvf_\vtheta}{\dd \vtheta}(t,\rvx_t)
+\rva_\vtheta(T)=0 \quad \frac{\dd \rva_\vtheta}{\dd t}=-\left(\frac{\partial \rvf_\vtheta}{\partial \vtheta}(t,\rvx_t)\right)^\top\rva_\rvx(t)
 \]
- If the loss contributes non-terminal hidden states, the integration restarts from the new loss, with the accumulated adjoint $\hat\rva$ added to the initialise the new ``terminal value''
+Here $\rva_\vtheta(T)=0$ assumes that the loss has no direct dependence on $\vtheta$ other than through the state. If the loss also depends on intermediate hidden states, integration restarts at each such state, adding the local loss gradient to the accumulated state adjoint $\hat\rva_\rvx$; the parameter adjoint is carried across the restart:
 \[
-\rva_\rvx(T_i)=\hat\rva_\rvx(T_i)+\frac{\partial\Ls}{\partial\rvx{T_i}}
+\rva_\rvx(T_i)=\hat\rva_\rvx(T_i)+\nabla_{\rvx_{T_i}}\Ls
 \]
 \[
 \rva_\vtheta(T_i)=\hat\rva_\vtheta(T_i)

@@ -6,8 +6,7 @@ Normalising flows are appropriately named given that they learn a flow (transfor
 \[
 p_0(\rx)=p_1(\rz)\left| \det \frac{\partial \rf(\rz)}{\partial \rz} \right|^{-1}
 \]
-where $p_0$ models $\pdata$ and $p_1$ is simple e.g. normal.
-Provided that $\rf$ is invertable, the density can be written in terms of $\rx$ 
+where $p_0$ models $\pdata$ and $p_1$ is a simple density, for example a normal density. Since $\rz=\rf^{-1}(\rx)$, the equivalent expression in terms of $\rx$ is
 \[
 p_0(\rx)=p_1(\rf^{-1}(\rx))\left| \det \frac{\partial \rf^{-1}(\rx)}{\partial \rx} \right|
 \]
@@ -16,26 +15,26 @@ This has the log form
 \log p_0(\rx)=\log p_1(\rf^{-1}(\rx)) + \log\left|\det \frac{\partial \rf^{-1}(\rx)}{\partial\rx} \right|
 \label{eq:nfll}
 \]
-The density $p_0$ can finally be trained by specifying a transform $\rf_\vtheta$ and then maximising likelihood over samples from the data $x\sim\pdata$
+The density $p_0$ can be trained by specifying a transform $\rf_\vtheta$ and maximising the expected log likelihood over data samples $\rx\sim\pdata$:
 \[
-\vtheta^\ast=\underset{\vtheta}{\arg\max} \,\E_{p_1,\pdata}\log p_0(x;\vtheta)
+\vtheta^\ast=\underset{\vtheta}{\arg\max} \,\E_{\rx\sim\pdata}\left[\log p_0(\rx;\vtheta)\right]
 \]
-The optimal parameters $\vtheta^\ast$ will yield the desired density model $p_0$.
+The population optimum matches $p_0$ to $\pdata$ when the model family contains the data density and the optimisation reaches a global optimum; finite data and model capacity need not yield an exact match.
 
-A large factor in the success of a normalising flow is the choice of transform $\rf$. It must be invertable, expressive, and computational tractable. A challenge when using discrete-depth neural networks i.e. $f_1\circ f_2\circ f_3$ is that \eqref{eq:nfll} scales depth and compute. This scaling is a consequence of the quadratic cost of the Jacobian determinant.
+A large factor in the success of a normalising flow is the choice of transform $\rf$. It must be invertible, expressive, and computationally tractable. With a discrete composition such as $f_1\circ f_2\circ f_3$, evaluating \eqref{eq:nfll} requires the log determinant of each layer Jacobian. A dense determinant generally costs cubic time in the state dimension, although specialised architectures can make it cheaper.
 
-A central motivation for continuous-depth normalising flows is that the change-of-variables becomes easier to compute. The instantaneous-change-of-variables formula \cite{NEURIPS2018_69386f6b, song2021sde} rewrites \eqref{eq:nfll} for vector-field $\rf_\vtheta$ as
+A central motivation for continuous-depth normalising flows is that the change-of-variables formula can be expressed using the divergence of a vector field. For the ODE $\frac{\dd\rx_u}{\dd u}=\rf_\vtheta(\rx_u,u)$, the instantaneous-change-of-variables formula \cite{NEURIPS2018_69386f6b, song2021sde} gives
 \[
 \log p_0(\rx)=\log p_1(\rx_1) + \int_0^1\nabla\cdot\rf_\vtheta(\rx_u,u)\dd u
 \label{eq:cnfll}
 \]
-Invertability is easy to satisfy since an ODE can be evaluated forwards and backwards in time. Additionally, computation becomes lighter as it is now tied to the divergence computation and black-box ODE solver.
+The formula assumes a well-posed ODE flow (in particular, conditions ensuring existence and uniqueness). Computation still requires solving the ODE and evaluating its divergence; the cost depends on the solver and the method used to estimate the divergence.
 
 A remaining critique would be that the ODE must be solved between $0$ and $1$ for every optimisation iteration. In other words, the ODE must be simulated during training. This problem has been alleviated through \textit{simulation-free} training, which aims to sample intermediate states $\rx_\ru$ through closed-form solutions and optimises the vector-field at the sampled point $\ru$. A method for defining differential equations from a structured initialisation towards a normal distribution is through stochastic differential equations.
 
 \section{Stochastic differential equations}
 \subsection{The Wiener process}
-The Wiener process (AKA Brownian Motion) can be thought of as a random walk continuous in $u$. It starts from $\rw_0=0$ and ``walks'' with random increments $\rw_{0+\Delta u}\sim\mathcal N(0,\Delta u)$. The inspiration for this process comes from Robert Brown observing the motion of pollen in water. After placing a pollen particle into the centre $(0,0)$, it will begin to move randomly in all directions. This is known as diffusion.
+The Wiener process (also called Brownian motion) can be thought of as a random walk continuous in $u$. It starts from $\rw_0=0$ and has increments $\rw_{u+\Delta u}-\rw_u\sim\mathcal N(0,\Delta u)$. The inspiration for this process comes from Robert Brown observing the motion of pollen in water. A pollen particle moves randomly in all directions; this is known as diffusion.
 
 The Wiener process is useful here as it can be used to predict the likelihood of a particle position at a given time. The Wiener process is also easy to sample from in closed-form
 \[
@@ -44,7 +43,7 @@ The Wiener process is useful here as it can be used to predict the likelihood of
 but only describes evolution of samples from the origin. For more complicated processes, more mechanisms are required.
 
 \subsection{It\^o SDE}
-An It\^o SDE is a summation of a ordinary drift and stochastic diffusion
+An It\^o SDE combines an ordinary drift with stochastic diffusion:
 \[
 \dd \rx \coloneqq f(\rx,u)\dd u + g(\rx,u)\dd \rw_u
 \]
@@ -55,11 +54,11 @@ These processes are the first example SDEs to be introduced in this dissertation
 \]
 SDEs are characterised by a deterministic component \textit{drift}, and non-deterministic diffusion. This process scales reversion to the selected mean $y$ with $\gamma$ and diffusion with $\sigma$. Although less obvious than the Wiener process, \eqref{eq:ousde} also has a closed-form solution
 \[
-\mathcal N \left(y,\frac{\sigma^2}{2\gamma}\right).
+\rx_u\sim\mathcal N\left(y+e^{-\gamma u}(\rx_0-y),\frac{\sigma^2}{2\gamma}(1-e^{-2\gamma u})\right),\qquad \gamma>0.
 \]
-Note how this solution does not depend on $u$.
+As $u\to\infty$, this conditional distribution converges to the stationary distribution $\mathcal N(y,\sigma^2/(2\gamma))$.
 
 \section{Deep equilibrium models}
 This thesis focusses on neural DEs, but the reader should be aware that this is not the only way to achieve ``implicit layers''. Neural DEs are implicit because the parameters describe a single layer which can be used by black-box equation solvers to simulate depth. Another way to simulate depth is with DEQs.
 
-DEQs are solved by finding an equilibrium point, where the output of the layer is equal to or within a small margin of error from the input. 
+DEQs are solved by finding an equilibrium point, where the output of the layer is equal to or within a small margin of error from the input.

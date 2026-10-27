@@ -5,7 +5,7 @@
     \centering
     \includegraphics[width=1\linewidth]{plots/cartoon-4.pdf}
     \caption{Enter Caption}
-    \label{fig:placeholder}
+    \label{fig:flow-matching-1}
 \end{figure}
 \begin{figure}
     \centering
@@ -13,18 +13,18 @@
     \caption{Enter Caption}
     \label{fig:schrodinger_bridge}
 \end{figure}
-The original SB problem explains the path between two observations of particles at $u=0$ and $u=1$. The particles are assumed to move by an SDE yet the observations are unlikely under this model. The space of probability paths that satisfy the observed boundaries $\gP_{[0,1]}$ is infinite, and contains many unlikely paths under the SDE. The conflict between the assumed model and the observations is resolved by finding the path with minimum Kullback-Leibler divergence to the reference $p_\mathrm{ref}$
+The original SB problem describes paths between two observations at $u=0$ and $u=1$. The paths are required to have specified endpoint marginals and are compared with a reference path law $P_\mathrm{ref}$. The Schr\"odinger bridge minimises path-space Kullback--Leibler divergence subject to those marginal constraints:
 \[
-\min _{p \in \mathcal{P}_{\left[0, 1\right]}} D_{\text{KL}}(p, p_\mathrm{ref}) 
+\min _{P\in\mathcal{P}_{\left[0,1\right]}(p_0,p_1)} D_{\text{KL}}(P\Vert P_\mathrm{ref})
 \]
-Finding the solution $p$ begins by assuming optimal forward and reverse probability flows $\mPsi$ and $\hat\mPsi$ within the following forward-backward SDEs
+Under standard regularity conditions, the solution can be represented using positive Schr\"odinger potentials $\Psi_u$ and $\hat\Psi_u$ in the forward and reverse SDEs
 \[
 \dd\rmX \coloneqq \left[\rmF(\rmX,u) + g^2(u)\nabla\log\mPsi_u\right]\dd u + g(u)\dd \rmW_u
 \]
 \[
 \dd\rmX \coloneqq \left[\rmF(\rmX,u) - g^2(u)\nabla\log\hat\mPsi_u\right]\dd u + g(u)\dd \hat\rmW_u
 \]
-The solution then becomes $p=\hat\mPsi\mPsi$.
+The time-$u$ marginal density is proportional to the product $\hat\Psi_u\Psi_u$; the proportionality constant is fixed by normalisation.
 Assume linear drift $\rmF(\rmX)=f(u)\rmX$ and Gaussian boundaries
 \[
 p_0=\gN(\rmX,\epsilon_0^2\tI) \quad p_1=\gN(\rmY,\epsilon_1^2\tI)
@@ -43,14 +43,14 @@ Given that the forward $\mPsi$ is guaranteed to have mean $\rmY$ at $u=1$, and t
 \[
 \mPsi_u=\gN\left(\rmY,\int_0^1g^2(s)\dd s - \int_0^ug^2(s)\dd s\tI\right)
 \]
-the mean and standard deviation of the solution $p$ becomes
+the mean and covariance of the solution $p$ are
 \[
 \rmM(\rmX,\rmY,u)=\left(1-\frac{\int_0^ug^2(s)\dd s}{\int_0^1g^2(s)\dd s}\right)\rmX + \left(\frac{\int_0^ug^2(s)\dd s}{\int_0^1g^2(s)\dd s}\right)\rmY
 \]
 \[
 \tSigma = \int_0^ug^2(s)\dd s\left(1-\frac{\int_0^ug^2(s)\dd s}{\int_0^1g^2(s)\dd s}\right)\tI
 \]
-The solution here is complementary to the diffusion frame work described in \chapref{chap:diffusion} yet SB has some advantages when dealing with non-simple terminal distributions. Having zero variance at the boundaries means there is less data prediction error. This is considered an improvement over the mean-reverting SDE seen earlier which is subject to lack of generalisation.
+This solution is related to the diffusion framework described in \chapref{chap:diffusion}. Bridge paths can connect prescribed endpoint distributions, and this Gaussian example has zero conditional variance at its boundaries. This property alone does not establish lower prediction error or better generalisation than a mean-reverting SDE.
 
 An important distinction with supervised learning is that samples from the boundaries are paired
 \[
@@ -79,9 +79,9 @@ Consider a purely variance-exploding reference process
     \label{fig:sb_kc}
 \end{figure}
 
-The loss is data prediction given a path sample
+For this example, a data-prediction objective regresses the clean endpoint from a path sample:
 \[
-\mS_\theta(\rmX_u|\mY,\ru)-\rmX_0
+\mathcal L_{\mathrm{DP}}(\theta)=\mathbb E_{(\rmX_0,\rmY)\sim\pi,\,\ru\sim U(0,1),\,\rmX_\ru\sim p_{\ru|0,Y}(\cdot|\rmX_0,\rmY)}\left[\left\|\mS_\theta(\rmX_\ru\mid\mY,\ru)-\rmX_0\right\|^2\right]
 \]
 
 \section{Notes on the SB design space}\label{sec:sbsv}
@@ -92,7 +92,7 @@ As seen in \figref{fig:sb_kc}, the mean $\rmM$ tends to linear interpolation as 
     \centering
     \includegraphics[width=1\linewidth]{plots/cartoon-5.pdf}
     \caption{Enter Caption}
-    \label{fig:placeholder}
+    \label{fig:flow-matching-2}
 \end{figure}
 \begin{figure}
     \centering
@@ -100,17 +100,17 @@ As seen in \figref{fig:sb_kc}, the mean $\rmM$ tends to linear interpolation as 
     \caption{Enter Caption}
     \label{fig:conditional_flow_matching}
 \end{figure}
-A less obvious yet simpler approach is a linearly interpolating mean and constant variance.
+A simpler conditional path uses a linearly interpolating mean and constant covariance.
 \[
-\dd \rmX\coloneqq\mY - \rmX \dd u
+\dd \rmX_u= (\mY-\rmX_u)\dd u
 \]
-In other words, use straight paths. Formally this is McCann's interpolation \citep{mccannConvexityPrincipleInteracting1997}. The conditional path is described as
+The conditional mean follows a straight path, with $\frac{\dd}{\dd u}\rmM_u=\mY-\rmX_0$. The target $\rmX_0-\mY$ below is therefore the velocity in the reverse depth direction (from $u=1$ towards $u=0$), which is the convention used for direct prediction. This is McCann's displacement interpolation only in the zero-noise limit and when the endpoint coupling is optimal for the transport cost. The conditional path is described as
 \[
-\rmM(\rmX_0,\rmY,u) = u\rmY + (1-u)\rmX_0 \quad \tSigma(u)^2= c\tI
+\rmM(\rmX_0,\rmY,u) = u\rmY + (1-u)\rmX_0 \quad \tSigma(u)= c\tI
 \label{eq:icfm_mean_variance}
 \]
 \[
-\vtheta^\ast=\arg\min_\vtheta\E_{u,\rmX_u,\rmX_0,\rmY}||\rmF_\vtheta(\rmX_u|\mY,\ru)-(\rmX_0 -\mY)||^2
+\vtheta^\ast=\arg\min_\vtheta\mathbb E_{(\rmX_0,\rmY)\sim\pi,\,\ru\sim U(0,1),\,\rmZ\sim\mathcal N(0,I)}\left[\left\|\rmF_\vtheta(\rmX_\ru\mid\mY,\ru)-(\rmX_0 -\mY)\right\|^2\right],\quad \rmX_\ru=\rmM(\rmX_0,\rmY,\ru)+\sqrt c\rmZ
 \]
 
 \section{Inference schemes}
@@ -139,7 +139,7 @@ The ODE sampler that solves the SB-VE problem is defined as
         \sigma_{u_i}
     }
 \right)
-\mD_\vtheta(\mX_{u_i},\mY,u_{i-1})
+    \mD_\vtheta(\mX_{u_i},\mY,u_i)
 \\
 &+
 \frac{1}{\sigma_1^2}
@@ -156,7 +156,7 @@ The ODE sampler that solves the SB-VE problem is defined as
 \mY .
 \end{aligned}
 \]
-for an increasing sequence of $u_i$.
+for an increasing sequence of $u_i$. The denoiser is evaluated at the current state depth $u_i$. The formula is singular at the endpoint $u_i=1$, so an implementation needs an endpoint special case or a limiting update.
 
 An alternative to the SB-ODE proposed in this thesis is \textit{direct data prediction}. In \chapref{ch:gradtts} the data prediction objective is used to make the estimator well conditioned to clean data across all noise levels. An added benefit of the data prediction loss is that the estimator becomes a data predictor, and may be a sufficiently strong model without the need to solve an ODE. Here the term ``direct data prediction'' is used to describe the use of a noise conditional model as a data predictor instead of an ODE.
 
@@ -193,7 +193,7 @@ Instead of a variance preserving SDE, consider a variance exploding SDE
 \rmM(\mY,\rmX,u;\gamma) = e^{-\gamma u}\rmX + (1- e^{-\gamma u})\mY \qquad \tSigma(u;\gamma,c,k) = \frac{c(k^{2u}-e^{-2\gamma u})}{2(\gamma + \log k)}\tI
 \]
 
-One notable property here is that the flow-matching loss recovers background noise estimation
+When $\mH=I$, the flow-matching target also equals the additive-noise residual. With reverberation, this residual is $\rmY-\rmX=\rmX\ast\mH-\rmX+\rmZ$, so it is not the background noise alone:
 \[
 \rmZ = \rmY - \rmX
 \]
