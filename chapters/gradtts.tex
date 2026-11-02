@@ -14,6 +14,20 @@ As discussed in the \chapref{ch:intro}, neural ODEs can be used to construct CNF
     \caption{Enter Caption}
     \label{fig:gradtts-2}
 \end{figure}
+
+\section{Optimal transport}
+
+\[
+p_0(\rmX_0|\rmY)=\iint p_0(\rmX_0|\rmX_1)\gN(\dd\rmX_1|\rmY,\tSigma_1)\dd \pdata(\rmX_0,\rmY)
+\]
+\[
+p(x0|x1)p(x1|y)
+\]
+% SVM integrals, 
+% p(x0|y)p(y)dx0dy
+%loss = log p d data
+% int int p(x0|)p(x1)p(z)dxdz dl? inverse wishart is distribution given length
+
 \section{Stochastic differential equations}
 Recall that the goal of a CNF is to learn a probability path between a simple/normal distribution and a data distribution. This is formalised as a time varying probability path with boundaries at the desired distributions e.g. $\gN(\bm0,\tSigma)\rightarrow\pdata$. As seen earlier, the reverse of this path can be described as a diffusion process. Starting from a structured initialisation at $u=0$, the Wiener process $\rmW$ shifts points over time, and at the terminal time $u=1$ the distribution has the same density as a normal distribution.
 The formal description of this begins with an It\^o SDE
@@ -42,7 +56,7 @@ The marginal score is typically intractable, but for a Gaussian transition the c
 \vtheta^\ast\in\underset{\vtheta}{\arg\min}\;\E_{\ru\sim\gU(0,1),\rmX_0\sim\ptrain,\rmX_\ru\sim p_{\ru|0}(\cdot|\rmX_0)}\left\lVert\rmS_\vtheta(\rmX_\ru,\ru)-\nabla_{\rmX_\ru}\log p_{\ru|0}(\rmX_\ru|\rmX_0)\right\rVert_2^2.
 \]
 Here $\ru\sim\gU(0,1)$ is the random depth, $\rmX_0$ is sampled from the empirical data distribution, and $\rmX_\ru$ is sampled from its conditional transition law.
-By sampling $\rmX_1\sim p_1$ and integrating the probability-flow ODE backwards with the estimated marginal score, data samples can be generated.
+By sampling $\rmX_1\sim p_1$ and integrating the probability-flow ODE backwards with the estimated marginal score, data samples can be generated. Note how depth is optimised at the ``infinite layer limit'', and a random ``layer'' is optimised per sample per optimisation step. 
 
 
 In the case where the SDE has a closed-form Gaussian solution, the conditional score becomes easy to compute. By assuming that the conditional probability path is Gaussian
@@ -70,7 +84,10 @@ For the general affine Gaussian transition $\rmX_u=a_u\rmX_0+b_u+\tSigma(u)^{1/2
 \]
 These identities apply to the population-optimal denoiser; a trained network only approximates that optimum. The denoiser objective predicts the clean target at every noise level \citep{karras2022elucidating}.
 
-There are many ways to develop an architecture for score estimators $\rmS_\vtheta$. An identifying feature of a score estimator is that it depends on the depth variable $u$ in addition to the current sample $\rmX_u$. There are many ways to achieve this, two popular examples are NCSN++ and DiT. 
+Simulation-free training is analogous to teacher-forcing. An instantaneous point from a reference path is sampled, and input to the estimator. A sufficiently trained model will align with the reference path, much like a sequence model aligning to likely sequences.
+
+
+There are many ways to develop an architecture for score estimators $\rmS_\vtheta$. An identifying feature of a score estimator is that it depends on the depth variable $u$ in addition to the current sample $\rmX_u$. Two popular examples are NCSN++ and DiT. 
 
 An NCSN++ is a modified U-Net \citep{ronneberger2015unet} with a learnt $u$-step embedding applied to each Resnet block. The U-Net remains similar to the original implementation as a series of downsampling layers, a bottleneck, and then a series of upsampling layers. As with all convolutional neural networks, contextual dependence can only be modelled within the kernels receptive field.
 
@@ -79,7 +96,7 @@ A more modern approach is to use a DiT. A DiT uses the transformer architecture 
 Both the NCSN++ and DiT have a dimensionality-reduction step for features such as images and spectrograms. The NCSN++ uses down-sampling layers and DiT uses patch embeddings. Such steps are interesting as the noise typically exists on the highest dimensional manifold whereas the data may lie on a much lower manifold e.g. an image of a blue sphere has much less variance than a standard normal sample. It might be the case that dimensionality reduction offers a denoising bias as it forces local correlation during the learned reverse process which is beneficial for a data-generating score network.
 
 \section{Conditional generation}
-An enhanced variant of the generative modelling task is conditional generation. This involves generating realistic data samples that are likely given a conditioning signal e.g. a text prompt. The notion of conditional distribution between two random variables becomes relevant here.
+An extension of the generative modelling task is conditional generation. This involves generating realistic data samples that are likely given a conditioning signal e.g. a text prompt. The notion of conditional distribution between two random variables becomes relevant here.
 \[
 p(\rmX|\vy)=?
 \]
@@ -187,6 +204,12 @@ p_0(\rmX_0)=p_L(\rl)\int\int \rp_{u=0}(\rmX_0)\dd\gP_{\rp_1\#\rmX_0}(\rp_u)\dd\g
 \[
 p_0(\rmX_0)= \int\int\int p_0(\rmX_0|\rmX_1)\gN(\dd \rmX_1;\rmY,\tSigma)\gW_{\R^{d\times\rl}}(\dd\rmY,\dd\tSigma)p_l(\dd\rl)
 \]
+% int int p(x0|)p(x1)p(z)dxdz dl? inverse wishart is distribution given length
+\[
+p(\rmX_0|\rvy)=\int_{\sZ_+}\iint_{\R^{d\times\rl}} p(\rmX_0|\rmX_1,\rmY)p(\rmX_1|\rmY)p(\rmY|\rvy,\rl)p(\rl|\rvy)\dd\rmX_1\dd\rmY\dd\rl
+\]
+
+\section{Equations that describe speech enhancement}
 
 \section{Example: mean-reversion and variance preservation}
 Define a function of $u$, known as a  $\beta$-schedule

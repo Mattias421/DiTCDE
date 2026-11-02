@@ -1,4 +1,13 @@
 \chapter{Not so simple terminal distributions}
+
+Until now, this work has focused on diffusion models. One limitation of diffusion models is that the terminal distributions must be plausible under a diffusion process i.e. a normal. There are many tasks that are better described as finding a coupling between two data distributions. Some examples include image super resolution, speech noise suppression, and TTS.
+
+Although Grad-TTS has shown success for diffusion, the framework is misaligned and becomes hard to work with. Grad-TTS simplifies the terminal distribution to a Gaussian with unit variance, which may be artificially increasing the difficulty of the problem. 
+
+There are methods better suited to such problems. These methods are motivated by optimal transport theory. Specifically they are concerned with dynamic OT, which aims to find the minimum energy vector field that describes a transport between two distributions. 
+
+
+
 % draw cartoons, remember W is wiener, reread ICFM, give examples, customisable serving of information, write terms used throughout papers, find terms that need explanation, UNet and Transformer and optimisation in appendix, parametric function is non linear,
 \section{Schr\"odinger bridge}\label{sec:schr}
 \begin{figure}
@@ -81,7 +90,7 @@ Consider a purely variance-exploding reference process
 
 For this example, a data-prediction objective regresses the clean endpoint from a path sample:
 \[
-\mathcal L_{\mathrm{DP}}(\theta)=\mathbb E_{(\rmX_0,\rmY)\sim\pi,\,\ru\sim U(0,1),\,\rmX_\ru\sim p_{\ru|0,Y}(\cdot|\rmX_0,\rmY)}\left[\left\|\mS_\theta(\rmX_\ru\mid\mY,\ru)-\rmX_0\right\|^2\right]
+\mathcal L_{\mathrm{DP}}(\theta)=\mathbb E_{(\rmX_0,\rmY)\sim\pi,\,\ru\sim U(0,1),\,\rmX_\ru\sim p_{\ru|0,Y}(\cdot|\rmX_0,\rmY)}\left[\left\|\rmD_\theta(\rmX_\ru\mid\mY,\ru)-\rmX_0\right\|^2\right]
 \]
 
 \section{Notes on the SB design space}\label{sec:sbsv}
@@ -110,7 +119,7 @@ The conditional mean follows a straight path, with $\frac{\dd}{\dd u}\rmM_u=\mY-
 \label{eq:icfm_mean_variance}
 \]
 \[
-\vtheta^\ast=\arg\min_\vtheta\mathbb E_{(\rmX_0,\rmY)\sim\pi,\,\ru\sim U(0,1),\,\rmZ\sim\mathcal N(0,I)}\left[\left\|\rmF_\vtheta(\rmX_\ru\mid\mY,\ru)-(\rmX_0 -\mY)\right\|^2\right],\quad \rmX_\ru=\rmM(\rmX_0,\rmY,\ru)+\sqrt c\rmZ
+\vtheta^\ast=\arg\min_\vtheta\mathbb E_{(\rmX_0,\rmY)\sim\pi,\,\ru\sim U(0,1),\,\rmZ\sim\mathcal N(0,I)}\left[\left\|\rmF_\vtheta(\rmX_\ru\mid\rmY,\ru)-(\rmX_0 -\rmY)\right\|^2\right],\quad \rmX_\ru=\rmM(\rmX_0,\rmY,\ru)+\sqrt c\rmZ
 \]
 
 \section{Inference schemes}
@@ -197,3 +206,19 @@ When $\mH=I$, the flow-matching target also equals the additive-noise residual. 
 \[
 \rmZ = \rmY - \rmX
 \]
+
+
+\begin{table}
+    \centering
+    \begin{tabular}{ccc}
+    \toprule
+         &  SB-VE& ICFM\\
+         \midrule
+         Exact interpolation&  y& n\\
+         Static variance&  n& y\\
+         Static gradient&  n& y\\
+         \bottomrule
+    \end{tabular}
+    \caption{Caption}
+    \label{tab:placeholder}
+\end{table}
