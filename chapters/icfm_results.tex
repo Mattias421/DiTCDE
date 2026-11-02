@@ -1,7 +1,7 @@
 \chapter{Deep noise suppression}
 The noisy-speech distribution is tightly coupled to clean speech, making enhancement a different task from unconditional speech and image synthesis. This observation motivates diffusion- and Schr\"odinger-bridge-based models for noise suppression. This chapter investigates whether Brownian noise is needed when interpolating between paired noisy and clean data distributions. As discussed in the background chapter, Brownian motion can construct a path to a high-variance Gaussian, but paired distributions may not require the same construction.
 
-The variance of training samples can affect model optimisation: it may regularise training, while excessive variance may make optimisation less stable. The intended figure comparing depth-dependent probability-path velocity and variance is missing and must be restored or identified. In the stated flow-matching construction, both are independent of $u$.
+The variance of training samples can affect model optimisation: it may regularise training, while excessive variance may make optimisation less stable. Figures~\ref{fig:path-overview} and~\ref{fig:sb_kc} illustrate the corresponding probability paths and parameter choices. In the stated flow-matching construction, both are independent of $u$.
 
 The main result is that the flow-matching model outperforms the tested SB model on additive-noise suppression. An additional investigation introduces SB-SV, showing how the SB interpolation becomes linear as $k\rightarrow1$.
 
@@ -51,10 +51,14 @@ The neural estimator $F_\theta$ employs the NCSN++ architecture \citep{song2021s
 \label{tab:results}
 \end{table}
 The results are displayed in \tableref{tab:results}. The tested SB-SV and ICFM settings improve several metrics over the SB-VE baseline, but the table does not show improvement on every metric. Using SB-SV with $k=0.99$ lowers PESQ and WhiSQA relative to $k=2.6$. ICFM with depth-independent path velocity and variance improves several reported scores. For ODE inference, FM loss gives a slightly higher SI-SDR and DNSMOS than DP, while DP gives higher PESQ; for DDP, DP has the highest PESQ and FM has the highest SI-SDR. These results do not establish a single objective as superior on all metrics.
-%
-% AUTHOR REVIEW: restore the missing figure and its underlying ODE-step results before making claims about performance at one or twenty steps.
-The ODE-step comparison figure referenced here is missing, so the associated claims about one-step and twenty-step performance cannot be checked against the supplied results.
-%
+\begin{figure}[tb]
+\centering
+\includegraphics[width=\linewidth]{plots/se/ode_step_metrics.pdf}
+\caption{Speech-enhancement quality against the number of ODE sampling steps $N$ on a logarithmic axis. Panels show PESQ, SI-SDR, DNSMOS, and WhiSQA. Unqualified SB-VE and SB-SV curves use $k=2.6$; the second SB-SV curve uses $k=0.99$. ICFM-DP and ICFM-FM denote the two training objectives. Higher scores indicate better quality.}
+\label{fig:se-ode-steps}
+\end{figure}
+Figure~\ref{fig:se-ode-steps} compares the supplied ODE-step results. The $N=1$ points represent one-step ODE sampling; DDP results are reported separately in \tableref{tab:results}.
+
 Across the reported DDP and 50-step ODE results, most metrics are comparable, and some DDP scores are higher. The proposed ICFM with DP has the highest PESQ, while ICFM with FM has the highest SI-SDR. These results suggest that models trained for ODE inference can also have useful direct-prediction behaviour. The proposed explanation involving boundary variance and overfitting remains a hypothesis.
 
 \section{Conclusion}
