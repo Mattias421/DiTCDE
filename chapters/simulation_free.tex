@@ -8,10 +8,8 @@ This chapter organises these methods around probability paths, prediction target
 Figure~\ref{fig:path-overview} provides a visual overview of the paths considered below: mean-reverting variance-preserving diffusion (MR-VP), variance-exploding Schr\"odinger bridges (SB-VE), static-variance paths (SB-SV), and the linear interpolation paths used for flow matching (labelled ICFM in the figure).
 \begin{figure}[p]
 \centering
-\subfigure[Paired target and source points]{\includegraphics[width=\linewidth]{plots/simulation_free/ripple_paths_paired_diracs.pdf}\label{fig:path-overview-paired}}
-\par\medskip
-\subfigure[One-dimensional MR-VP bridge with standard-normal source]{\includegraphics[width=0.78\linewidth]{plots/simulation_free/bridge_1d_mr_vp.pdf}\label{fig:path-overview-mrvp-1d}}
-\caption{Probability-path overview. In the upper panel, each row shows density contours for three paired target and source points at increasing depth $u$; generation proceeds from right to left. MR-VP approaches a Gaussian mixture about the source points, SB-VE has exact point-mass endpoints, and SB-SV and the flow-matching paths retain Gaussian smoothing at both endpoints. The two SB-VE schedules and two flow-matching variances illustrate their effects on the intermediate densities. ICFM denotes the linear, constant-variance path form used with the displayed pairing. The lower panel shows the one-dimensional MR-VP bridge: its conditional mean reverts to the conditioning value $Y$, so coupling $Y$ to each data point yields a Gaussian mixture centred on those data points, whereas setting $Y=0$ for every point yields a standard-normal source centred at zero.}
+\includegraphics[width=\linewidth]{plots/simulation_free/ripple_paths_paired_diracs.pdf}
+\caption{Probability-path overview for three paired target and source points. Each row shows density contours at increasing depth $u$; generation proceeds from right to left. MR-VP approaches a Gaussian mixture about the source points, SB-VE has exact point-mass endpoints, and SB-SV and the flow-matching paths retain Gaussian smoothing at both endpoints. The two SB-VE schedules and two flow-matching variances illustrate their effects on the intermediate densities. Here ICFM denotes the linear, constant-variance path form used with the displayed pairing, rather than independent endpoint sampling.}
 \label{fig:path-overview}
 \end{figure}
 \clearpage
@@ -84,6 +82,15 @@ where $\bar\rmW_u$ is the reverse Wiener process. The gradient of the log-densit
 
 
 \subsection{Mean reversion and variance preservation}
+\begin{figure}[tbp]
+\centering
+\subfigure[Common conditioning mean $Y=0$: standard-normal source]{\includegraphics[width=0.95\linewidth]{plots/simulation_free/bridge_1d_mr_vp_normal.pdf}\label{fig:mrvp-normal}}
+\par\medskip
+\subfigure[Paired conditioning points $y_i$: Gaussian-mixture source]{\includegraphics[width=0.95\linewidth]{plots/simulation_free/bridge_1d_mr_vp.pdf}\label{fig:mrvp-mixture}}
+\caption{One-dimensional MR-VP paths for the same three target Diracs. Left: forward densities; right: marginal probability-flow trajectories towards the data at $u=0$. In (a), $Y=0$ for every data point and the source approaches $\gN(0,1)$. In (b), each target point $x_i$ is paired with a fixed conditioning point $y_i$, with conditional law $Y\mid X=x_i\sim\delta_{y_i}$. The source approaches $\frac{1}{3}\sum_i\gN(y_i,1)$. The conditioning Diracs specify the reversion means; the source itself is a Gaussian mixture. With the finite noise schedule shown, these source distributions are approximate.}
+\label{fig:mean_reverting_sde}
+\end{figure}
+
 Define a function of $u$, known as a  $\beta$-schedule
 \[
 \beta(u)\coloneqq\beta_{\min}+\bigl(\beta_{\max}-\beta_{\min}\bigr)u
