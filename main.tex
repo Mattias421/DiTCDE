@@ -11,9 +11,10 @@
 % Note: if microtype causes error on ubuntu, run
 % sudo apt-get install cm-super
 \usepackage{mathtools} % for \coloneqq
-\title{PhD thesis}
-\author{Mattias Cross \\ Anton Ragni}
-\date{}
+\input{thesis_metadata.tex}
+\title{\ThesisTitle}
+\author{\ThesisAuthor}
+\date{\ThesisSubmissionDate}
 \setcounter{tocdepth}{1}
 
 \pdfobjcompresslevel=0
@@ -24,8 +25,10 @@
 % so the reader needs numbers to find the correct place.
 
 
-\usepackage[vcentering,dvips]{geometry}
-\geometry{papersize={7in,9in},bottom=3pc,top=5pc,left=5pc,right=5pc,bmargin=4.5pc,footskip=18pt,headsep=25pt}
+% A4 and one-inch margins match the supplied Sheffield example.
+\usepackage[a4paper,margin=25.4mm,headheight=14pt,headsep=25pt,footskip=18pt]{geometry}
+\usepackage{setspace}
+\onehalfspacing
 
 
 %%% Packages %%%
@@ -87,14 +90,14 @@
 \newcolumntype{P}[1]{>{\centering\arraybackslash}p{#1}}
 
 % Rebuild the book document class's headers from scratch, but with different font size
-% (this is for MIT Press style)
+% Keep running headings compact.
 % Source: http://texblog.org/2012/10/09/changing-the-font-size-in-fancyhdr/
 \newcommand{\changefont}{% 1st arg to fontsize is font size. 2nd arg is the baseline skip. both in points.
     \fontsize{9}{11}\selectfont
 }
 \fancyhf{}
 %\fancyhead[LE,RO]{\changefont \slshape \rightmark} %section
-\fancyhead[RE,LO]{\changefont \slshape \leftmark} %chapter
+\fancyhead[L]{\changefont \slshape \leftmark} %chapter
 \fancyfoot[C]{\changefont \thepage} %footer
 \pagestyle{fancy}
 \input{math_commands.tex}
@@ -154,14 +157,18 @@ plainpages=false]{hyperref}
 
 \typeout{START_CHAPTER "TOC" \theabspage}
 \frontmatter
-
-
-\maketitle
+% Keep a single Arabic page sequence, including preliminary pages.
+\pagenumbering{arabic}
+\input{frontmatter.tex}
 \tableofcontents
+\listoftables
+\listoffigures
 \typeout{END_CHAPTER "TOC" \theabspage}
 
  \input{notation.tex}
- \mainmatter
+ % Enable numbered chapters without resetting the page counter.
+ \cleardoublepage
+ \makeatletter\@mainmattertrue\makeatother
  \input{chapters/intro}
  \input{chapters/background_stuff}
  \part{Continuous depth}

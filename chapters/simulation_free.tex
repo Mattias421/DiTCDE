@@ -281,7 +281,10 @@ For this example, a data-prediction objective regresses the clean endpoint from 
 \label{sec:flow-matching-objective}
 For the linear interpolation path in \secref{sec:icfm}, conditional flow matching regresses the reverse-depth velocity:
 \[
-\vtheta^\ast=\arg\min_\vtheta\mathbb E_{(\rmX_0,\rmY)\sim\pi,\,\ru\sim U(0,1),\,\rmZ\sim\mathcal N(0,I)}\left[\left\|\rmF_\vtheta(\rmX_\ru\mid\rmY,\ru)-(\rmX_0 -\rmY)\right\|^2\right],\quad \rmX_\ru=\rmM(\rmX_0,\rmY,\ru)+\sqrt c\rmZ
+\begin{aligned}
+\vtheta^\ast &=\arg\min_\vtheta\mathbb E_{(\rmX_0,\rmY)\sim\pi,\,\ru\sim U(0,1),\,\rmZ\sim\mathcal N(0,I)}\left[\left\|\rmF_\vtheta(\rmX_\ru\mid\rmY,\ru)-(\rmX_0 -\rmY)\right\|^2\right],\\
+\rmX_\ru &=\rmM(\rmX_0,\rmY,\ru)+\sqrt c\rmZ
+\end{aligned}
 \]
 
 
