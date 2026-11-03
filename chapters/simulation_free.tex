@@ -31,11 +31,14 @@ For paired endpoints, their joint law is denoted by $\pi(\rmX,\rmY)$. This contr
 
 Conditional paths are used as a reference for learning a marginal path. This aspect is what makes training simulation-free, as the conditional path can be sampled at any $u$ during training, and the marginal path is optimised for any $u$. This format is useful, and is discussed in \secref{}.
 
+A contrast simulation-free training brings is through the optimisation objective. When simulating the CNF, likelihood is maximised directly, and the learnt path is a result of the optimisation algorithm. A probability path instead acts as a target in which a sufficiently trained estimator can retrieve the data marginal. Yet, this is achieved by learning the probability path rather than likelihood maximisation. A useful feature of simulation-free training is that the likelihood density is still tractable through the ICOV formula.
+
 These paths typically take the form of a closed expression of a DE, as this guarantees that there is a valid trainable vector field. Another common factor is the use of Gaussian probability paths. Although this may seem as an incorrect assumption of the underlying data, by considering the data as a mixture of Gaussians centred at the data points, the smaller the variance of each Gaussian, the closer to the data distribution the path endpoint becomes. 
 
 Score-based diffusion models were first developed as a method for training a standard CNF, but many proposed modifications have been made to support extended tasks and data such as conditional generation and paired endpoints. On the other hand, Schr\"odinger bridges specify a path problem with endpoint constraints and reference dynamics e.g. go from point A to point B and follow a diffusion-like path. Finally, flow matching also specify a path between endpoints, but no restrictions on the dynamics, thus allowing straight-line paths, which are optimal in the sense that they require the least amount of movement.
 
-The next sections detail the mechanics of these probability paths and how to construct them. The order these are presented in follows the chronology of ``breakthrough'' findings. First diffusion models proved that SDEs can be used simulation-free training of CNFs with a tractable LL, then SBs use forward-backward SDEs for exact-endpoint interpolation, \note{then fm did cool stuff}
+
+The next sections detail the mechanics of these probability paths and how to construct them. The order these are presented in follows the chronology of ``breakthrough'' findings. First diffusion models proved that SDEs can be used simulation-free training of CNFs with a tractable LL, then SBs use forward-backward SDEs for exact-endpoint interpolation, finally flow-matching shows a generalised view through ODEs. A key observation made in this thesis is the amount of stochasticity each method has, and its impact on training and sampling.
 
 \note{Mention something about LL here?}
 
@@ -55,7 +58,7 @@ p(x0|x1)p(x1|y)
 
 \subsection{Diffusion paths}
 
-Recall that the goal of a CNF is to learn a probability path between a source distribution and target distribution. This is formalised as a time varying probability path with boundaries at the desired distributions e.g. $\gN(\bm0,\tSigma)\rightarrow\pdata$. As seen earlier, the reverse of this path can be described as a diffusion process. Starting from a structured initialisation at $u=0$, the Wiener process $\rmW$ shifts points over time, and at the terminal time $u=1$ the distribution has the same density as a normal distribution.
+Recall that the goal of a CNF is to learn a probability path between a source distribution and target distribution. This is formalised as a time varying probability path with boundaries at the desired distributions e.g. $\gN(\bm0,\tSigma)\rightarrow\pdata$. As indicated earlier, the reverse of this path can be described as a diffusion process. Starting from a structured initialisation at $u=0$, the Wiener process $\rmW$ shifts points over time, and at the terminal time $u=1$ the distribution has a similar density to a normal distribution.
 The formal description of this begins with an It\^o SDE
 \[
 \dd\rmX \coloneqq \rmF(\rmX)\dd u + g(u)\dd\rmW_u
@@ -74,6 +77,8 @@ The reverse process is core to finalising the CNF construction, which is written
 \]
 % TODO need to be consistent between \hat W and \bar W
 where $\bar\rmW_u$ is the reverse Wiener process. The gradient of the log-density $\nabla\log p_u(\rmX_u)$ is known as the score, and models that estimate it are known as score-based generative models.
+
+\note{Figure to N(0,1).}
 
 
 \subsection{Mean reversion and variance preservation}
