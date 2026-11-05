@@ -5769,3 +5769,47 @@ note={}
  volume = {35},
  year = {2022}
 }
+
+% my publications
+@InProceedings{pmlr-v255-cross24a,
+  title = 	 {What happens to diffusion model likelihood when your model is conditional?},
+  author =       {Cross, Mattias and Ragni, Anton},
+  booktitle = {Proceedings of the 1st ECAI Workshop on {Machine Learning Meets Differential Equations: From Theory to Applications}},
+  pages = 	 {1--14},
+  year = 	 {2024},
+  editor = 	 {Coelho, Cecı́lia and Zimmering, Bernd and Costa, M. Fernanda P. and Ferrás, Luı́s L. and Niggemann, Oliver},
+  volume = 	 {255},
+  series = 	 {Proceedings of Machine Learning Research},
+  month = 	 {20 Oct},
+  publisher =    {PMLR},
+  pdf = 	 {https://raw.githubusercontent.com/mlresearch/v255/main/assets/cross24a/cross24a.pdf},
+  url = 	 {https://proceedings.mlr.press/v255/cross24a.html},
+  abstract = 	 {Diffusion Models (DMs) iteratively denoise random samples to produce high-quality data. The iterative sampling process is derived from Stochastic Differential Equations (SDEs), allowing a speed-quality trade-off chosen at inference. Another advantage of sampling with differential equations is exact likelihood computation. These likelihoods have been used to rank unconditional DMs and for out-of-domain classification. Despite the many existing and possible uses of DM likelihoods, the distinct properties captured are unknown, especially in conditional contexts such as Text-To-Image (TTI) or Text-To-Speech synthesis (TTS). Surprisingly, we find that TTS DM likelihoods are agnostic to the text input. TTI likelihood is more expressive but cannot discern confounding prompts. Our results show that applying DMs to conditional tasks reveals inconsistencies and strengthens claims that the properties of DM likelihood are unknown. This impact sheds light on the previously unknown nature of DM likelihoods. Although conditional DMs maximise likelihood, the likelihood in question is not as sensitive to the conditioning input as one expects. This investigation provides a new point-of-view on diffusion likelihoods.}
+}
+
+@InProceedings{pmlr-v277-cross25a,
+  title = 	 {Flowing Straighter with Conditional Flow Matching for Accurate Speech Enhancement},
+  author =       {Cross, Mattias and Ragni, Anton},
+  booktitle = {Proceedings of the 2nd ECAI Workshop on {Machine Learning Meets Differential Equations: From Theory to Applications}},
+  pages = 	 {121--132},
+  year = 	 {2025},
+  editor = 	 {Coelho, Cecı́lia and Zimmering, Bernd and Costa, M. Fernanda P. and Ferrás, Luı́s L. and Niggemann, Oliver},
+  volume = 	 {277},
+  series = 	 {Proceedings of Machine Learning Research},
+  month = 	 {26 Oct},
+  publisher =    {PMLR},
+  pdf = 	 {https://raw.githubusercontent.com/mlresearch/v277/main/assets/cross25a/cross25a.pdf},
+  url = 	 {https://proceedings.mlr.press/v277/cross25a.html},
+  abstract = 	 {Current flow based generative speech enhancement methods learn curved probability paths which model a mapping between clean and noisy speech. Despite impressive performance, the implications of curved probability paths are unknown. Methods such as Schr\"{}odinger bridges focus on curved paths, where time dependent gradients and variance do not promote straight paths. Findings in machine learning research suggest that straight paths, such as conditional flow matching, are easier to train and offer better generalisation. In this paper we quantify the effect of path straightness on speech enhancement quality. We report experiments with the Schrödinger bridge, where we show that certain configurations lead to straighter paths. Conversely, we propose independent conditional flow matching for speech enhancement, which models straight paths between noisy and clean speech. We demonstrate empirically that a time independent variance has a greater effect on sample quality than the gradient. Although conditional flow matching improves several speech quality metrics, it requires multiple inference steps. We rectify this with a one step solution by inferring the trained flow based model as if it was directly predictive. Our work suggests that straighter time independent probability paths improve generative speech enhancement over curved time dependent paths.}
+}
+
+% TODO update with SLT citation when released
+@misc{cross2026continuoustimeacousticmodellingneural,
+      title={Continuous-Time Acoustic Modelling with Neural Controlled Differential Equations}, 
+      author={Mattias Cross and Minghui Zhao and Anton Ragni},
+      year={2026},
+      eprint={2609.11725},
+      archivePrefix={arXiv},
+      primaryClass={cs.SD},
+      url={https://arxiv.org/abs/2609.11725}, 
+}
