@@ -1,4 +1,5 @@
 \chapter{Deep noise suppression}
+\label{ch:cfmse}
 The noisy-speech distribution is tightly coupled to clean speech, making enhancement a different task from unconditional speech and image synthesis. This observation motivates diffusion- and Schr\"odinger-bridge-based models for noise suppression. This chapter investigates whether Brownian noise is needed when interpolating between paired noisy and clean data distributions. As discussed in the background chapter, Brownian motion can construct a path to a high-variance Gaussian, but paired distributions may not require the same construction.
 
 The variance of training samples can affect model optimisation: it may regularise training, while excessive variance may make optimisation less stable. Figures~\ref{fig:path-overview} and~\ref{fig:sb_kc} illustrate the corresponding probability paths and parameter choices. In the stated flow-matching construction, both are independent of $u$.
