@@ -1,38 +1,78 @@
 \chapter{Controlled differential equations}
-So far, the DEs covered do not dynamically support sequence-to-sequence tasks.
-Let $\rvx_t\in\mathbb R^m$ be a control path and $\rvz_t\in\mathbb R^d$ the hidden state. The vector field is matrix-valued, $\rmF_\theta(\rvz,t)\in\mathbb R^{d\times m}$, so its product with the control increment is a hidden-state increment.
+
+\note{Have a background/related chapter e.g. to mention neural SDEs and contiformer? and GP for infinite dimensional }
+\ainote{A focused related-work section in this chapter should suffice unless the later experiments require a larger survey. Compare ODEs, controlled equations, stochastic equations, and attention-based models by their inputs, treatment of irregular observations, and uncertainty. Use \citet{kidger2020neuralcde,kidger2021thesis} for the CDE foundation. Introduce Gaussian processes as distributions over functions; merely writing continuous-time equations does not establish an infinite-dimensional neural state. Include ContiFormer only with a precise comparison and its original citation.}
+
+\note{Neural ODE depends on $\rmX_1$, CDE depends on continuous incoming data.}
+\ainote{For a fixed vector field, an ODE trajectory is determined by its initial state, whereas a CDE also depends on the driving control path \citep{kidger2020neuralcde}. Use $\rvz_0$ for the initial hidden state here; $\rmX_1$ belongs to the continuous-depth endpoint convention. Observations may arrive discretely and irregularly, with interpolation supplying the continuous control. Online processing additionally requires a causal interpolation and initialisation; conditioning on the whole sequence can use future observations.}
+
+
+\section{CDEs}
+
+Let $\rn$ be the length of a sequence of observations $\rmX=\{\rvx_{\rt_i}\}_0^\rn$ known as the control path, whose time is $\rl=\rt_\rn$ long, and the time-stamp sequence $\rt_i$ is monotonic. At time $t$, $\rvx_t\in\mathbb R^{c+1}$ is a control path state, an important feature of a control path is that it is augmented with a time channel, in this example the first $c$ channels would be the data, and the final channel would be $\rt_i$. $\rvz_t\in\mathbb R^d$ the hidden state. The vector field is matrix-valued, $\rmF_\theta(\rvz,t)\in\mathbb R^{d\times c+1}$, so its product with the control increment $\dd\rvx$ is a hidden-state increment. 
 \[
-\rvz_t = \rvz_0 + \int_0^t\rmF_\theta(\rvz,s)\dd\rvx_s
+\rvz_t \coloneqq \rvz_0 + \int_0^t\rmF_\vtheta(\rvz,s)\dd\rvx_s
 \label{eq:ode_ct}
 \]
+The infinitesimal increment of the control state $\dd \rvx_s$ can be approximated by computing the gradient of a continuous interpolation of the control path e.g. linear or cubic interpolation. This is known as a Riemann-Stieltjes integral.
+
+In most cases, the CDE can be written as an ODE
 \[
 \rvz_t = \rvz_0 + \int_0^t\rmF_\vtheta(\rvz,s)\frac{\dd\rvx_s}{\dd s}\dd s
 \]
+This formulation is practical as it can be integrated with ODE solvers. Thus, no additional support is required to compute CDEs, the key attribute of the CDE is how the change in hidden state depends on change in control state.
+
+It may have become apparent by now that the initial hidden state $\rvz_0$ has not yet been defined. A typical definition is as a function $\rvl$ with parameters $\vzeta$
 \[
-\Ls\coloneqq D_\mathrm{KL}(\rvy||\vg_\phi(\rvz_T))
+\rvz_0=\rvl_\vzeta(\rvx_0) 
 \]
+alternatively the initial state could depend on the entire control sequence
 \[
-\Ls=\rmY - \rmZ_{1:T}?
+\rvz_0=\rvl_\vzeta(\rmX) 
 \]
+such design choices depend on the data and application.
+
+
+
 
 \section{Optimisation}
-Neural ODEs and CDEs can be optimised with the continuous adjoint (optimise-then-discretise) approach. 
+The vector field can be optimised by minimising a loss for a readout layer $\vg_\vphi$. Let $\rvy$ be a label associated with control sequence $\rmX$ 
 \[
-\frac{\dd \rvx}{\dd t}=\rvf_\vtheta(t,\rvx_t)
+\Ls_1\coloneqq D_\mathrm{KL}(\rvy||\vg_\vphi(\rvz_\rl))
+\]
+\note{Write in argmin form.}
+\ainote{Write $(\vtheta^*,\vphi^*,\vzeta^*)\in\arg\min_{\vtheta,\vphi,\vzeta}\mathbb E_{(\rmX,\rvy)\sim\ptrain}[\Ls_1]$, with $\rvz_\rl$ defined by the CDE and its initialisation. Include the parameters of the initial-state map when it is optimised jointly. For classification, define the target as a categorical distribution or use cross-entropy with the label; a bare label is not an argument of KL divergence. Also check the next objective: indexing from $0$ to $n$ gives $n+1$ terms, so an equally weighted mean uses $1/(n+1)$.}
+
+Alternatively, perhaps time-evolution of the vector-field must be optimised, for example
+
+\[
+\Ls_2\coloneqq\frac{1}{\rn}\sum_{i=0}^\rn  D_\mathrm{KL}(\rvy_i||\vg_\vphi(\rvz_{\rt_i}))
+\]
+
+The parameters of Neural ODEs and CDEs can be updated with the continuous adjoint (optimise-then-discretise) approach \citep{NEURIPS2018_69386f6b,kidger2021thesis}.  The use of continuous adjoint allows a large reduction in memory compared to storing each forward operation and computing gradients with automatic differentiation. Here only concerns ODEs as CDEs are equivalent through \eqref{}.
+\[
+\frac{\dd \rvz}{\dd t}=\rvf_\vtheta(t,\rvz_t)
 \]
 \[
-\rva_\rvx(T)=\nabla_{\rvx_T}\Ls \quad \frac{\dd \rva_\rvx}{\dd t}=-\left(\frac{\partial \rvf_\vtheta}{\partial \rvx}(t,\rvx_t)\right)^\top\rva_\rvx(t)
+\rva_\rvz(\rl)=\nabla_{\rvz_\rl}\Ls \quad \frac{\dd \rva_\rvz}{\dd t}=-\left(\frac{\partial \rvf_\vtheta}{\partial \rvz}(t,\rvz_t)\right)^\top\rva_\rvz(t)
 \]
 \[
-\rva_\vtheta(T)=0 \quad \frac{\dd \rva_\vtheta}{\dd t}=-\left(\frac{\partial \rvf_\vtheta}{\partial \vtheta}(t,\rvx_t)\right)^\top\rva_\rvx(t)
+\rva_\vtheta(\rl)=0 \quad \frac{\dd \rva_\vtheta}{\dd t}=-\left(\frac{\partial \rvf_\vtheta}{\partial \vtheta}(t,\rvz_t)\right)^\top\rva_\rvz(t)
 \]
-Here $\rva_\vtheta(T)=0$ assumes that the loss has no direct dependence on $\vtheta$ other than through the state. If the loss also depends on intermediate hidden states, integration restarts at each such state, adding the local loss gradient to the accumulated state adjoint $\hat\rva_\rvx$; the parameter adjoint is carried across the restart:
+Here $\rva_\vtheta(\rl)=0$ assumes that the loss has no direct dependence on $\vtheta$ other than through the state. If the loss also depends on intermediate hidden states $\rvz_{\rt_i}$, integration restarts at each such state, adding the local loss gradient to the accumulated state adjoint $\hat\rva_\rvz$; the parameter adjoint is carried across the restart:
 \[
-\rva_\rvx(T_i)=\hat\rva_\rvx(T_i)+\nabla_{\rvx_{T_i}}\Ls
+\rva_\rvz(\rt_i)=\hat\rva_\rvz(\rt_i)+\nabla_{\rvz_{\rt_i}}\Ls
 \]
 \[
-\rva_\vtheta(T_i)=\hat\rva_\vtheta(T_i)
+\rva_\vtheta(\rt_i)=\hat\rva_\vtheta(\rt_i)
 \]
+Once the adjoint is computed, a standard parameter update takes place
 \[
 \vtheta_{j+1}\leftarrow\vtheta_j - \eta\rva_\vtheta(0)
 \]
+
+\section{Stacked CDE}
+
+\section{Example: speech synthesis}
+
+

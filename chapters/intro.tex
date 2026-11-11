@@ -6,11 +6,11 @@
 
 % establish context
 % crafted examples to fit data/problem e.g. CNNs, RNNs.
-% generative modelling task, irregularly sampled data task, 
+% generative modelling task, irregularly sampled data task,
 
 A central pattern in the advancement of deep learning is crafting methods and architectures for the task and data at hand. An image is structured in two dimensions, thus a two-dimensional convolutional kernel is a sensible modelling choice. Time series such as speech waveforms often have a causal relationship between past and future events, and recurrent neural networks share this property. Transformers build on this with parallel training computation over the sequence dimension and longer context modelling. These choices carefully consider the data, the form of the task, and scale required.
 
-% whats wrong with conv, rnn, attention, depth not continuous, time not continuous, 
+% whats wrong with conv, rnn, attention, depth not continuous, time not continuous,
 
 Typically, these models are constrained to discrete sequences of hidden layers. This constraint lacks support for modelling continuous dynamics, which may be more generalisable since a continuous process can be identical to a discrete process, but the reverse is not true. Recurrent nets may be applied to continuous time series, but they cannot model a continuous process. Overcoming these limitations has become a topic to be investigated.
 
@@ -20,7 +20,7 @@ Recent years have witnessed a growing academic interest in \textit{neural differ
 
 % hidden state: prev see discrete sequence (jumps, highly constrained), network learning dynamics is good
 % continuous depth: explain why its good, argue
-% continuous time: 
+% continuous time:
 
 \section{A brief review of neural differential equations}
 % brief review
@@ -44,7 +44,7 @@ which is the current hidden state plus the output of a learned neural network $\
 \[
 \vh_{u+1} = \vh_u + \vf(\vh_u; \theta_u)\cdot 1.
 \]
-Through this observation, $\vf$ becomes a \textit{vector field}. This vector field is variant to depth $u$ through specific parameters at each layer $\theta_u$, although a typical vector field would simply depend on depth $u$ directly. In addition to depending on $u$, another relaxation would be to support continuous $u$ and arbitrary step-size $\Delta u$, 
+Through this observation, $\vf$ becomes a \textit{vector field}. This vector field is variant to depth $u$ through specific parameters at each layer $\theta_u$, although a typical vector field would simply depend on depth $u$ directly. In addition to depending on $u$, another relaxation would be to support continuous $u$ and arbitrary step-size $\Delta u$,
 \[
 \vh_{u+\Delta u} \coloneq \quad ?.
 \]
@@ -57,9 +57,9 @@ This form of update with a parametrised vector field is known as a \textit{neura
 \vh_u = \vh_0 + \int_0^u\vf_\theta(\vh_s, s)\dd s.
 \label{eq:cnf}
 \]
-A neural ODE is a flexible architecture that is easier to work with on certain tasks than non-continuous models. For example, a continuous-depth generative model can be constructed by bounding $u$ between 0 and $U$, then modelling a flow between a simple distribution at $u=U$ and a data distribution at $u=0$. This flow is optimised end-to-end by allocating a single set of parameters $\theta$ to support general $u$, rather than optimising a subset of the flow at discrete points. 
+A neural ODE is a flexible architecture that is easier to work with on certain tasks than non-continuous models. For example, a continuous-depth generative model can be constructed by bounding $u$ between 0 and $U$, then modelling a flow between a simple distribution at $u=U$ and a data distribution at $u=0$. This flow is optimised end-to-end by allocating a single set of parameters $\theta$ to support general $u$, rather than optimising a subset of the flow at discrete points.
 
-% 
+%
 This form of generative model is a \textit{continuous normalising flow}, and can be trained by maximum likelihood or a variational lower bound. There is much discussion on how to optimise a Neural ODE. A usual distinction is simulation vs simulation-free methods. Methods such as the continuous adjoint simulate the ODE forwards and backwards to compute gradients, whereas others construct a reference flow which can be sampled analytically and regressed. This thesis considers the many ways to optimise a simulation-free probabilistic flow e.g. diffusion, flow-matching.
 
 
@@ -74,9 +74,9 @@ Another perspective considers the flexibility of continuously described dynamics
 
 \section{Known vs unknown generalisations}
 % section known generalisations vs unknown generalisations
-% we care about likelihood, intermidiate optimisation, 
-% speech support large LL, unlimited density, countably infinite, 
-% dynamics of hidden state is a debate, should it have Brownian motion? 
+% we care about likelihood, intermidiate optimisation,
+% speech support large LL, unlimited density, countably infinite,
+% dynamics of hidden state is a debate, should it have Brownian motion?
 
 Continuous normalising flows such as diffusion models have become strong models for TTS, but their probabilistic strength is unmeasured. Models such as Grad-TTS have scored higher in subjective evaluation, and they can alternatively be evaluated objectively by likelihood. The likelihood of the data determined by the model determines how important the probabilistic component is within the pipeline. The meaning of ``likelihood'' in a task such as TTS is naturally the likelihood of an acoustic observation given a text source. Models have not been evaluated this way which leads to a gap in research.
 
@@ -106,7 +106,7 @@ How well do CNFs generalise to data-to-data tasks such as deep noise suppression
 DNS deals with transforming a noise-speech mixture into a clean speech signal. Diffusion models exploit Brownian motion to learn this function. How necessary is Brownian motion? Flow matching is an alternative method that supports data-to-data transformations without Brownian motion. How well does this fit the DNS task?
 
 \subsection{Continuous-time}
-% mention studies that have been made, 
+% mention studies that have been made,
 
 \paragraph{RQ3}
 % duration question, it is important, tasks where intermidiate state is important
@@ -144,3 +144,6 @@ Chapter X answers RQ4 by training NDE decoders on top of pretrained ASR models, 
 The rest of this dissertation is organised into two parts. The first part is concerned with CNFs and studies continuous-depth models for speech and image data. Chapter X provides a background on training CNFs with diffusion, and how this can be used for speech and image synthesis. Chapter X examines the empirical properties of diffusion likelihood. Chapter X builds further on CNFs by reviewing methods for data-to-data processes with Schr\"odinger bridge and flow matching models. These models are then used to explore the path design in continuous depth speech denoisers by observing the use of Brownian motion in chapter X. The second part considers continuous-time models for speech synthesis and recognition. Chapter X introduces a background to neural CDEs, which allow a neural ODE to react to an input stream of data. Neural CDEs are then used in chapter X and X for the aforementioned tasks. Concluding remarks on the perspective developed in this thesis are given in chapter X.
 
 \section{Publications}
+
+\note{Contributions}
+\ainote{Organise the contributions around the four research questions already introduced: conditional likelihood diagnostics; paired speech-enhancement paths and direct prediction; continuous-time emotional speech synthesis; and CDE-based speech recognition. For each, state the concrete contribution, the chapter containing its evidence, and the associated publication. Distinguish original methods from empirical findings and identify your role in co-authored work. The publication list and authorship statements should be confirmed by you rather than inferred from chapter titles.}

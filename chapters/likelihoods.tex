@@ -20,128 +20,74 @@
 % surplus column declarations; Table 7 includes three reference columns
 % that extend beyond the right edge of the published PDF.
 
-This chapter investigates the properties of diffusion-model likelihood in practical implementations. The models considered are SDXL for text-to-image generation and Grad-TTS for speech synthesis. These models use different probability paths and conditioning mechanisms.
+\note{Need to find a better phrase for the goal of this chapter than "practical implementations"}
+\ainote{A more precise phrase is \emph{conditional likelihood in pretrained image and speech generators}. It identifies the conditioning question and the evaluated models. State whether the goal is numerical density evaluation, sensitivity to the conditioning signal, or utility for ranking; these are the distinct questions tested below.}
 
-Differences between the original model formulations and practical implementations may affect likelihood. For example, the probability-flow ODE used with SDXL contains a guidance-scale parameter. Does the evaluated density shift towards images depicting the caption as that scale increases? Grad-TTS also uses an utterance-dependent probability flow conditioned on $\rvy$. How much does the model rely on the encoded mean $\rmY$, and how much does it represent linguistic structure?
+\note{After first pass of this, all seems good, but the chapter seems a bit short, perhaps more discussion is needed, or more ties to the rest of the thesis.}
+\ainote{Expand the interpretation rather than the experiment count. Connect the findings to the conditioning mechanisms in Chapter~\ref{ch:simulation-free}; distinguish density, sample quality, and prompt/transcript compatibility; and discuss numerical error, feature normalisation, and the limited model coverage. Close with what these diagnostics motivate in the subsequent path-design experiments. Integrate the existing Matcha-TTS section before the final summary so that the conclusion covers all evaluated models.}
+
+This chapter investigates the properties of diffusion-model likelihood in practical implementations. The models considered are SDXL for text-to-image generation and Grad-TTS for speech synthesis. These models use different probability paths and conditioning mechanisms. Appendix XXXX provides details on SDXL and Grad-TTS.
+
+Differences between the original model formulations on small-scale data and practical implementations on larger data may affect likelihood. For example, the probability-flow ODE used with SDXL contains a guidance-scale parameter, an extension that introduces a gap in the known properties of its density. Does the evaluated density shift towards images depicting the caption as that scale increases? Grad-TTS also uses an utterance-dependent probability flow conditioned on text $\rvy$. How much does the model rely on the encoded mean $\rmY$, and how much does it represent linguistic structure?
 
 The above questions are answered through a series of experiments. First the likelihood of a sample through a probability path is measured to confirm that likelihood increases during the generative process. The guidance scale is also varied to verify if the density changes. Then, special evaluations are taken to measure expected behaviour for the task. These tasks apply the density model for classification tasks e.g. which transcript fits a spoken utterance the best.
 
-The measured likelihood generally increases as $u\rightarrow 0$, but at different rates: Grad-TTS changes most in the final quarter, whereas SDXL likelihood is not monotone. In the reported CFG comparison, increasing the guidance scale is associated with higher likelihood.
+Between the two models, the measured likelihood generally increases as $u\rightarrow 0$, but at different rates: Grad-TTS changes most in the final quarter, whereas SDXL likelihood is not monotone. In the reported CFG comparison, increasing the guidance scale is associated with higher likelihood.
 
 The rest of the evaluations suggest that the densities are not task-orientated. For example, using likelihood for ranking hypothesis transcriptions for speech recognition does not find the correct transcription. Given a list of confounding prompts, image likelihood struggles to find the correct prompt for an image. Such behaviours are unexpected for a high-quality density model.
 
 The rest of this chapter outlines the models used and data they are tested on. Then details of the evaluation metrics are given. Then the experimental results are presented and discussed. The chapter ends with a final summary paragraph tying everything learned together so far.
 
 \section{Models}
-SDXL is a latent diffusion model that operates in the latent space of an image autoencoder. Generation uses classifier-free guidance (CFG). The score network is a U-Net with cross-attention to text representations. The reported density is a density over latents; it is not an exact image-space likelihood unless the image transform and its Jacobian are included. The training-data statement and the precise guidance implementation should be checked against the experimental configuration.
 
-Grad-TTS uses a transformer encoder and U-Net diffusion decoder. The encoder predicts a coarse mel-spectrogram which is used as the mean $\rmY$. Although the mel-spectrogram has 80 dimensions, the input dimension of the U-Net is 160 to accommodate the encoder output for conditioning. Grad-TTS is trained on LJSpeech.
+SDXL is a latent diffusion model that operates in the latent space of an image autoencoder \citep{podellSDXLImprovingLatent2023}. Generation uses classifier-free guidance (CFG). The score network is a U-Net with cross-attention to CLIP text representations. The density also operates on the autoencoder representation, not the true image space. SDXL is trained on web-scale data \citep{laion}.
+
+Grad-TTS uses a transformer encoder and U-Net diffusion decoder \citep{popov21gradtts}. The encoder predicts a coarse mel-spectrogram which is used as the mean $\rmY$. Although the mel-spectrogram has 80 dimensions, the input dimension of the U-Net is 160 to accommodate the encoder output for conditioning. Grad-TTS is trained on LJSpeech \citep{LJSpeechDataset}.
 
 \section{Data}
-\paragraph{Speech}
-The datasets considered are the validation sets of LJSpeech \citep{LJSpeechDataset} and TED-LIUM \citep{rousseauTEDLIUMAutomaticSpeech2012}. The LJSpeech split contains around 1 hour of audiobooks read by a US-English female speaker. The TED-LIUM split contains around 3 hours of male speakers and 1 hour of female speaker TED conference audio.
-%
-To observe how likelihood changes during denoising, likelihood is measured at several values of the depth coordinate $u$. Bits per dimension (BPD) is $-\log_2 p(\x)/D$, where $D=\prod_i d_i$ is the number of scalar dimensions in $\x$. Lower BPD means higher likelihood.
 \begin{figure}
     \centering
     \includegraphics[width=0.5\linewidth]{plots//gradtts/pacs.png}
-    \caption{Enter Caption}
+    \caption{The PACS data contains images of 9 classes in 4 domains (photo, art, cartoon, sketch) \citep{pacs}.}
     \label{fig:likelihoods-1}
 \end{figure}
 \begin{figure}
     \centering
     \includegraphics[width=0.5\linewidth]{red_sphere.png}
-    \caption{Enter Caption}
+    \caption{CLEVR contains images of different coloured objects \citep{johnsonCLEVRDiagnosticDataset2017}.}
     \label{fig:likelihoods-2}
 \end{figure}
 \paragraph{Image}
-The datasets are PACS \citep{liDeeperBroaderArtier2017}, a domain-generalisation dataset with photo, art-painting, cartoon, and sketch domains, and CLEVR \citep{johnsonCLEVRDiagnosticDataset2017}, a diagnostic dataset of synthetic 3D objects in eight colours. The images are generated following \cite{lewisDoesCLIPBind2023}, including a ``red sphere'' example. A single-object subset of CLEVR is used. Each class-domain or shape-colour pair is repeated 20 times. Images are resized to $512^2$ or $1024^2$; the number of PACS classes used in these experiments should be stated explicitly.
+Two datasets considered are PACS \citep{liDeeperBroaderArtier2017}, a domain-generalisation dataset with photo, art-painting, cartoon, and sketch domains over 9 classes, and CLEVR \citep{johnsonCLEVRDiagnosticDataset2017}, a diagnostic dataset of synthetic 3D objects in eight colours. The images are generated following \cite{lewisDoesCLIPBind2023}, including a ``red sphere'' example. A single-object subset of CLEVR is used. Each class-domain or shape-colour pair is repeated 20 times. Images are resized to $512^2$ or $1024^2$.
 The likelihood of SDXL latents is reported, with \ac{CFG} used to generate PACS samples. Image-distribution distance and text-image similarity are measured using \ac{FID} and CLIP similarity, respectively (Table~\ref{tab:sdxl_over_t}).
 
-\section{Evaluation}
 \paragraph{Speech}
-\Ac{MCD} is a measure of how different two mel-cepstra (audio features) are from each other \citep{kominekSynthesizerVoiceQuality2008}.\footnote{MCD is calculated with the method presented in ESPnet \citep{gaoEUROESPnetUnsupervised2023}} The root mean squared error of the log fundamental frequencies is denoted as ``log-$F_0$ RMSE'' and measures pitch/intonation accuracy.\footnote{For reference, Tacotron 2 and Fastspeech 2 achieve 0.26 and 0.24 log-$F_0$ RMSE respectively \citep{renFastSpeechFastHighQuality2022}.} \Ac{WER} is the ratio of transcription errors to the number of words; intelligibility is measured by calculating the \ac{WER} of the transcript generated by the \ac{ASR} foundation model Whisper \citep{radfordRobustSpeechRecognition2022}. Speaker similarity with automatic speaker verification (ASV) is measured by comparing the cosine similarity between embeddings from the speaker verification foundation model Titanet \citep{koluguriTitaNetNeuralModel2021}.
+For speech this work uses the validation sets of LJSpeech \citep{LJSpeechDataset} and TED-LIUM \citep{rousseauTEDLIUMAutomaticSpeech2012}. The LJSpeech split contains around 1 hour of audiobooks read by a US-English female speaker. The TED-LIUM split contains around 3 hours of male speakers and 1 hour of female speaker TED conference audio.
+%
+
+\section{Evaluation}
+Likelihood is measured in Bits per dimension (BPD) is $-\frac{1}{D}\log_2 p(\rmX)$, where $D=\prod_i d_i$ is the number of scalar dimensions in $\rmX$. Lower BPD means higher likelihood. Likelihood is computed with the RK5 adaptive solver in all cases \note{(verify)}.
+\ainote{The original study, \href{https://arxiv.org/html/2409.06364v2}{Section 3}, names dopri5/RK45 for density integration, but this does not verify every run. Check the saved solver configurations, tolerances, and trace-estimator settings. Distinguish density integration from the Euler/RK45 generation comparisons in Table~\ref{tab:uda}; avoid claiming one solver was used for every operation.}
+
 
 \paragraph{Image}
-FID measures a distance between real and synthetic image feature distributions. CLIP similarity measures alignment between text and image representations. These metrics measure different properties from MCD and WER in the TTS experiment.
+\note{citations}
+\ainote{For FID, add the original \href{https://arxiv.org/abs/1706.08500}{Heusel et al. (2017)} reference. Cite \citet{radfordLearningTransferableVisual2021} for CLIP. If the implementation uses the CLIPScore metric, also cite \href{https://arxiv.org/abs/2104.08718}{Hessel et al. (2021)}; raw cosine similarity and CLIPScore are not interchangeable. State the feature extractor, reference set, sample count, preprocessing, and score scaling actually used.}
+
+FID measures a distance between real and synthetic image feature distributions. CLIP similarity measures alignment between text and image representations. 
+
+\paragraph{Speech}
+\Ac{MCD} is a measure of how different two mel-cepstra (audio features) are from each other \citep{kominekSynthesizerVoiceQuality2008}.\footnote{MCD is calculated with the method presented in ESPnet \citep{gaoEUROESPnetUnsupervised2023}} The root mean squared error of the log fundamental frequencies is denoted as ``log-$F_0$ RMSE'' and measures pitch/intonation accuracy.\footnote{For reference, Tacotron 2 and Fastspeech 2 achieve 0.26 and 0.24 log-$F_0$ RMSE respectively \citep{renFastSpeechFastHighQuality2022}.} \Ac{WER} is the ratio of transcription errors to the number of words; intelligibility is measured by calculating the \ac{WER} of the transcript generated by the \ac{ASR} model Whisper \citep{radfordRobustSpeechRecognition2022}. Speaker similarity with automatic speaker verification (ASV) is measured by comparing the cosine similarity between embeddings from the speaker verification model Titanet \citep{koluguriTitaNetNeuralModel2021}.
 
 
 \section{Experiments}
 
-\subsection{Text-to-speech}
-\label{sec:Grad-TTS encoder and decoder output}
-\begin{figure}
-    \centering
-    \includegraphics[width=1\linewidth]{plots/gradtts/trajectory.pdf}
-    \caption{Enter Caption}
-    \label{fig:likelihoods-3}
-\end{figure}
-\begin{figure}
-    \centering
-    \includegraphics[width=\linewidth]{plots/gradtts/combined_comparison.pdf}
-    \caption{Enter Caption}
-    \label{fig:likelihoods-4}
-\end{figure}
-\begin{table}[htbp]
-    \centering
-    \caption{Quantitative assessment of Grad-TTS from depth $u=1$ to $u=0$.}%Various metrics as depth decreases from 1 to 0. These are likelihood (BPD), intonation error (log-$F_0$ RMSE), spectral distortion (MCD), intelligibility (WER), and speaker similarity (ASV). These results show that likelihood is correlated with smoother spectrograms and speaker accurate speech, but the diffusion generative process decreases intelligibility. There is a negligible change in intonation error.}
-    \begin{tabular}{l||l|rrrrrrrrr}
-        \toprule
-        \multirow{2}*{Metric} & \multirow{2}*{Ref} & \multicolumn{9}{c}{Depth $u$}\\
-         &  & 1.00 & 0.88 & 0.75 & 0.62 & 0.50 & 0.38 & 0.25 & 0.12 & 0.00 \\
-        \midrule
-        BPD $\downarrow$ & -0.06 & 2.79 & 2.79 & 2.79 & 2.79 & 2.77 & 2.72 & 2.55 & 1.35 & -0.08 \\
-        log-$F_0$ RMSE $\downarrow$ & 0.00 & 0.28 & 0.28 & 0.28 & 0.28 & 0.28 & 0.27 & 0.27 & 0.27 & 0.27 \\
-        MCD $\downarrow$ & 0.00 & 6.52 & 6.52 & 6.52 & 6.50 & 6.47 & 6.43 & 6.39 & 6.34 & 6.31 \\
-        WER $\downarrow$ & 0.03 & 0.08 & 0.08 & 0.08 & 0.09 & 0.08 & 0.10 & 0.13 & 0.16 & 0.19 \\
-        ASV $\uparrow$ & 1.00 & 0.74 & 0.74 & 0.73 & 0.73 & 0.74 & 0.75 & 0.78 & 0.84 & 0.86 \\
-        \bottomrule
-    \end{tabular}
-\label{tab:gtts_over_t}
-\end{table}
-To observe how likelihood changes during denoising, likelihood is measured at several values of the depth coordinate $u$. Bits per dimension (BPD) is $-\log_2 p(\x)/D$, where $D=\prod_i d_i$ is the number of scalar dimensions in $\x$. Lower BPD means higher likelihood.
-%
-Table \ref{tab:gtts_over_t} shows that although likelihood increases as $\x_1$ is denoised into data $\x_0$, the effect on other metrics is surprising.
-Likelihood is correlated with ASV, marginally with MCD, but not log-$F_0$ RMSE. Intelligibility decreases as likelihood improves. The results suggest that composition between the source text and hypothesis utterance is modelled by the encoder $\enc(\cdot)$, and the diffusion decoder does not model the exact likelihood between text and speech $p_0(\x | \vy)$. This is verified through an \ac{ASR} decoder rescoring experiment on LJSpeech. An ASR pipeline generates a list of hypothesis transcripts for a given utterance, which are scored by a weighted combination of an \ac{AM} probability and a language model probability to find the best transcription. This pipeline serves as a diagnostic tool for how well Grad-TTS likelihoods can measure speech/text compatibility. The \ac{AM} probabilities are replaced with Grad-TTS likelihoods, and standard hypothesis rescoring techniques are applied \citep{kahnFlashlightEnablingInnovation2022}. The models tested are a wav2vec2 model fine-tuned on 10 minutes of audiobook data \citep{panayotovLibrispeechASRCorpus2015}, and Whisper (Table~\ref{tab:asr_reranking}).
-
-\begin{table}[!htbp]
-\centering
-\caption{WER\% $\downarrow$ of n-best list rescoring strategies including Grad-TTS.}
-\begin{tabular}{lccccc}
-\toprule
-\textbf{AM Model} & {AM Score} & {Grad-TTS LL} & {Oracle Best} & {Oracle worst} & {Random} \\
-\midrule
-wav2vec2 & 13.3 & 19.6 & 10.5 & 29.0 & 20.2\\
-Whisper & 3.3 & 4.7 & 1.5 & 7.2 & 4.3\\
-\bottomrule
-\end{tabular}
-\label{tab:asr_reranking}
-\end{table}
-In all cases, the DM likelihoods yield a worse score than the \ac{AM}, although better than the oracle worst and better than random in the wav2vec2 case. This suggests that the likelihoods may have some sensitivity to textual changes but lack an expressive linguistic representation.
-%
-To survey how DM likelihood interacts with intelligibility and speaker quality, Grad-TTS is used to adapt TED-LIUM live-talk data \citep{rousseauTEDLIUMAutomaticSpeech2012} to aid an ASR model trained on audiobooks. ASR models perform worse when the acoustic properties differ between train and test data. The spectrogram is passed through a Gaussian blur with kernel 5 and $\sigma=1$, simulating text encoder output $\xblur \approx \enc(\vy)$.\footnote{This method is further explained in Appendix \ref{sec:Grad-TTS encoder and decoder output}} The forward ODE is used to calculate $\x_1$, and $\x_0$ is then produced with the reverse ODE. Given that Grad-TTS is trained on LJSpeech, the newly generated $\x_0$ will be acoustically similar to the data the ASR model was trained on. If Grad-TTS can adapt acoustic-linguistic features, it will reduce WER. Both Euler and RK45 solvers are evaluated (Table~\ref{tab:uda}).
-
-\begin{table}[!htbp]
-    \centering
-\caption{Quantitative assessment of cross-domain adaptation with Grad-TTS.}
-     \begin{tabular}{cccccc}
-        \toprule
-         \multicolumn{2}{c}{ODE sampler} & & \multicolumn{3}{c}{Metric}\\
-         \cmidrule{1-2} \cmidrule{4-6}
-         Forward & Reverse & & WER $\downarrow$ & BPD $\downarrow$ & ASV $\uparrow$ \\
-         \midrule
-          None & None & & 0.46 & 1.66 & 0.52\\
-          Euler & Euler & & 0.94 & -1.47 & 0.66\\
-          RK45 & Euler & & 0.57 & 6.92 & 0.54\\
-          RK45 & RK45 & & 0.57 & 1.83 & 0.55\\
-         \bottomrule
-    \end{tabular}
-    \label{tab:uda}
-\end{table}
-The Euler method produces unintelligible audio, yet has high speaker similarity and likelihood. The RK45 sampler degrades intelligibility to a lesser degree than Euler, but speaker adaptation is negligible. The trend is that greater shift towards the LJSpeech speaker produces less intelligible audio.
 
 \subsection{Text-to-image}
 \label{sec:SDXL Images}
+\note{These two figures need to be joined. What was the mscoco caption for this?}
+\ainote{Combine the two images as labelled panels of one reconstruction figure, with one caption and a shared label matching the existing reference to \texttt{panda}. The caption should identify original and reconstructed panels, the prompt, resolution, guidance, and forward/reverse solvers. The original paper points to Appendix C for this example, but its HTML rendering does not expose the caption or prompt. Recover the prompt from the source or run metadata; the local filenames do not establish an MS-COCO caption.}
+
 \begin{figure}
     \centering
     \includegraphics[width=0.5\linewidth]{plots//gradtts/panda_a.png}
@@ -169,11 +115,13 @@ The Euler method produces unintelligible audio, yet has high speaker similarity 
   \bottomrule
 \end{tabular}
 \end{table}
-Similar to Table~\ref{tab:gtts_over_t}, the reported FID improves overall during the generative process, while the BPD values fluctuate. The FID remains high in this comparison; the CIFAR-10 result cited in the footnote is not directly comparable because it uses a different dataset and evaluation setup. The CLIP similarity improves over much of the trajectory, but this does not by itself show that CFG defines a more conditional likelihood than the MR-VP SDE used by Grad-TTS.
+During the generation process for $u\rightarrow 0$, the reported FID improves overall during the generative process, while the BPD values fluctuate in a downwards trend \tableref{tab:sdxl_over_t}. The CLIP similarity improves over much of the trajectory. BPD jumps -0.16 between $u\in[0.75,0.5]$ and then stagnates, CLIP and FID also jump at this interval then stagnate. This shows that not only does image quality improve, but content becomes more similar to the caption. Likelihood is consistent with this. 
+\note{Were these experiments on mscoco, clevr or pacs? must check.}
+\ainote{The original study\textquotesingle s \href{https://arxiv.org/html/2409.06364v2}{Section 4.2} associates the SDXL generation/FID comparison with PACS and uses CLEVR for shape/colour confounding. PACS is therefore the supported reading for Table~\ref{tab:sdxl_over_t}; confirm its exact split and image manifest from the experiment records. The paper does not identify MS-COCO for this table.}
 
 \begin{table}[!htbp]
   \centering
-  \caption{Impacts of CFG, reconstruction (-R) and image sizes. \textit{Divide in two}}
+  \caption{Impacts of CFG, reconstruction (-R) and image sizes. \note{Divide in two}}
   \label{tab:sdxl_cfg_reconstruct}
     \begin{tabular}{l||l|rrrr|rrrr}
       \toprule
@@ -186,9 +134,11 @@ Similar to Table~\ref{tab:gtts_over_t}, the reported FID improves overall during
       \bottomrule
     \end{tabular}
   \end{table}
-  Table~\ref{tab:sdxl_cfg_reconstruct} shows that samples produced with higher CFG scale intuitively receive higher likelihood. To measure how the generative process is intertwined with likelihood, the forward process and then the backward process are applied to an image, producing an image similar to the original but with features more consistent with synthetic images. This operation is termed \textit{reconstruction}.\footnote{An example is given in Appendix \ref{sec:SDXL Images}} Reconstruction increases likelihood without affecting other metrics, revealing inconsistency (Table~\ref{tab:sdxl_cfg_reconstruct}).
+\ainote{Split this into a guidance table and a resolution/reconstruction table. Keep the reference-data column and metric units in both. State the fixed resolution for the guidance sweep, and the fixed guidance and evaluated depth for the reconstruction comparison. Preserve the reported values; separate tables will make the controlled variable in each comparison clearer.}
 
-Lastly, this chapter investigates visual-language reasoning, an important ability for \ac{TTI} models. The aim is to determine whether DM likelihood can correctly match images to captions from a list of compositionally confounding captions. Although diffusion classifiers show that this is possible with proxy-likelihoods, it remains to be determined whether this also holds for exact likelihood. The ability to discern objects is evaluated on CLEVR. For each image, all confounding prompts are presented e.g. the correct prompt is ``a photo of a red sphere'' but instead ``a photo of a red cube'' is provided. Accuracy is calculated based on the number of correct captions that were given the highest likelihood. Both colour and shape are confounded, but not at the same time.
+  Table~\ref{tab:sdxl_cfg_reconstruct} shows that samples produced with higher CFG intuitively receive higher likelihood. To measure how the generative process is intertwined with likelihood, the forward process and then the backward process are applied to an image, producing an image similar to the original but with features more consistent with synthetic images. This operation is termed \textit{reconstruction} \figref{panda}. Reconstruction increases likelihood without affecting other metrics, revealing inconsistency (Table~\ref{tab:sdxl_cfg_reconstruct}). This is especially problematic in cases where the image changes without reasonable explanation e.g. a photo becoming a cartoon.
+
+Visual-language reasoning is an important ability for \ac{TTI} models. The aim of the final image experiment is to determine whether DM likelihood can correctly match images to captions from a list of compositionally confounding captions. Although diffusion classifiers show that this is possible with proxy-likelihoods \cite{liYourDiffusionModel2023}, it remains to be determined whether this also holds for exact likelihood. The ability to discern objects is evaluated on CLEVR. For each image, all confounding prompts are presented e.g. the correct prompt is ``a photo of a red sphere'' but instead ``a photo of a red cube'' is provided. Accuracy is calculated based on the number of correct captions that were given the highest likelihood. Both colour and shape are confounded, but not at the same time.
 Other visual-language concepts are also considered. Complementary to the CLEVR experiment, PACS is used to measure the likelihood sensitivity to object versus domain changes, for example a photo of a horse.
 
 \begin{table}[!htbp]
@@ -215,23 +165,128 @@ Other visual-language concepts are also considered. Complementary to the CLEVR e
     \bottomrule
   \end{tabular}
 \end{table}
-The results are shown in Table \ref{tab:clevr_pacs}. It can be seen that the scores are unexpectedly low. Scores from random selection and from selecting captions with the highest CLIP score are also provided. The results on CLEVR are comparable to random choice; when reconstruction is used, shape accuracy is reduced. SDXL performs better on PACS without reconstruction and guidance. This is anomalous behaviour since the rest of the PACS results are typically 0\% accuracy.
+The results are shown in Table \ref{tab:clevr_pacs}. It can be seen that the scores are unexpectedly low. Scores from random selection and from selecting captions with the highest CLIP score are also provided. The results on CLEVR are comparable to random choice; when reconstruction is used, shape accuracy is reduced. SDXL performs better on PACS without reconstruction and guidance. This is anomalous behaviour since the rest of the PACS results are typically 0\% accuracy. This could however indicate that CFG introduces a malformed density.
+
+\subsection{Text-to-speech}
+\label{sec:Grad-TTS encoder and decoder output}
+\begin{figure}
+    \centering
+    \includegraphics[width=1\linewidth]{plots/gradtts/trajectory.pdf}
+    \caption{\note{landscape?}}
+    \label{fig:likelihoods-3}
+\end{figure}
+\ainote{Inspect the axis labels at the final print size. If the trajectory panels are unreadable at portrait text width, put this figure on a landscape page using a landscape environment; rotating only the caption does not increase the plot area. Retain the caption and label together, and explain the rows, depth direction, and colour scales.}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=\linewidth]{plots/gradtts/combined_comparison.pdf}
+    \caption{\note{make fullpage landscape.}}
+    \label{fig:likelihoods-4}
+\end{figure}
+\ainote{Use a dedicated landscape page with the figure, a descriptive caption, and its label. Set the plot dimensions against the landscape text area and check that its labels remain readable. Replace this placeholder caption with what is compared and how each panel relates to the encoder, blurred spectrogram, and generated output.}
+
+\begin{table}[htbp]
+    \centering
+    \caption{Quantitative assessment of Grad-TTS from depth $u=1$ to $u=0$.}%Various metrics as depth decreases from 1 to 0. These are likelihood (BPD), intonation error (log-$F_0$ RMSE), spectral distortion (MCD), intelligibility (WER), and speaker similarity (ASV). These results show that likelihood is correlated with smoother spectrograms and speaker accurate speech, but the diffusion generative process decreases intelligibility. There is a negligible change in intonation error.}
+    \begin{tabular}{l||l|rrrrrrrrr}
+        \toprule
+        \multirow{2}*{Metric} & \multirow{2}*{Ref} & \multicolumn{9}{c}{Depth $u$}\\
+         &  & 1.00 & 0.88 & 0.75 & 0.62 & 0.50 & 0.38 & 0.25 & 0.12 & 0.00 \\
+        \midrule
+        BPD $\downarrow$ & -0.06 & 2.79 & 2.79 & 2.79 & 2.79 & 2.77 & 2.72 & 2.55 & 1.35 & -0.08 \\
+        log-$F_0$ RMSE $\downarrow$ & 0.00 & 0.28 & 0.28 & 0.28 & 0.28 & 0.28 & 0.27 & 0.27 & 0.27 & 0.27 \\
+        MCD $\downarrow$ & 0.00 & 6.52 & 6.52 & 6.52 & 6.50 & 6.47 & 6.43 & 6.39 & 6.34 & 6.31 \\
+        WER $\downarrow$ & 0.03 & 0.08 & 0.08 & 0.08 & 0.09 & 0.08 & 0.10 & 0.13 & 0.16 & 0.19 \\
+        ASV $\uparrow$ & 1.00 & 0.74 & 0.74 & 0.73 & 0.73 & 0.74 & 0.75 & 0.78 & 0.84 & 0.86 \\
+        \bottomrule
+    \end{tabular}
+\label{tab:gtts_over_t}
+\end{table}
+Table \ref{tab:gtts_over_t} shows that although likelihood increases as $\rmX_1$ is denoised into data $\rmX_0$, the effect on other metrics is surprising.
+Likelihood is correlated with ASV, marginally with MCD, but not log-$F_0$ RMSE. WER increases as likelihood improves. The results suggest that composition between the source text and hypothesis utterance is modelled by the encoder $\rmE_\vphi(\cdot)$, and the diffusion decoder does not model the exact likelihood between text and speech $p_0(\rmX | \rvy)$.
+
+This is verified through an \ac{ASR} decoder rescoring experiment on LJSpeech. An ASR pipeline generates a list of hypothesis transcripts for a given utterance, which are scored by a weighted combination of an \ac{AM} probability and a language model probability to find the best transcription. This pipeline serves as a diagnostic tool for how well Grad-TTS likelihoods can measure speech/text compatibility. The \ac{AM} probabilities are replaced with Grad-TTS likelihoods, and standard hypothesis rescoring techniques are applied \citep{kahnFlashlightEnablingInnovation2022}. The models tested are a wav2vec2 model fine-tuned on 10 minutes of audiobook data \citep{panayotovLibrispeechASRCorpus2015}, and Whisper \note{small?} (Table~\ref{tab:asr_reranking}).
+\ainote{The original paper names Whisper but does not identify its size. Neither the reported WER nor the generic Whisper citation determines the checkpoint. Verify the model identifier, language variant, decoding settings, and n-best extraction configuration from the original script or logs; leave the size unspecified until then.}
+
+
+\begin{table}[!htbp]
+\centering
+\caption{WER\% $\downarrow$ of n-best list rescoring strategies including Grad-TTS.}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{AM Model} & {AM Score} & {Grad-TTS LL} & {Oracle Best} & {Oracle worst} & {Random} \\
+\midrule
+wav2vec2 & 13.3 & 19.6 & 10.5 & 29.0 & 20.2\\
+Whisper & 3.3 & 4.7 & 1.5 & 7.2 & 4.3\\
+\bottomrule
+\end{tabular}
+\label{tab:asr_reranking}
+\end{table}
+In all cases, the DM likelihoods yield a worse score than the \ac{AM}, although better than the oracle worst and better than random in the wav2vec2 case. These results are statistically significant using the matched-pair sentence segment word error test \cite{gillickandcox}. This suggests that the likelihoods may have some sensitivity to textual changes but lack an expressive linguistic representation.
+
+To survey how DM likelihood interacts with intelligibility and speaker quality, Grad-TTS is used to adapt TED-LIUM live-talk data \citep{rousseauTEDLIUMAutomaticSpeech2012} to aid an ASR model trained on audiobooks. ASR models perform worse when the acoustic properties differ between train and test data. The spectrogram is passed through a Gaussian blur with kernel 5 and $\sigma=1$, simulating text encoder output $\hat\rmX \approx \rmE_\vphi(\rvy)$. \note{gaus blur plot} The forward ODE is used to calculate $\rmX_1$, and $\rmX_0$ is then produced with the reverse ODE. Given that Grad-TTS is trained on LJSpeech, the newly generated $\rmX_0$ should be acoustically similar to the data the ASR model was trained on. If Grad-TTS can adapt acoustic-linguistic features, it will reduce WER. Both Euler and RK45 solvers are evaluated (Table~\ref{tab:uda}).
+\ainote{A useful figure would show the original Mel-spectrogram, encoder prediction where available, blurred conditioning representation, and regenerated spectrogram with common axes and colour scales. State whether the $5$-point kernel operates along time, frequency, or both, and how boundaries are padded. Describe the blur as a proxy conditioning representation; visual similarity alone does not establish equivalence to the encoder output.}
+
+
+\begin{table}[!htbp]
+    \centering
+\caption{Quantitative assessment of cross-domain adaptation with Grad-TTS.}
+     \begin{tabular}{cccccc}
+        \toprule
+         \multicolumn{2}{c}{ODE sampler} & & \multicolumn{3}{c}{Metric}\\
+         \cmidrule{1-2} \cmidrule{4-6}
+         Forward & Reverse & & WER $\downarrow$ & BPD $\downarrow$ & ASV $\uparrow$ \\
+         \midrule
+          None & None & & 0.46 & 1.66 & 0.52\\
+          Euler & Euler & & 0.94 & -1.47 & 0.66\\
+          RK45 & Euler & & 0.57 & 6.92 & 0.54\\
+          RK45 & RK45 & & 0.57 & 1.83 & 0.55\\
+         \bottomrule
+    \end{tabular}
+    \label{tab:uda}
+\end{table}
+The Euler method produces audio with remarkably higher WER, yet higher speaker similarity and likelihood also. The RK45 sampler degrades intelligibility to a lesser degree than Euler, but speaker adaptation is negligible. The trend is that greater shift towards the LJSpeech speaker increases WER.
+
+Using different ODE samplers result in different likelihood. Of note are the last two examples in \tableref{tab:uda}. They have similar WER and ASV, but much different BPD. A possible explanation is that the density is sensitive to features that are different between Euler and RK45 reverse sampling, but these features do not have an effect on speaker or content similarity.
+
+\note{For both image and speech should make clearer how LL is evaluated.}
+\ainote{Add a reproducible density-evaluation paragraph for each model. Specify the represented variable, conditioning held fixed, initial depth, integration direction to the source, terminal density, divergence estimator, solver/tolerances, and BPD denominator. For SDXL, distinguish latent density from pixel density and state the guidance weight used for evaluation separately from generation. For speech, specify length/alignment, masking of padding, feature normalisation, and the encoder-conditioned source mean. Also say whether intermediate states are scored under their depth-specific density or re-evaluated as observations at $u=0$. Numerical integration and stochastic trace estimation introduce approximation error even when the change-of-variables identity is exact.}
+
 
 \section{Summary}
-Given that DMs are trained to maximise the VLB of likelihood, it is important to understand
-the nuances of this exact likelihood. This is especially true for conditional tasks where
+It is important to understand the nuances of diffusion model likelihood. This is especially true for conditional tasks where
 the conditional likelihood is often modelled implicitly, such as with a MR-VP SDE, or
 with CFG. The results show that even reasonable assumptions should be verified, as the task and
-conditional ODE used have a substantial impact on the nature of DM likelihood. For Grad-
-TTS, the MR-VP SDE likelihood models speaker characteristics and smooth spectrograms,
-but not features of language. Such findings are contrary to what one would expect for a
-probabilistic conditional process between speech and text. For SDXL, CFG does appear to
+conditional ODE used have a substantial impact on the nature of DM likelihood. For SDXL, CFG does appear to
 model prompt-faithful image generation, but exact likelihood from SDXL cannot be used for
 prompt classification. This is inconsistent with the concept of Diffusion Classifiers that use
-lower bounds on likelihood for classification. Hence, these quantitative results highlight a current lack
+lower bounds on likelihood for classification. For Grad-TTS, the MR-VP SDE likelihood models speaker characteristics and smooth spectrograms,
+but not features of language. Such findings are contrary to what one would expect for a
+probabilistic conditional process between speech and text.  Hence, these quantitative results highlight a current lack
 of understanding of DM likelihood. This chapter provides initial evidence that more
 attention should be devoted to experiments and theoretical understanding of DM likelihood,
 especially on conditional tasks.
+
+\note{Add matchatts. write about applied LL}
+\ainote{Introduce Matcha-TTS with \citet{mehta2024matcha} as a conditional-flow-matching comparison to Grad-TTS, then document the checkpoint, data split, preprocessing, source law, and density integration. Explain that its displayed $t$ axis corresponds to the chapter\textquotesingle s depth $u$, if that is the implementation convention. The table alone does not support a causal claim about flow matching: architectures and optimisation also differ. For applied likelihood, distinguish trajectory diagnostics from caption/transcript ranking, and report task accuracy against the relevant baselines. Move this material before the chapter summary and resolve the currently missing citation key \texttt{cross2024}.}
+
+
+\section{Matcha TTS}
+\begin{table}[ht]\centering\small
+\caption{Trajectory diagnostics, styled after Table 1 of~\cite{cross2024}. WER is a percentage; other values are utterance means.}
+\begin{tabular}{lrrrrr}\toprule
+$t$ & BPD $\downarrow$ & LogF0 $\downarrow$ & MCD $\downarrow$ & WER $\downarrow$ & ASV $\uparrow$ \\\midrule
+Ref. & -0.96 & 0.00 & 0.00 & 3.14 & 1.00 \\
+1.000 & 8.34 & 1.02 & 16.40 & 396.01 & -0.01 \\
+0.875 & 7.17 & 1.02 & 15.24 & 387.73 & -0.01 \\
+0.750 & 6.01 & 0.99 & 13.76 & 230.17 & -0.00 \\
+0.625 & 4.87 & 0.90 & 12.30 & 170.31 & 0.04 \\
+0.500 & 3.74 & 0.68 & 10.80 & 18.62 & 0.13 \\
+0.375 & 2.60 & 0.46 & 9.32 & 6.59 & 0.22 \\
+0.250 & 1.39 & 0.37 & 8.01 & 4.05 & 0.42 \\
+0.125 & 0.03 & 0.34 & 7.32 & 3.81 & 0.75 \\
+0.000 & -1.13 & 0.33 & 7.36 & 3.81 & 0.83 \\
+\bottomrule\end{tabular}\end{table}
 
 \section{Additional tables}
 

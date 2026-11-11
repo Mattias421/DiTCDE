@@ -58,7 +58,9 @@ SDEs are characterised by a deterministic component \textit{drift}, and non-dete
 \]
 As $u\to\infty$, this conditional distribution converges to the stationary distribution $\mathcal N(y,\sigma^2/(2\gamma))$.
 
-\section{Deep equilibrium models}
+\section{Other continuous-depth models}
 This thesis focusses on neural DEs, but the reader should be aware that this is not the only way to achieve ``implicit layers''. Neural DEs are implicit because the parameters describe a single layer which can be used by black-box equation solvers to simulate depth. Another way to simulate depth is with DEQs.
 
 DEQs are solved by finding an equilibrium point, where the output of the layer is equal to or within a small margin of error from the input.
+
+Loop transformers are also continuous-depth.

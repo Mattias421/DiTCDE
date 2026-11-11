@@ -3,7 +3,7 @@
 \section{From simulation-based to simulation-free training}
 \Acfp{CNF} connect a source distribution to a data distribution through a depth-dependent vector field. Training through numerical integration can require repeated forward and backward solves. Simulation-free objectives instead sample intermediate states from a prescribed probability path and regress an available conditional target. Sampling and likelihood evaluation can still require numerical integration.
 
-This chapter organises these methods around probability paths, prediction targets, conditioning, and inference. Throughout, $u=0$ denotes the data endpoint and $u=1$ the source endpoint; generation proceeds towards decreasing $u$.
+This chapter organises these methods around probability paths, prediction targets, conditioning, and generation. Throughout, $u=0$ denotes the data endpoint and $u=1$ the source endpoint; generation proceeds towards decreasing $u$.
 
 Figure~\ref{fig:path-overview} provides a visual overview of the paths considered below: \acf{MR-VP}, \acf{SB-VE}, \acf{SB-SV}, and the linear interpolation paths used for flow matching (labelled \acs{ICFM}, for \acl{ICFM}, in the figure).
 \begin{figure}[p]
@@ -16,7 +16,7 @@ Figure~\ref{fig:path-overview} provides a visual overview of the paths considere
 \section{Probability paths and endpoint distributions}
 \label{sec:probability-paths}
 
-The central tool for simulation-free training is the definition of a probability path $p_u$. A path is a depth-varying density, which may be marginal or conditional. The conditional paths considered here are Gaussian, with intermediate states $\rmX_u\sim p_u$ sampled as
+The central tool for simulation-free training is the definition of a probability path $p_u$. A path is a depth-varying density, which is conditioned on the data endpoint, the goal of simulation-free training is to marginalise the conditional path by optimising an estimator to predict the conditional path. The conditional paths considered here are Gaussian, with intermediate states $\rmX_u\sim p_u$ sampled as
 \[
 \rmX_u=\rmM_u+\tSigma(u)^{1/2}\rmZ,\qquad \rmZ\sim\gN(\bm0,\tI).
 \label{eq:xu_sample}
@@ -25,22 +25,34 @@ The mean $\rmM$ and covariance $\tSigma$ depend on the chosen construction and i
 \[
 \rmM(u,\rmX,\rmY)\coloneqq a(u)\rmX + b(u)\rmY,
 \]
-where $a(0)=b(1)=1$ and $a(1)=b(0)=0$. When $\rmY=0$, the marginal at $u=1$ becomes similar to a standard normal $p_1(\rmX_1)\simeq\gN(\bm0,\tSigma)$. The boundaries $p_0$ and $p_1$ are known as the \textit{target} and \textit{source} distribution respectively. A path derived from a data endpoint is known as a \textit{conditional} path $p_u(\rmX_u|\rmX_0)$, which may also be conditioned on $\rmX_1$ as well.
+where $a(0)=b(1)=1$ and $a(1)=b(0)=0$. When $\rmY=0$ for all $\rmX$, the marginal at $u=1$ becomes similar to a standard normal $p_1(\rmX_1)\simeq\gN(\bm0,\tSigma)$. The boundaries $p_0$ and $p_1$ are known as the \textit{target} and \textit{source} distribution respectively. A path derived from a data endpoint is known as a \textit{conditional} path $p_u(\rmX_u|\rmX_0)$, which may also be conditioned on $\rmX_1$ as well.
 
-For paired endpoints, their joint law is denoted by $\pi(\rmX,\rmY)$. This contrasts the original idea of a normalising flow, as now the flow is a coupling between two potentially non-normal distributions. Despite this, such flows still lie within the \acs{CNF} framework.
+\note{Talk about MMI here?}
+\ainote{Expand MMI before introducing it; the draft does not define the abbreviation. If it means maximum mutual information, place the discussion with the conditional objectives or likelihood-based ranking: specifying a probability path alone does not optimise mutual information. Distinguish an objective involving a joint distribution and its marginals from ordinary conditional-density estimation.}
 
-Conditional paths are used as a reference for learning a marginal path. This aspect is what makes training simulation-free, as the conditional path can be sampled at any $u$ during training, and the marginal path is optimised for any $u$. This format is useful, and is discussed in \secref{sec:learning-objectives}.
 
-A contrast simulation-free training brings is through the optimisation objective. When simulating the \acs{CNF}, likelihood is maximised directly, and the learnt path is a result of the optimisation algorithm. A probability path instead acts as a target in which a sufficiently trained estimator can retrieve the data marginal. Yet, this is achieved by learning the probability path rather than likelihood maximisation. A useful feature of simulation-free training is that the likelihood density is still tractable through the \acf{ICOV} formula.
+For paired endpoints, their joint law is denoted by $\pi(\rmX,\rmY)$. This contrasts the original idea of a normalising flow, as now the flow is a coupling between two potentially non-normal distributions. Despite this, such flows still lie within the \acs{CNF} framework, despite \textit{normalising} becoming a slight inaccuracy.
+
+Conditional paths are used as a target for optimising a marginal path. This aspect is what makes training simulation-free, as the conditional path can be sampled at any $u$ during training, and the marginal path is optimised for any $u$. This format is useful, and is discussed in \secref{sec:learning-objectives}.
+
+A contrast simulation-free training brings is through the optimisation objective. When simulating the \acs{CNF}, likelihood is maximised directly, and the learnt path is a result of the optimisation algorithm. A probability path instead acts as a target in which a sufficiently trained estimator can retrieve the data marginal. Yet, this is achieved by optimising a constrained probability path rather than likelihood maximisation. A useful feature of simulation-free training is that the likelihood density is still tractable through the instantaneous change
+of variable formula.
+
+% \note maybe add this as paragraph if there's more to talk about
+% Simulation-free training avoids numerical integration when constructing the regression objective. Likelihood evaluation generally still requires integrating the learned dynamics and their divergence, as described in \secref{sec:likelihood-evaluation} and examined empirically in \chapref{ch:ll}.
 
 These paths typically take the form of a closed expression of a differential equation, as this guarantees that there is a valid trainable vector field. Another common factor is the use of Gaussian probability paths. Although this may seem as an incorrect assumption of the underlying data, by considering the data as a mixture of Gaussians centred at the data points, the smaller the variance of each Gaussian, the closer to the data distribution the path endpoint becomes.
 
-Score-based diffusion models were first developed as a method for training a standard \acs{CNF}, but many proposed modifications have been made to support extended tasks and data such as conditional generation and paired endpoints. On the other hand, Schr\"odinger bridges specify a path problem with endpoint constraints and reference dynamics e.g. go from point A to point B and follow a diffusion-like path. Finally, flow matching also specify a path between endpoints, but no restrictions on the dynamics, thus allowing straight-line paths, which are optimal in the sense that they require the least amount of movement.
+
+Score-based diffusion models were first developed as a method for training a standard \acs{CNF}, but many proposed modifications have been made to support extended tasks and data such as conditional generation and paired endpoints. On the other hand, Schr\"odinger bridges specify a path problem with endpoint constraints and reference dynamics e.g. go from point A to point B and follow a diffusion-like path. Finally, flow matching also specify a path between endpoints, but no restrictions on the dynamics, thus allowing straight-line paths, which are optimal in the sense that they require the least amount of movement/kinetic energy.
 
 
 The next sections detail the mechanics of these probability paths and how to construct them. The order these are presented in follows the chronology of ``breakthrough'' findings. First diffusion models proved that \acfp{SDE} can be used simulation-free training of \acsp{CNF} with a tractable log-likelihood, then \acfp{SB} use forward-backward \acsp{SDE} for exact-endpoint interpolation, finally flow-matching shows a generalised view through \acfp{ODE}. A key observation made in this thesis is the amount of stochasticity each method has, and its impact on training and sampling.
 
-Simulation-free training avoids numerical integration when constructing the regression objective. Likelihood evaluation generally still requires integrating the learned dynamics and their divergence, as described in \secref{sec:likelihood-evaluation} and examined empirically in \chapref{ch:ll}.
+\note{Should there be a formal example with Gaussian mixture over the dirac data mass?}
+\ainote{Yes. Define the empirical law $\hat p_0=N^{-1}\sum_i\delta_{\mX_0^{(i)}}$ and, for common covariance, its path marginal as $p_u(\mX)=N^{-1}\sum_i\gN(\mX;\rmM(\mX_0^{(i)},u),\tSigma(u))$. This makes clear that Gaussian conditional transitions do not require a Gaussian data distribution. With paired endpoints, include each paired source in the corresponding mean. At $u=0$, a Dirac endpoint is recovered only when the covariance vanishes; constant positive covariance instead gives a smoothed empirical law.}
+
+
 
 \subsection{Diffusion paths}
 \label{sec:diffusion-paths}
@@ -64,7 +76,7 @@ The reverse process plays a central role to finalising the \acs{CNF} constructio
 \]
 where $\bar\rmW_u$ is the reverse Wiener process. The gradient of the log-density $\nabla\log p_u(\rmX_u)$ is known as the score, and models that estimate it are known as score-based generative models.
 
-Of course, the marginal score at any point $u$ is unknown. However, a path may have a conditional score $\nabla\log p_u(\rmX_u|\rmX_0)$ if the endpoint sample $\rmX_0$ is known e.g. by sampling the data. A standard method is use a conditional path $p_u1(\rmX_u|\rmX_0)$ and score and then learning a neural estimator to replace the conditional. This all begins with a defined conditional path, which is presented next.
+Of course, the marginal score at any point $u$ is unknown. However, a path may have a conditional score $\nabla\log p_{u|0}(\rmX_u|\rmX_0)$ if the endpoint sample $\rmX_0$ is known e.g. by sampling the data. A standard method is use a conditional path $p_{u|0}(\rmX_u|\rmX_0)$ and score and then learning a neural estimator to replace the conditional. This all begins with a defined conditional path, which is presented next.
 
 
 
@@ -75,12 +87,12 @@ Of course, the marginal score at any point $u$ is unknown. However, a path may h
 \centering
 \subfigure[Common conditioning mean $Y=0$: standard-normal source]{\includegraphics[width=0.95\linewidth]{plots/simulation_free/bridge_1d_mr_vp_normal.pdf}\label{fig:mrvp-normal}}
 \par\medskip
-\subfigure[Paired conditioning points $y_i$: Gaussian-mixture source]{\includegraphics[width=0.95\linewidth]{plots/simulation_free/bridge_1d_mr_vp.pdf}\label{fig:mrvp-mixture}}
-\caption{One-dimensional \acs{MR-VP} paths for the same three target Diracs. Left: forward densities; right: marginal probability-flow trajectories towards the data at $u=0$. In (a), $Y=0$ for every data point and the source approaches $\gN(0,1)$. In (b), each target point $x_i$ is paired with a fixed conditioning point $y_i$, with conditional law $Y\mid X=x_i\sim\delta_{y_i}$. The source approaches $\frac{1}{3}\sum_i\gN(y_i,1)$. The conditioning Diracs specify the reversion means; the source itself is a Gaussian mixture. With the finite noise schedule shown, these source distributions are approximate.}
+\subfigure[Paired conditioning points $y_i$: Coupled Gaussian-mixture source]{\includegraphics[width=0.95\linewidth]{plots/simulation_free/bridge_1d_mr_vp.pdf}\label{fig:mrvp-mixture}}
+\caption{One-dimensional \acs{MR-VP} paths for the same three target Diracs. Left: forward densities; right: marginal probability-flow trajectories towards the data at $u=0$. In (a), $Y=0$ for every data point and the source approaches $\gN(0,1)$. In (b), each target point $x_i$ is paired with a fixed conditioning point $y_i$, with conditional law $Y\mid X=x_i\sim\delta_{y_i}$. The source approaches $\frac{1}{3}\sum_i\gN(y_i,1)$. The conditioning Diracs specify the reversion means; the source itself is a Gaussian mixture. With the finite noise schedule shown, these source distributions are approximate. In practice, the Diracs are a minimal-variance Gaussian mixture.}
 \label{fig:mean_reverting_sde}
 \end{figure}
 
-Often, the properties of the source distribution must be designed for a given task. This means specifying how the path evolves through $u$ is important, as the terminal boundary of the path is the source distribution of the generative model. A key characteristic of a Gaussian is the mean and variance. The path described in this section uses mean-reversion to control the terminal mean, and variance preservation to influence a source with unit variance. In other words, a time-inhomogeneous Ornstein-Uhlenbeck process.
+Often, the properties of the source distribution must be designed for a given application. This means specifying how the path evolves through $u$ is important, as the terminal boundary of the path is the source distribution of the generative model. A key characteristic of a Gaussian is the mean and variance. The path described in this section uses mean-reversion to control the terminal mean, and variance preservation to influence a source with unit variance. In other words, a time-inhomogeneous Ornstein-Uhlenbeck process.
 
 First, define a function of $u$, known as a  $\beta$-schedule
 \[
@@ -115,26 +127,28 @@ This allows sampling from $p_u$ instead of solving \eqref{eq:sdesolv}, resulting
 An important simplification here is the use of an isotropic covariance matrix. There are situations where the data might be better learned with non-isotropic Gaussians \citep{dhariwalDiffusionModelsBeat2021}, or non-diagonal \citep{xia2026improved,voleti2022scorebaseddenoisingdiffusionnonisotropic}. Such extra generalisations are beyond the topic of this thesis, but remain important to acknowledge.
 
 
-The diffusion construction above uses a Gaussian terminal distribution centred at $\mY$ for all $\rmX_0$. This choice can be restrictive for tasks whose source distribution is itself a data distribution. There are many tasks that are better described as finding a coupling between two data distributions. Some examples include image super resolution, speech noise suppression, and \acf{TTS}.
+The diffusion construction above uses a Gaussian terminal distribution centred at $\mY$ for all $\rmX_0$. This choice can be restrictive for tasks whose source distribution is itself a data distribution. There are many tasks that are better described as finding a coupling between two data distributions. Some examples include image super resolution, speech noise suppression, and \acf{TTS} \note{cite}.
+\ainote{For concrete paired tasks, cite the speech-enhancement bridge work \citep{jukic2024schr} and Grad-TTS \citep{popov21gradtts} for encoder-conditioned synthesis. Distinguish a source distribution centred on observations or encoder outputs from the unsmoothed distribution of those observations: adding Gaussian source noise changes the endpoint law.}
 
-In these cases, the mixture path follows a coupled law $\pi(\rmX,\rmY)$, the boundaries become mixtures of Gaussians on both sides, and a path becomes conditional on $\rmY$. Examples of paths between paired endpoints are shown in \figref{fig:path-overview}. The language around ``conditional paths'' now becomes tricky. This thesis uses ``conditional'' to refer to ``conditional to $\rmX_0$''.
 
-There are other methods that directly answer such coupled problems. These methods are motivated by optimal transport theory. Specifically they are concerned with dynamic \acs{OT}, which aims to find the minimum energy vector field that describes a transport between two distributions. \Secref{sec:schr} and \secref{sec:icfm} cover \acs{SB} and \acs{FM}, respectively.
+In these cases, the mixture path follows a coupled law $\pi(\rmX,\rmY)$, the boundaries become mixtures of Gaussians on both sides, and a path becomes conditional on $\rmY$. Examples of paths between paired endpoints are shown in \figref{fig:path-overview}. The language around ``conditional paths'' now becomes tricky. This thesis uses ``conditional'' to refer to ``conditional to $\rmX_0$'', and will specify any alternative meaning for conditioning or assume the context is clear e.g. conditional generation.
+
+There are other methods that directly answer such coupled problems. These methods are motivated by optimal transport theory. Specifically, they are concerned with dynamic \acs{OT}, which aims to find the minimum energy vector field that describes a transport between two distributions. Bear in mind that the coupling is resolved by the data pairing, not the optimal coupling of endpoints with regards to some cost function. \Secref{sec:schr} and \secref{sec:icfm} cover \acs{SB} and \acs{FM}, respectively.
 
 \subsection{Schr\"odinger bridges}
 \label{sec:schr}
 
 
-The original \acs{SB} problem describes paths between two observations at $u=0$ and $u=1$. The paths are required to have specified endpoint marginals and are compared with a reference path law $P_\mathrm{ref}$. The Schr\"odinger bridge minimises path-space Kullback--Leibler divergence subject to those marginal constraints:
+The original \acs{SB} problem concerned statistical physics, and describes paths between two particle-cloud observations at $u=0$ and $u=1$. The paths are required to have specified endpoint marginals and are compared with a reference path law $P_\mathrm{ref}$. The Schr\"odinger bridge minimises path-space Kullback--Leibler divergence subject to those marginal constraints:
 \[
 \min _{P\in\mathcal{P}_{\left[0,1\right]}(p_0,p_1)} D_{\text{KL}}(P\Vert P_\mathrm{ref}).
 \]
-Under standard regularity conditions, the solution can be represented using positive Schr\"odinger potentials $\Psi_u$ and $\hat\Psi_u$ in the forward and reverse \acsp{SDE}
-\[
-\dd\rmX \coloneqq \left[\rmF(\rmX,u) + g^2(u)\nabla\log\mPsi_u\right]\dd u + g(u)\dd \rmW_u,
-\]
+Under standard regularity conditions, the solution can be represented using positive Schr\"odinger potentials $\hat\mPsi_u$ and $\mPsi_u$ in the reverse and forward \acsp{SDE}
 \[
 \dd\rmX \coloneqq \left[\rmF(\rmX,u) - g^2(u)\nabla\log\hat\mPsi_u\right]\dd u + g(u)\dd \hat\rmW_u.
+\]
+\[
+\dd\rmX \coloneqq \left[\rmF(\rmX,u) + g^2(u)\nabla\log\mPsi_u\right]\dd u + g(u)\dd \rmW_u,
 \]
 The time-$u$ marginal density is proportional to the product $\hat\Psi_u\Psi_u$; the proportionality constant is fixed by normalisation.
 Assume linear drift $\rmF(\rmX)=f(u)\rmX$ and Gaussian boundaries
@@ -155,7 +169,8 @@ Given that the forward $\mPsi$ is guaranteed to have mean $\rmY$ at $u=1$, and t
 \[
 \mPsi_u=\gN\left(\rmY,\int_0^1g^2(s)\dd s - \int_0^ug^2(s)\dd s\tI\right);
 \]
-the mean and covariance of the solution $p$ are
+the potentials can be viewed as modified Wiener process that increase (or decrease variance) over time, and begin (or end) at a Dirac.
+The mean and covariance of the solution $p$ are
 \[
 \label{eq:bridge-mean}
 \rmM(\rmX,\rmY,u)=\left(1-\frac{\int_0^ug^2(s)\dd s}{\int_0^1g^2(s)\dd s}\right)\rmX + \left(\frac{\int_0^ug^2(s)\dd s}{\int_0^1g^2(s)\dd s}\right)\rmY,
@@ -166,12 +181,6 @@ the mean and covariance of the solution $p$ are
 \]
 This solution is related to the diffusion framework described in \secref{sec:diffusion-paths}. Bridge paths can connect prescribed endpoint distributions, and this Gaussian example has zero conditional variance at its boundaries. This property alone does not establish lower prediction error or better generalisation than a mean-reverting \acs{SDE}.
 
-An important distinction with supervised learning is that samples from the boundaries are paired
-\[
-(\rmX^{(i)},\rmY^{(i)})\sim\pi(\rmX,\rmY).
-\]
-
-
 \subsection{Variance-exploding bridge}
 Above has discussed that an \acs{SB} has two important features: boundary constraints and a reference path. Here an example reference path will be given. The path in question is \textit{variance-exploding}, motivated by results in speech enhancement \citep{jukic2024schr,gonzalez2023investigating}. This path continuously increases variance with $u$, an interesting property since the \acs{SB} solution must have zero variance at $u=1$. This conflict allows a path with high variance while ensuring the source distribution is exact, although the benefits of high variance are largely unknown but likely regularise neural network optimisation.
 
@@ -179,6 +188,7 @@ Above has discussed that an \acs{SB} has two important features: boundary constr
 \[
 \dd \rmX \coloneqq \bm 0 \dd u + \sqrt{ck^{2u}}\dd\rmW_u.
 \]
+with scale $c$ and stiffness $k$ hyper parameters controlling the stochastic evolution.
 For clarity, define accumulated variance of the reference process
 \[
 \sigma_u^2 \coloneqq \int_0^ug^2(s)\dd s = \frac{c(k^{2u}-1)}{2 \log k}.
@@ -216,7 +226,6 @@ As illustrated in \figref{fig:sb_kc}, the speed of interpolation for the varianc
 \subsection{Path variance and flow matching}
 \label{sec:icfm}
 \label{sec:sbsv}
-Related simulation-free approaches emerged in 2022--2023. Liu, Gong, and Liu introduced rectified flow, using regression on straight interpolations and repeated rectification to straighten learned trajectories (preprint September 2022; \citealp{liuFlowStraightFast2022a}). Albergo and Vanden-Eijnden developed stochastic interpolants with a quadratic velocity objective (preprint September 2022; \citealp{albergoBuildingNormalizingFlows2023}). Lipman, Chen, and colleagues introduced flow matching through conditional probability paths (preprint October 2022; \citealp{lipman2023flow}). Tong and colleagues subsequently generalised conditional flow matching to arbitrary source distributions and endpoint couplings, including minibatch optimal-transport couplings (preprint February 2023; \citealp{tongImprovingGeneralizingFlowbased2024}).
 \begin{figure}[tb]
 \centering
 \includegraphics[width=\linewidth]{plots/simulation_free/bridge_1d_icfm_c0.04.pdf}
@@ -235,11 +244,10 @@ The conditional mean follows a straight path, with $\frac{\dd}{\dd u}\rmM_u=\mY-
 \label{eq:icfm_mean_variance}
 \]
 
-The constant covariance used here is a choice of probability path, rather than a requirement of flow matching. Other constructions use depth-dependent conditional covariance.
 
-For $c>0$, the conditional endpoints retain covariance $c\tI$ rather than being exact point masses. The purpose of this covariance is to satisfy Gaussian assumptions and perhaps act as regularisation as well.
+For $c>0$, the conditional endpoints retain covariance $c\tI$ rather than being exact point masses, as seen in \figref{}. The purpose of this covariance is to satisfy Gaussian assumptions and perhaps act as regularisation as well. The constant covariance used here is a choice of probability path, rather than a requirement of flow matching. Other constructions use depth-dependent conditional covariance such as ensuring a standard normal source.
 
-For the sake of ablation, this thesis proposes \acs{SB-SV}. This path shares \acs{SB} interpolation with \acs{FM} variance. The goal here is to observe the practical implications of interpolation and variance design. \acs{SB-SV} subsumes \acs{FM} because it is possible to construct an \acs{SB-SV} path with almost linear interpolation (recall \figref{fig:sb_kc}).
+There are many related yet distinct views of flow matching, all emerging in 2022--2023. Liu, Gong, and Liu introduced rectified flow, using regression on straight interpolations and repeated rectification to straighten learned trajectories (preprint September 2022; \citealp{liuFlowStraightFast2022a}). Albergo and Vanden-Eijnden developed stochastic interpolants with a quadratic velocity objective (preprint September 2022; \citealp{albergoBuildingNormalizingFlows2023}). Lipman, Chen, and colleagues introduced flow matching through conditional probability paths (preprint October 2022; \citealp{lipman2023flow}). Tong and colleagues subsequently generalised conditional flow matching to arbitrary source distributions and endpoint couplings, including minibatch optimal-transport couplings (preprint February 2023; \citealp{tongImprovingGeneralizingFlowbased2024}).
 
 \begin{table}
     \centering
@@ -255,45 +263,31 @@ For the sake of ablation, this thesis proposes \acs{SB-SV}. This path shares \ac
     \caption{Comparison of the \acs{SB-VE} and \acs{ICFM} conditional paths. Exact interpolation refers to unsmoothed endpoints; static gradient refers to the conditional mean velocity.}
     \label{tab:sb-icfm-path-properties}
 \end{table}
+For the sake of ablation, this thesis proposes \acs{SB-SV}. This path shares \acs{SB} interpolation with \acs{FM} variance. The goal here is to observe the practical implications of interpolation and variance design. \acs{SB-SV} is similar to \acs{FM} because it is possible to construct an \acs{SB-SV} path with almost linear interpolation (recall \figref{fig:sb_kc}). Table \ref{tab:sb-icfm-path-properties} summarises the paths discussed above, which are explored later.
 
-\subsection{Optimal transport}
-\note{Review the transport claims below, including the relation between flow matching, fixed endpoint couplings, and minimum kinetic energy, and complete the unfinished equations.}
-\ainote{The minimum-energy claim needs qualification. Straight, constant-speed paths minimise the action for each fixed endpoint pair, but a prescribed data coupling need not minimise transport cost over all couplings. Moreover, the marginal velocity learned by flow matching averages conditional velocities at each intermediate state, so its trajectories need not preserve the original pairing or remain straight. General flow matching therefore does not automatically solve dynamic optimal transport; the optimal-coupling and vanishing-smoothing assumptions matter \citep{tongImprovingGeneralizingFlowbased2024}. Describe the Schr\"odinger bridge as minimising relative entropy to a specified reference path law, with the connection to quadratic transport made under the corresponding Brownian-reference and small-noise assumptions. The two unfinished expressions below concern conditional marginalisation rather than transport optimality. If this is the intended model factorisation, a complete identity is
-\[
-p_0(\rmX_0\mid\rmY)
-=\int p_{0\mid1,Y}(\rmX_0\mid\mX_1,\rmY)
-\,p_{1\mid Y}(\mX_1\mid\rmY)\dd\mX_1.
-\]
-State the source law separately. Conditioning the first factor only on the source sample would require an additional conditional-independence assumption. No integration over the joint data law is needed in this identity.}
-From an \acf{OT} perspective, \acf{FM} can be seen as a solution to the dynamic \acs{OT} problem, and \acs{SB} is an entropic regularisation of this. When dealing with paired endpoints, the coupling is already resolved. With this, only the minimum kinetic energy component of the dynamic \acs{OT} problem is optimisable, of which \acs{FM} fully addresses but diffusion models and \acs{SB} address with added noise. The benefit of added noise is an open topic.
-\[
-p_0(\rmX_0|\rmY)=\iint p_0(\rmX_0|\rmX_1)\gN(\dd\rmX_1|\rmY,\tSigma_1)\dd \pdata(\rmX_0,\rmY).
-\]
-\[
-p(x0|x1)p(x1|y)
-\]
-% SVM integrals,
-% p(x0|y)p(y)dx0dy
-%loss = log p d data
-% int int p(x0|)p(x1)p(z)dxdz dl? inverse wishart is distribution given length
 
-\section{Simulation-free learning objectives}
+\section{Learning objectives}
 \label{sec:learning-objectives}
 
 This work now turns to how the parameters of these generative models are optimised. So far only the (conditional) target paths have been explained. The technique for training from a target path involves training a neural \acs{ODE} to predict the vector-field that describes the target path without reliance on endpoint conditioning. The objective functions for the neural networks are score-matching, data prediction and flow-matching for diffusion, \acs{SB} and \acs{FM} models respectively. It is possible to rewrite score-matching and flow-matching as a data prediction objective.
 
-Simulation-free training is analogous to teacher-forcing. An instantaneous point from a reference path is sampled, and input to the estimator. A sufficiently trained model will align with the reference path, much like a sequence model aligning to likely sequences.
+Simulation-free training is analogous to teacher-forcing. An instantaneous point from a reference path is sampled, and input to the estimator. A sufficiently trained model will align with the reference path, much like a sequence model aligning to likely sequences. This similarity emphasises the contrast between simulation and simulation-free methods. Simulation-free has efficient training at the expense of an constrained path that may not match generation conditions.
 
 \subsection{Score and clean-data prediction}
+\note{Double check if objective $\rmX_0$ is the data or sample from target distribution}
+\ainote{Both descriptions agree under this chapter\textquotesingle s convention: $u=0$ is the target/data endpoint. During optimisation, $\rmX_0$ is an observed clean training example sampled from the empirical data law, and then $\rmX_u$ is sampled conditionally on it. It is not a generated model sample in these regression objectives. Reserve a separate symbol or explicit qualification for samples drawn from the fitted model.}
 
 
-The marginal score is typically intractable, but for a Gaussian transition the conditional score $\nabla\log p_{u|0}(\rmX_u|\rmX_0)$ is available in closed form. Although this target depends on $\rmX_0$, a network that receives only $(\rmX_u,u)$ can learn the marginal score by conditional score matching. With an unrestricted function class and samples from the stated training distribution, the population regression optimum is the marginal score \citep{song2021sde}. The objective is
+
+The marginal score is typically intractable, but for a Gaussian transition the conditional score $\nabla\log p_{u|0}(\rmX_u|\rmX_0)$ is available in closed form. Although this target depends on $\rmX_0$, a network that receives only $(\rmX_u,u)$ can learn the marginal score by conditional score matching \note{cite}. With an unrestricted function class and samples from the stated training distribution, the population regression optimum is the marginal score \citep{song2021sde}. The objective is
 \[
 \label{eq:score-objective}
 \vtheta^\ast\in\underset{\vtheta}{\arg\min}\;\E_{\ru,\rmX_0,\rmX_\ru}\left\lVert\rmS_\vtheta(\rmX_\ru,\ru)-\nabla_{\rmX_\ru}\log p_{\ru|0}(\rmX_\ru|\rmX_0)\right\rVert_2^2.
 \]
 Here $\ru\sim\gU(0,1)$ is the random depth, $\rmX_0$ is sampled from the empirical data distribution $\ptrain(\rmX_0)$, and $\rmX_\ru$ is sampled from its conditional transition law $p_{\ru|0}(\rmX_u|\rmX_0)$.
 By sampling $\rmX_1\sim p_1$ and integrating the probability-flow \acs{ODE} backwards with the estimated marginal score, data samples can be generated (see \secref{sec:probability-flow}). Note how depth is optimised at the ``infinite layer limit'', and a random ``layer'' is optimised per sample per optimisation step.
+\ainote{The existing citation to \citet{song2021sde} supports this diffusion objective. Add \citet{vincent2011connection} for the denoising score-matching identity. State the regularity and population-optimum qualifications; the equality concerns the optimal regression function, rather than every fitted finite network.}
+
 
 
 In the case where the \acs{SDE} has a closed-form Gaussian solution, the conditional score becomes easy to compute. Assume that the conditional probability path is Gaussian:
@@ -347,7 +341,9 @@ For the linear interpolation path in \secref{sec:icfm}, conditional flow matchin
 \label{eq:flow-matching-objective}
 \vtheta^\ast =\arg\min_\vtheta\mathbb E_{(\rmX_0,\rmY),\ru,\rmX_\ru}\left[\left\|\rmF_\vtheta(\rmX_\ru\mid\rmY,\ru)-(\rmX_0 -\rmY)\right\|^2\right].
 \]
-Similar to the \acs{SB} objective, sample paired endpoint data $(\rmX_0,\rmY)\sim\pi$, draw an independent time $\ru\sim U(0,1)$, and then obtain $\rmX_\ru$. \Eqref{eq:flow-matching-objective} assumes a linear interpolating path $\nabla_u \rmX=\rmX_0-\rmY$, although the design space supports many conditional vector fields and manifolds e.g. Riemannian flow matching.
+Similar to the \acs{SB} objective, sample paired endpoint data $(\rmX_0,\rmY)\sim\pi$, draw an independent time $\ru\sim U(0,1)$, and then obtain $\rmX_\ru$. \Eqref{eq:flow-matching-objective} assumes a linear interpolating path $\nabla_u \rmX=\rmX_0-\rmY$, although the design space supports many conditional vector fields and manifolds e.g. Riemannian flow matching, discrete flows \note{cite}.
+\ainote{Use \citet{chenFlowMatchingGeneral2024} for Riemannian flow matching. For discrete state spaces, a suitable primary reference is \href{https://arxiv.org/abs/2407.15595}{Gat et al., Discrete Flow Matching (2024)}; add its bibliography entry if retained. Discrete flow matching uses probability paths and transition rates on discrete states, so it should not be presented as the same Euclidean ODE with only a different manifold.}
+
 
 
 \begin{table}[tb]
@@ -365,7 +361,7 @@ Flow matching (linear path) & Reverse velocity & \acs{ODE} or direct prediction 
 \end{table}
 
 \subsection{Architecture}
-There are many ways to develop an architecture for the neural estimators $\rmS_\vtheta,\rmD,\rmF$. An identifying feature is that it depends on the depth variable $u$ in addition to the current sample $\rmX_u$. Two popular examples are NCSN++, an enhanced noise conditional score network, and the \acf{DiT}.
+There are many ways to develop an architecture for the neural estimators $\rmS_\vtheta,\rmD_\vtheta,\rmF_\vtheta$. An identifying feature is dependance on the depth variable $u$ in addition to the current sample $\rmX_u$. Two popular examples are NCSN++, an enhanced noise conditional score network, and the \acf{DiT}.
 
 An NCSN++ \citep{song2021sde} is a modified U-Net \citep{ronneberger2015unet} with a learnt $u$-step embedding applied to each residual network block. The U-Net remains similar to the original implementation as a series of downsampling layers, a bottleneck, and then a series of upsampling layers. As with all convolutional neural networks, contextual dependence can only be modelled within the kernels receptive field.
 
@@ -385,9 +381,13 @@ There are several ways to influence the generation process. One approach is to f
 \]
 $p_u(\rvy|\rmX_u)$ is known as the \textit{classifier}. Classifier-guided generation depends heavily on the quality of the classifier, which adds additional compute cost and often fails to generate high-quality samples. Two advanced techniques considered in this thesis are \acf{CFG} and mean-reverting \acsp{SDE}.
 \subsection{Classifier-free guidance}
-One option is to provide conditioning labels during training to optimise $\nabla\log p_u(\rmX_u|\rvy)$, e.g. the score network could use cross-attention to be informed by the conditioning signal. In doing so, the score estimator is at risk of overfitting to the labelled data and no longer providing a diverse density possible with the unconditional model.
+\note{Add CFG figure}
+\ainote{Added as Figure~\ref{fig:cfg-comparison} in this subsection. It compares $\omega=0,1,2,4$ from shared Gaussian source samples using analytic scores. Figure~\ref{fig:conditional-mrvp} illustrates encoder-conditioned mean reversion in the next subsection. The captions identify the different paths and sampling assumptions.}
 
-\acs{CFG} overcomes this by training a conditional-unconditional mixture. The ``classifier'' can be written as
+
+One option is to provide conditioning labels during training to optimise $\nabla\log p_u(\rmX_u|\rvy)$, e.g. the score network could use cross-attention to be informed by the conditioning signal. In doing so, the score estimator is at risk of overfitting to the labelled data and no longer providing a diverse density possible with the unconditional model. Note that in some cases e.g. MR-VP, FM, simply adding a conditional signal is sufficient.
+
+\acs{CFG} overcomes overfitting by training a conditional-unconditional mixture. The ``classifier'' can be written as
 \[
 \nabla_{\rmX_u}\log p_u(\rvy|\rmX_u) = \nabla_{\rmX_u}\log p_u(\rmX_u|\rvy) - \nabla_{\rmX_u}\log p_u(\rmX_u).
 \]
@@ -431,7 +431,7 @@ Figure~\ref{fig:conditional-mrvp} illustrates this construction for three condit
 
 
 
-\section{Generation and likelihood evaluation}
+\section{Generation}
 \subsection{Probability-flow ODE}
 \label{sec:probability-flow}
 
@@ -478,7 +478,7 @@ where $h\leq 1$ is the step size. The number of steps required is $\frac{1}{h}$.
 
 There are many options for \acs{ODE} solvers. For example, the fourth-order Runge-Kutta method evaluates the vector-field four times per step \citep{Runge1895UeberDN,kutta1901beitrag}. Adaptive methods dynamically increase or decrease the step size under select criteria such as an error tolerance between fourth and fifth order evaluations \citep{dormandFamilyEmbeddedRungeKutta1980}. The development of diffusion models has lead to customised solvers for the generative task e.g. with special weighting schemes \citep{cheng2022dpmsolvr}.
 
-A key area of research here is improving quality with less steps. Flow matching addresses this with straight paths, since less variation in the estimator target likely results in less variation in estimator error during sampling. Additionally, the speed of a path reduces variation, further removing potentially disruptive noise from the optimisation landscape. Rectified flows are one of the first to directly address this issue \citep{liuFlowStraightFast2022a}, and Peyre chapter XXX supports details for one-step generative models \citep{}.
+A key area of research here is improving quality with less steps. Flow matching addresses this with straight paths, since less variation in the estimator target likely results in less variation in estimator error during sampling. Additionally, the speed of a path reduces variation, further removing potentially disruptive noise from the optimisation landscape. Rectified flows are one of the first to directly address this issue \citep{liuFlowStraightFast2022a}, and Peyre chapter XXX supports details for one-step generative models.
 
 
 \subsection{Bridge sampling}
@@ -548,7 +548,7 @@ There is an equivalence to a single Euler step of the \acs{SB}-\acs{ODE}, provid
 \[
 {\rmX}_0=\rmY-\rmH_\vtheta(\rmY,\rmY,1).
 \]
-This coincides with direct data prediction when $\rmH_\vtheta(\rmY,\rmY,1)=\rmY-\rmD_\vtheta(\rmY,\rmY,1)$, or with the flow-matching expression above when $\vv_\vtheta(\mY,\mY,1)=-\mF_\vtheta(\mY,\mY,1)$. The equivalence therefore depends on the path parameterisation and the sign convention used for the predicted velocity; it does not hold automatically for every \acs{SB}-\acs{ODE}. Moreover, equivalence to a single Euler step does not imply equivalence to the fully integrated \acs{ODE}, which evaluates the evolving vector field along the intermediate path.
+This coincides with direct data prediction when $\rmH_\vtheta(\rmY,\rmY,1)=\rmY-\rmD_\vtheta(\rmY,\rmY,1)$, or with the flow-matching expression above when $\rmH_\vtheta(\mY,\mY,1)=-\mF_\vtheta(\mY,\mY,1)$. The equivalence therefore depends on the path parameterisation and the sign convention used for the predicted velocity; it does not hold automatically for every \acs{SB}-\acs{ODE}. Moreover, equivalence to a single Euler step does not imply equivalence to the fully integrated \acs{ODE}, which evaluates the evolving vector field along the intermediate path.
 
 
 
@@ -569,7 +569,7 @@ During sampling, \acs{SB-VE} and \acs{FM} have equivalent linear trajectories, a
 \label{fig:inference-dirac-dirac}
 \end{figure}
 \clearpage
-\subsection{Likelihood evaluation}
+\section{Likelihood evaluation}
 \label{sec:likelihood-evaluation}
 As discussed earlier, a property of normalising flows and \acsp{CNF} is likelihood of the density. In practice the log-likelihood is easier to compute. This function scores samples based on how likely they are to appear in the data distribution, a sample with higher log-likelihood implies the model assigns more probability to that sample. Computing likelihood of samples from the data $p_0(\rmX_0;\vtheta), \rmX_0\sim\pdata$ should be high, as we expect the model to correlate with the data distribution.
 
@@ -585,12 +585,15 @@ estimator \citep{skillingEigenvaluesMegadimensionalMatrices1989,hutchinsonStocha
 Although score-based modelling is simulation-free, it removes the ability to maximise likelihood directly. Despite this, the learnt density outperforms non-continuous-depth alternatives \citep{song2021sde}. Interestingly, there are methods for maximum likelihood training \cite{songMaximumLikelihoodTraining2021}, yet these do not produce higher quality samples. Such research emphasises the fact that evaluating generative models is a non-trivial task.
 
 
-A computable likelihood allows the model to be robustly evaluated. Despite this advantage, evaluating likelihood on practical tasks such as controllable image and speech generation is not commonplace. One reason for this is that it is common to report the average likelihood that the model assigns to samples from the data distribution. This is, of course, useful as it is expected that a model with higher likelihood better represents the data distribution, but viewing the average likelihood does not explain the calibration between the model and data e.g. are higher likelihood samples more likely according to the data. \Chapref{ch:ll} explores this gap.
+A computable likelihood allows the model to be robustly evaluated. Despite this advantage, evaluating likelihood on practical tasks such as controllable image and speech generation is not commonplace. One reason for this is that it is common to report the average likelihood that the model assigns to samples from the data distribution. This is, of course, useful as it is expected that a model with higher likelihood better represents the data distribution, but viewing the average likelihood does not explain the calibration between the model and data e.g. are higher likelihood samples more likely according to the data.
+
+There are many examples of these failure cases such as assigning high likelihood to \textit{all} samples; data samples would have high likelihood, but so would implausible samples. Despite the disjoint between model likelihood and sample quality \citep{theisNoteEvaluationGenerative2016}, it would be useful if the interaction between generated samples and likelihood offer qualitative insights into the model. Perhaps the model likelihood is useful for applications such as data-labelling. Such applications are explored in \chapref{ch:ll}.
 
 \note{maybe mention theis et al here, maybe mention how we talk about log- and likelihood as the same}
 \ainote{Yes: cite \citet{theisNoteEvaluationGenerative2016} to support distinguishing average held-out log-likelihood from perceptual sample quality and evaluating the intended application directly. That result does not itself establish the samplewise calibration property proposed here; define that property separately. State once that likelihood denotes the model density evaluated at an observation and that numerical results report its logarithm. The logarithm preserves individual density rankings, but averaging densities and averaging log-densities are different operations. For continuous observations, density is not point probability, so replace claims about the probability of an exact sample accordingly.}
 
-\section{Task examples}
+
+\section{Application examples}
 \note{This section needs a good look over.}
 \ainote{The section needs three concrete additions: complete the empty text-to-image subsection with its conditioning signal and source law; distinguish discrete speech-length prediction from continuous generation at a fixed length; and specify a consistent observation model for noise suppression. For each example, identify the generated variable, conditioning variables, source distribution, and prediction target, then signpost the relevant experimental chapter. Present the Grad-TTS criticism as a hypothesis unless supported by a controlled comparison. The notes below address the length marginalisation and observation-model equations.}
 
