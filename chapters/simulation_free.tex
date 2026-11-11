@@ -70,6 +70,7 @@ Of course, the marginal score at any point $u$ is unknown. However, a path may h
 
 \subsection{Mean reversion and variance preservation}
 \note{Image and speech example to show what adding noise looks like?}
+\ainote{Yes: a small figure with one image and one Mel-spectrogram at the same four depths would connect the Gaussian examples to the thesis applications. Generate each panel from the stated forward marginal, using a fixed noise draw within each row so that changes reflect depth. State the data normalisation, noise schedule, and reversion mean; use fixed display scales across depths. For speech, label this as noise in acoustic-feature space, since it is not equivalent to adding background noise to a waveform.}
 \begin{figure}[tbp]
 \centering
 \subfigure[Common conditioning mean $Y=0$: standard-normal source]{\includegraphics[width=0.95\linewidth]{plots/simulation_free/bridge_1d_mr_vp_normal.pdf}\label{fig:mrvp-normal}}
@@ -257,6 +258,13 @@ For the sake of ablation, this thesis proposes \acs{SB-SV}. This path shares \ac
 
 \subsection{Optimal transport}
 \note{Review the transport claims below, including the relation between flow matching, fixed endpoint couplings, and minimum kinetic energy, and complete the unfinished equations.}
+\ainote{The minimum-energy claim needs qualification. Straight, constant-speed paths minimise the action for each fixed endpoint pair, but a prescribed data coupling need not minimise transport cost over all couplings. Moreover, the marginal velocity learned by flow matching averages conditional velocities at each intermediate state, so its trajectories need not preserve the original pairing or remain straight. General flow matching therefore does not automatically solve dynamic optimal transport; the optimal-coupling and vanishing-smoothing assumptions matter \citep{tongImprovingGeneralizingFlowbased2024}. Describe the Schr\"odinger bridge as minimising relative entropy to a specified reference path law, with the connection to quadratic transport made under the corresponding Brownian-reference and small-noise assumptions. The two unfinished expressions below concern conditional marginalisation rather than transport optimality. If this is the intended model factorisation, a complete identity is
+\[
+p_0(\rmX_0\mid\rmY)
+=\int p_{0\mid1,Y}(\rmX_0\mid\mX_1,\rmY)
+\,p_{1\mid Y}(\mX_1\mid\rmY)\dd\mX_1.
+\]
+State the source law separately. Conditioning the first factor only on the source sample would require an additional conditional-independence assumption. No integration over the joint data law is needed in this identity.}
 From an \acf{OT} perspective, \acf{FM} can be seen as a solution to the dynamic \acs{OT} problem, and \acs{SB} is an entropic regularisation of this. When dealing with paired endpoints, the coupling is already resolved. With this, only the minimum kinetic energy component of the dynamic \acs{OT} problem is optimisable, of which \acs{FM} fully addresses but diffusion models and \acs{SB} address with added noise. The benefit of added noise is an open topic.
 \[
 p_0(\rmX_0|\rmY)=\iint p_0(\rmX_0|\rmX_1)\gN(\dd\rmX_1|\rmY,\tSigma_1)\dd \pdata(\rmX_0,\rmY).
@@ -313,6 +321,13 @@ For the general affine Gaussian transition $\rmX_u=a_u\rmX_0+b_u+\tSigma(u)^{1/2
 \nabla_{\rmX_u}\log p_u(\rmX_u)=\tSigma(u)^{-1}\left(a_u\rmD^*_\vtheta(\rmX_u,u)+b_u-\rmX_u\right).
 \]
 These identities apply to the population-optimal denoiser; a trained network only approximates that optimum. The denoiser objective predicts the clean target at every noise level \citep{karras2022elucidating}.
+\ainote{Reply to the question about $\rmY$ above: it is unnecessary when $b_u$ is deterministic and common to all samples. For a paired or encoder-conditioned path, write $b_u(\rmY)$ and condition both the score and denoiser on $\rmY$:
+\[
+\nabla_{\rmX_u}\log p_u(\rmX_u\mid\rmY)
+=\tSigma(u)^{-1}\bigl(a_u\rmD^*_\vtheta(\rmX_u,u,\rmY)
++b_u(\rmY)-\rmX_u\bigr).
+\]
+Here the optimal denoiser is the conditional mean of $\rmX_0$ given $(\rmX_u,u,\rmY)$, and the covariance must be invertible. If $\rmY$ is random and unobserved, its offset must also be averaged conditionally on $\rmX_u$; inserting a particular $\rmY$ into a marginal-score identity is not valid.}
 
 
 
@@ -384,6 +399,15 @@ Define $\omega$ to control the mixture of conditional and unconditional scores. 
 \end{align}
 At $\omega=0$ this is the unconditional score; at $\omega=1$ it is the conditional score. Values $\omega>1$ extrapolate in the direction of the classifier gradient and give stronger guidance in the score field. This linear combination does not, by itself, establish the distribution produced by a particular sampler. The conditional and unconditional scores can be trained together by randomly replacing $\rvy$ with the null label $\oslash$ during training.
 
+Figure~\ref{fig:cfg-comparison} illustrates the effect of $\omega$ using analytic conditional and unconditional scores.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\linewidth]{plots/simulation_free/cfg_comparison.pdf}
+\caption{\acs{CFG} for a linear Gaussian interpolant, with guidance weights $\omega=0,1,2,4$. The unconditional target is an equal mixture of three Gaussian components; conditioning selects the upper-right component, marked by a star. All panels share 90 standard-normal source samples. Exact conditional and mixture scores define the guided velocity, integrated towards $u=0$ with 500 fourth-order Runge--Kutta steps. Colours indicate depth, and dotted circles show two standard deviations of the target components.}
+\label{fig:cfg-comparison}
+\end{figure}
+
 \subsection{Mean reversion with conditional score}
 
 In some cases, a coarse representation of the data is predictable, and diffusion is then used to refine the features. Here, the predicted coarse representation defines the mean of the terminal distribution
@@ -394,6 +418,15 @@ where $\rmE_\vphi$ is a deterministic encoder and $\rmY$ is the mean of $p_1$ co
 Then for any \acs{SDE} with a mean reverting drift e.g. $\rmF(u)=\rmY-\rmX_u$ the score estimator is constrained to flows that revert to the mean $\rmY$.
 
 This is a specific form of a two-sided \acs{SDE} where the encoder is incorporated into the paired data law $\pi$. The score estimator can then use the encoder output as a conditioning signal $\rmS_\vtheta(\rmX_u,u,\rmY)$. The use of an encoder-defined source mean is examined empirically in \chapref{ch:ll}.
+
+Figure~\ref{fig:conditional-mrvp} illustrates this construction for three conditioning signals and their associated reversion means.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\linewidth]{plots/simulation_free/conditional_mrvp.pdf}
+\caption{Conditional \acs{MR-VP} probability-flow trajectories for three conditioning signals. Red crosses mark fixed illustrative encoder outputs $\rmY=\rmE_\vphi(\rvy)$, and blue circles mark the corresponding conditional target means. Each target is Gaussian with standard deviation $0.25$. All panels share 90 standardised noise draws and use analytic conditional scores with $\beta(u)=0.05+19.95u$, integrated towards $u=0$ with 1000 fourth-order Runge--Kutta steps. Initial samples follow the exact finite-depth marginal, approximately $\gN(\rmY,\tI)$. Colours indicate depth.}
+\label{fig:conditional-mrvp}
+\end{figure}
 
 
 
@@ -527,11 +560,12 @@ During sampling, \acs{SB-VE} and \acs{FM} have equivalent linear trajectories, a
 
 \begin{figure}[p]
 \centering
-\includegraphics[width=0.32\linewidth]{plots/simulation_free/inference/dirac_dirac/mr_vp.pdf}\hfill
-\includegraphics[width=0.32\linewidth]{plots/simulation_free/inference/dirac_dirac/sb_ve_k2.6.pdf}
-\hfill
-\includegraphics[width=0.32\linewidth]{plots/simulation_free/inference/dirac_dirac/icfm_c0.04.pdf}
-\caption{Point-cloud inference for paired three-point distributions: \acs{MR-VP} (left), \acs{SB-VE} with $k=2.6$ (centre), and \acs{ICFM} with $c=0.04$ (right). Colours indicate depth, with generation proceeding towards $u=0$. Analytic conditional predictors and 100 discrete integration steps are used. Each source point uniquely identifies its target, so trajectories with identical starts coincide. \acs{MR-VP} starts from Gaussian noise about the conditioning mean; \acs{SB} and \acs{ICFM} start at the observed source point. \acs{SB} integration begins at $u=1-10^{-4}$ to avoid singular endpoint coefficients. \note{Add FM gaussian example?}}
+\includegraphics[width=0.48\linewidth]{plots/simulation_free/inference/dirac_dirac/mr_vp.pdf}\hfill
+\includegraphics[width=0.48\linewidth]{plots/simulation_free/inference/dirac_dirac/sb_ve_k2.6.pdf}
+\par\medskip
+\includegraphics[width=0.48\linewidth]{plots/simulation_free/inference/dirac_dirac/icfm_c0.04.pdf}\hfill
+\includegraphics[width=0.48\linewidth]{plots/simulation_free/inference/paired_gaussians/icfm_c0.04.pdf}
+\caption{Point-cloud inference for paired three-point distributions: \acs{MR-VP} (top left), \acs{SB-VE} with $k=2.6$ (top right), \acs{ICFM} with $c=0.04$ from observed source points (bottom left), and a Gaussian-source data-prediction illustration with $c=0.04$ (bottom right). Colours indicate depth, with generation proceeding towards $u=0$. Analytic conditional predictors and 100 discrete integration steps are used. Each source point uniquely identifies its target, so trajectories with identical starts coincide. \acs{MR-VP} starts from Gaussian noise about the conditioning mean; \acs{SB} and the bottom-left \acs{ICFM} example start at the observed source point. The bottom-right example starts from Gaussian noise with variance $c$ about each source point and follows straight lines to the paired target mean under the assumed data-prediction velocity. \acs{SB} integration begins at $u=1-10^{-4}$ to avoid singular endpoint coefficients.}
 \label{fig:inference-dirac-dirac}
 \end{figure}
 \clearpage
@@ -554,9 +588,11 @@ Although score-based modelling is simulation-free, it removes the ability to max
 A computable likelihood allows the model to be robustly evaluated. Despite this advantage, evaluating likelihood on practical tasks such as controllable image and speech generation is not commonplace. One reason for this is that it is common to report the average likelihood that the model assigns to samples from the data distribution. This is, of course, useful as it is expected that a model with higher likelihood better represents the data distribution, but viewing the average likelihood does not explain the calibration between the model and data e.g. are higher likelihood samples more likely according to the data. \Chapref{ch:ll} explores this gap.
 
 \note{maybe mention theis et al here, maybe mention how we talk about log- and likelihood as the same}
+\ainote{Yes: cite \citet{theisNoteEvaluationGenerative2016} to support distinguishing average held-out log-likelihood from perceptual sample quality and evaluating the intended application directly. That result does not itself establish the samplewise calibration property proposed here; define that property separately. State once that likelihood denotes the model density evaluated at an observation and that numerical results report its logarithm. The logarithm preserves individual density rankings, but averaging densities and averaging log-densities are different operations. For continuous observations, density is not point probability, so replace claims about the probability of an exact sample accordingly.}
 
 \section{Task examples}
 \note{This section needs a good look over.}
+\ainote{The section needs three concrete additions: complete the empty text-to-image subsection with its conditioning signal and source law; distinguish discrete speech-length prediction from continuous generation at a fixed length; and specify a consistent observation model for noise suppression. For each example, identify the generated variable, conditioning variables, source distribution, and prediction target, then signpost the relevant experimental chapter. Present the Grad-TTS criticism as a hypothesis unless supported by a controlled comparison. The notes below address the length marginalisation and observation-model equations.}
 
 
 
@@ -584,8 +620,10 @@ p(\rmX_0|\rvy)=\int_{\sZ_+}\iint_{\R^{d\times\rl}} p(\rmX_0|\rmX_1,\rmY)p(\rmX_1
 \]
 
 \note{Should $\int_{\sZ_+}$ be $\sum_{\sZ_+}$?}
+\ainote{Yes, for a positive integer frame count use $\sum_{l=1}^{\infty}$ in all three expressions, and remove $\dd\rl$. Each summand is a density on its own space $\mathbb R^{d\times l}$, weighted by the length probability $p(l\mid\rvy)$; make the length component of the variable-length sample explicit. Retain $\rvy$ and $l$ in the decoder conditioning unless conditional independence has been justified. If the expanded encoder output is deterministic given text and length, $p(\rmY\mid\rvy,l)$ is a Dirac measure, so the integral over $\rmY$ reduces to evaluation at that output.}
 
 Although Grad-TTS has shown success for diffusion, the framework is misaligned and becomes hard to work with. Grad-TTS simplifies the terminal distribution to a Gaussian with unit variance, which may be artificially increasing the difficulty of the problem. \note{Review the claim that unit source variance increases the difficulty of the problem.}
+\ainote{This is a plausible experimental question, but unit covariance alone does not establish greater learning or sampling difficulty: its scale depends on feature normalisation, and performance also depends on the schedule, parameterisation, and solver. Grad-TTS derives a general diagonal terminal covariance, chooses the identity for simplicity, and also reports temperature-adjusted sampling \citep{popov21gradtts}, Section 3.1. Its source mean is already predicted from text. Qualify the criticism and test source variance while controlling the encoder, feature scale, architecture, training budget, and sampling budget. Distinguish changing the training path from changing only the inference temperature.}
 
 % Author outline from gradtts.tex: Equations that describe speech enhancement.
 \subsection{Paired endpoints for noise suppression}
@@ -599,6 +637,13 @@ The goal of noise suppression is to retrieve $\rmX$ given $\rmY$.
 p(\rmX|\rmY)=\int p(\rmX|\rmY)p(\rmY|\rmX,\rmZ)\dd\rmZ.
 \]
 \note{Need to work on this.}
+\ainote{The preceding integral is not a valid posterior factorisation: it repeats $p(\rmX\mid\rmY)$ on the right and supplies no noise prior. For a fixed known room response and additive noise independent of clean speech, define $p(\mY\mid\mX,\mR)=p_Z(\mY-\mX\ast\mR)$ and use Bayes' rule:
+\[
+p(\mX\mid\mY,\mR)
+=\frac{p_Z(\mY-\mX\ast\mR)\,p_X(\mX)}
+{\int p_Z(\mY-\mX'\ast\mR)\,p_X(\mX')\dd\mX'}.
+\]
+If the room response is unknown, marginalise it under a stated prior or joint model. The following formula for $q_1$ is a valid noisy marginal under the fixed-room and independence assumptions; define $q_0$, $q_1$, and $p_Z$ consistently. Finally, distinguish the observed noisy waveform from the artificial diffusion noise, and state whether the diffusion operates on waveforms or acoustic features.}
 
 \[
 q_1(\rmY)=\int p_z(\rmY - \rmX\ast\mR) q_0(\dd\rmX).
