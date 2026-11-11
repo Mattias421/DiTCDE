@@ -1,0 +1,8 @@
+\chapter*{Forward}
+Part I has covered the nature of continuous-depth in NODEs, part II covers continuous-time NCDEs. CDEs not only allow continuous-time processing, but also the processing of irregularly sampled data. Data is irregularly sampled if the change in time between data points is inhomogeneous. Examples of such data are medical records, stock market, and spoken language.
+
+This thesis identifies the irregular alignment between speech and text as an appropriate application for NCDEs. Speech exists as a continuous acoustic-time, with text occupying segments of this time at irregular intervals. For example, the phonetic transcription of an English utterance will have on average 80 ms per phone, but any phone can vary between 30-200 ms, and the style of speech can further adapt this e.g. by speaker and emotional variability. 
+
+Another notable feature of CDEs is the ability to process missing streams of data. A medical example might be heart rate measured every appointment, but blood tests taken less frequently. There are examples of missing in speech e.g. multiple speaker conversations were one interlocutor remains silent, or binaural audio with activity happening on one side. Such situations are not explored here, but present interesting applications for CDEs.
+
+The next chapter introduces NCDEs and how to optimise them. Then, an experimental chapter applies NCDEs for emotional speech synthesis. This experiment is appropriate because the duration of phones is highly dependant on the speaker and emotion, motivating modules with intricate continuous time processing to adapt to the acoustically irregular sequence of phones.

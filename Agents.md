@@ -12,8 +12,10 @@ This is a PhD thesis. It is important that the student writes the intellectual c
   - commas and full stops in equations are correct
   - variables are correctly introduced
   - suggest latin/greek derived words/phrases over English
+  - avoid anthropomorphic langauge e.g. training/learning, when it is more accurate to say optimised
 
 ## Notations
 Notation typically follows deep learning standards.
 The time index for depth is $u$, and for time $t$, this is different from usual diffusion convention.
+Do not use `inference' when `generation' is more correct.
 
