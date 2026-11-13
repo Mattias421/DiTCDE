@@ -16,7 +16,7 @@ The rest of this chapter explains metrics and the Voicebank-DEMAND dataset \cite
 
 \section{Metrics}
 Speech quality is evaluated with intrusive and non-intrusive metrics. The intrusive speech-enhancement metrics are PESQ~\citep{rixPerceptualEvaluationSpeech2001}, ESTOI~\citep{jensen2016algorithm}, and \ac{SI-SDR}~\citep{leroux2018sdr} \note{add acros?}, measured in dB. The evaluation also includes non-intrusive metrics that estimate quality from the enhanced speech alone: DNSMOS~\citep{reddy2021dnsmos},\footnote{https://github.com/microsoft/DNS-Challenge/tree/master/DNSMOS} a neural predictor trained on human ratings (\ac{MOS}), and WhiSQA, a non-intrusive \ac{MOS} predictor reported to correlate with human judgments \citep{closeHallucinationPerceptualMetricDriven2024,close2025whisqanonintrusivespeechquality}.\footnote{https://github.com/leto19/WhiSQA} Higher scores indicate better quality for all metrics used here.
-\ainote{Yes: define PESQ as perceptual evaluation of speech quality and ESTOI as extended short-time objective intelligibility in the acronym list, then use the acronym commands consistently. SI-SDR is already defined in the preamble. Only SI-SDR is measured in dB in this list; PESQ and ESTOI have their own scales. Keep the original metric citations beside their first definitions.}
+\ainote{Yes: define PESQ as perceptual evaluation of speech quality and ESTOI as extended short-time objective intelligibility in the acronym list, then use the acronym commands consistently. SI-SDR is already defined in the preamble. Only SI-SDR is measured in dB in this list; PESQ and ESTOI have their own scales. Keep the original metric citations beside their first definitions.}\note{Accepted, proceed.}
 
 
 \section{Data}
@@ -61,7 +61,7 @@ The results are displayed in \tableref{tab:results}. The tested SB-SV and ICFM s
 \begin{figure}[tb]
 \centering
 \includegraphics[width=\linewidth]{plots/se/ode_step_metrics.pdf}
-\caption{Speech-enhancement quality against the number of ODE sampling steps $N$ on a logarithmic axis. Panels show PESQ, SI-SDR, DNSMOS, and WhiSQA. Unqualified SB-VE and SB-SV curves use $k=2.6$; the second SB-SV curve uses $k=0.99$. ICFM-DP and ICFM-FM denote the two training objectives. Higher scores indicate better quality.}
+\caption{Speech-enhancement quality against the number of ODE sampling steps $N$ on a logarithmic axis. Panels show PESQ, SI-SDR, DNSMOS, and WhiSQA. Unqualified SB-VE and SB-SV curves use $k=2.6$; the second SB-SV curve uses $k=0.99$. ICFM-DP and ICFM-FM denote the two training objectives. Higher scores indicate better quality. \note{This might look better in a 2x2 grid.}}
 \label{fig:se-ode-steps}
 \end{figure}
 Figure~\ref{fig:se-ode-steps} compares the supplied ODE-step results. The $N=1$ points represent one-step ODE sampling; DDP results are reported separately in \tableref{tab:results}.
