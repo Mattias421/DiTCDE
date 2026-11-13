@@ -29,35 +29,34 @@ where $a(0)=b(1)=1$ and $a(1)=b(0)=0$. When $\rmY=0$ for all $\rmX$, the margina
 
 For paired endpoints, their joint law is denoted by $\pi(\rmX,\rmY)$. This contrasts the original idea of a normalising flow, as now the flow is a coupling between two potentially non-normal distributions. Despite this, such flows still lie within the \acs{CNF} framework, despite \textit{normalising} becoming a slight inaccuracy.
 
-From viewing \figref{}, it can be seen that the above equations do not completely explain the full story. Imagine the data distribution as a point cloud, each point is a data sample, and each interpolation is between points, not clouds. The next few equations describe the distinction between points and distributions, and motivate the use of conditional paths. For training, consider target and source distributions of $N$ samples as Dirac masses
+From viewing \figref{fig:path-overview}, it can be seen that the above equations do not completely explain the full story. Imagine the data distribution as a point cloud, each point is a data sample, and each interpolation is between points, not clouds. The next few equations describe the distinction between points and distributions, and motivate the use of conditional paths. For training, consider target and source distributions of $N$ samples as Dirac masses
 \[
 \ptrain^{(\rmX)}(\rmX)\coloneqq\frac{1}{N}\sum_{i=1}^N\delta_{\rmX^{(i)}}(\rmX) \quad
-\ptrain^{(\rmY)}(\rmY)\coloneqq\frac{1}{N}\sum_{i=1}^N\delta_{\rmY^{(i)}}(\rmY)
+\ptrain^{(\rmY)}(\rmY)\coloneqq\frac{1}{N}\sum_{i=1}^N\delta_{\rmY^{(i)}}(\rmY),
 \]
 whose coupling is
 \[
-\pi(\rmX,\rmY)\coloneqq\frac{1}{N}\sum_{i=1}^N\delta_{(\rmX^{(i)},\rmY^{(i)})}(\rmX,\rmY)
+\pi(\rmX,\rmY)\coloneqq\frac{1}{N}\sum_{i=1}^N\delta_{(\rmX^{(i)},\rmY^{(i)})}(\rmX,\rmY).
 \]
 This leads to the definition of the paired marginal Gaussian mixture probability path as
 \[
-p_u(\rmX_u)\coloneqq\frac{1}{N}\sum_{i=1}^N\gN(\rmX_u;\rmM(u,\rmX^{(i)},\rmY^{(i)}),\tSigma(u))
+p_u(\rmX_u)\coloneqq\frac{1}{N}\sum_{i=1}^N\gN(\rmX_u;\rmM(u,\rmX^{(i)},\rmY^{(i)}),\tSigma(u)),
 \]
 of which the paired conditional of paths towards data point $\rmX^{(j)}$ is
 \[
-p_u(\rmX_u|\rmX^{(j)})\coloneq\sum_{i=1}^N\gN(\rmX_u;\rmM(u,\rmX^{(i)},\rmY^{(i)}),\tSigma(u))\delta_{\rmX^{(i)}}(\rmX^{(j)})
+p_u(\rmX_u|\rmX^{(j)})\coloneq\sum_{i=1}^N\gN(\rmX_u;\rmM(u,\rmX^{(i)},\rmY^{(i)}),\tSigma(u))\delta_{\rmX^{(i)}}(\rmX^{(j)}),
 \]
 assuming there are no exact duplicates within the dataset.
 
 The paths presented in the rest of this thesis shall be more brief and only consider endpoint-to-endpoint couplings. In other words, the paths are data point to point, not data distribution to distribution. It will be seen later that instead of denoting $\rmX^{(j)}$, the target end point is denoted as $\rmX_0$ to unify the notion that $\ptrain^{(\rmX)}\sim p_0$, leading to the paired conditional path written as
 \[
-p_u(\rmX_u|\rmX_0,\rmY)\coloneqq\gN(\rmX_u;\rmM(u,\rmX_0,\rmY),\tSigma(u))
+p_u(\rmX_u|\rmX_0,\rmY)\coloneqq\gN(\rmX_u;\rmM(u,\rmX_0,\rmY),\tSigma(u)).
 \]
-these are the conditional paths mentioned above, which become the target for a neural ODE to predict. From this, it should become clear that $p_0$ becomes similar to $\ptrain$ for small covariance at the target data boundary. Additionally, it should be trivial that the standard normal source stated earlier is still recoverable when $\rmY^{(i)}=\bm 0$ for all $i$.
+These are the conditional paths mentioned above, which become the target for a neural ODE to predict. From this, it should become clear that $p_0$ becomes similar to $\ptrain$ for small covariance at the target data boundary. Additionally, it should be trivial that the standard normal source stated earlier is still recoverable when $\rmY^{(i)}=\bm 0$ for all $i$.
 
 Conditional paths are used as a target for optimising a marginal path. This aspect is what makes training simulation-free, as the conditional path can be sampled at any depth $u$ during training, and the marginal path is optimised for any $u$. This format is useful, and is discussed in \secref{sec:learning-objectives}.
 
-A contrast simulation-free training brings is through the optimisation objective. When simulating the \acs{CNF}, likelihood is maximised directly, and the learnt path is a result of the optimisation algorithm. A probability path instead acts as a target in which a sufficiently trained estimator can retrieve the data marginal. Yet, this is achieved by optimising a constrained probability path rather than likelihood maximisation. A useful feature of simulation-free training is that the likelihood density is still tractable through the instantaneous change
-of variable formula (\note{ref chapter section}).
+A contrast simulation-free training brings is through the optimisation objective. When simulating the \acs{CNF}, likelihood is maximised directly, and the learnt path is a result of the optimisation algorithm. A probability path instead acts as a target in which a sufficiently trained estimator can retrieve the data marginal. Yet, this is achieved by optimising a constrained probability path rather than likelihood maximisation. Likelihood can still be evaluated using the instantaneous change-of-variables formula in Equation~\eqref{eq:cnfll}, with the computation described in \secref{sec:likelihood-evaluation}.
 
 % \note maybe add this as paragraph if there's more to talk about
 % Simulation-free training avoids numerical integration when constructing the regression objective. Likelihood evaluation generally still requires integrating the learned dynamics and their divergence, as described in \secref{sec:likelihood-evaluation} and examined empirically in \chapref{ch:ll}.
@@ -260,7 +259,7 @@ The conditional mean follows a straight path, with $\frac{\dd}{\dd u}\rmM_u=\mY-
 \]
 
 
-For $c>0$, the conditional endpoints retain covariance $c\tI$ rather than being exact point masses, as seen in \figref{}. The purpose of this covariance is to satisfy Gaussian assumptions and perhaps act as regularisation as well. The constant covariance used here is a choice of probability path, rather than a requirement of flow matching. Other constructions use depth-dependent conditional covariance such as ensuring a standard normal source.
+For $c>0$, the conditional endpoints retain covariance $c\tI$ rather than being exact point masses, as seen in \figref{fig:conditional_flow_matching}. The purpose of this covariance is to satisfy Gaussian assumptions and perhaps act as regularisation as well. The constant covariance used here is a choice of probability path, rather than a requirement of flow matching. Other constructions use depth-dependent conditional covariance such as ensuring a standard normal source.
 
 There are many related yet distinct views of flow matching, all emerging in 2022--2023. Liu, Gong, and Liu introduced rectified flow, using regression on straight interpolations and repeated rectification to straighten learned trajectories (preprint September 2022; \citealp{liuFlowStraightFast2022a}). Albergo and Vanden-Eijnden developed stochastic interpolants with a quadratic velocity objective (preprint September 2022; \citealp{albergoBuildingNormalizingFlows2023}). Lipman, Chen, and colleagues introduced flow matching through conditional probability paths (preprint October 2022; \citealp{lipman2023flow}). Tong and colleagues subsequently generalised conditional flow matching to arbitrary source distributions and endpoint couplings, including minibatch optimal-transport couplings (preprint February 2023; \citealp{tongImprovingGeneralizingFlowbased2024}).
 
@@ -318,7 +317,7 @@ An alternative to predicting the score is to predict the target data given the n
 where $\ru,\rmX_0$ and $\rmX_u$ are sampled from the same laws as in \eqref{eq:score-objective}.
 For the special case $\rmX_u=\rmX_0+u\rmZ$, with $\rmZ\sim\gN(\bm0,\tI)$, the optimal denoiser satisfies
 \[
-\nabla_{\rmX_u}\log p_u(\rmX_u)=\frac{1}{u^2}\left(\rmD^*_\vtheta(\rmX_u,u)-\rmX_u\right)
+\nabla_{\rmX_u}\log p_u(\rmX_u)=\frac{1}{u^2}\left(\rmD^*_\vtheta(\rmX_u,u)-\rmX_u\right).
 \]
 For the general affine Gaussian transition $\rmX_u=a_u\rmX_0+b_u+\tSigma(u)^{1/2}\rmZ$ , the corresponding identity is
 \[
@@ -597,7 +596,7 @@ There are many examples of these failure cases such as assigning high likelihood
 \subsection{Text to image}
 Images are a common data type for applying deep learning models as they do not often vary in shape, apart from perhaps to support various resolutions e.g. $512\times 512$ and $1024\times 1024$. A strong proposal is CFG with a strong image caption embedding.
 \[
-p(\rmX_0|\rvy)=\int p(\rmX_0|\rvc)p(\rvc|\rvy)\dd \rvc
+p(\rmX_0|\rvy)=\int p(\rmX_0|\rvc)p(\rvc|\rvy)\dd \rvc.
 \]
 \note{Need to complete.}
 
@@ -625,8 +624,7 @@ p(\rmX_0|\rvy)=\int_{\sZ_+}\iint_{\R^{d\times\rl}} p(\rmX_0|\rmX_1,\rmY)p(\rmX_1
 \note{Should $\int_{\sZ_+}$ be $\sum_{\sZ_+}$?}
 \ainote{Yes, for a positive integer frame count use $\sum_{l=1}^{\infty}$ in all three expressions, and remove $\dd\rl$. Each summand is a density on its own space $\mathbb R^{d\times l}$, weighted by the length probability $p(l\mid\rvy)$; make the length component of the variable-length sample explicit. Retain $\rvy$ and $l$ in the decoder conditioning unless conditional independence has been justified. If the expanded encoder output is deterministic given text and length, $p(\rmY\mid\rvy,l)$ is a Dirac measure, so the integral over $\rmY$ reduces to evaluation at that output.}
 
-Although Grad-TTS has shown success for diffusion, the framework is misaligned and becomes hard to work with. Grad-TTS simplifies the terminal distribution to a Gaussian with unit variance, which may be artificially increasing the difficulty of the problem. \note{Review the claim that unit source variance increases the difficulty of the problem.}
-\ainote{This is a plausible experimental question, but unit covariance alone does not establish greater learning or sampling difficulty: its scale depends on feature normalisation, and performance also depends on the schedule, parameterisation, and solver. Grad-TTS derives a general diagonal terminal covariance, chooses the identity for simplicity, and also reports temperature-adjusted sampling \citep{popov21gradtts}, Section 3.1. Its source mean is already predicted from text. Qualify the criticism and test source variance while controlling the encoder, feature scale, architecture, training budget, and sampling budget. Distinguish changing the training path from changing only the inference temperature.}
+Grad-TTS uses a Gaussian source whose mean is predicted from text \citep{popov21gradtts}. The effect of source variance on generation quality and computational cost motivates investigating alternative probability paths.
 
 % Author outline from gradtts.tex: Equations that describe speech enhancement.
 \subsection{Paired endpoints for noise suppression}

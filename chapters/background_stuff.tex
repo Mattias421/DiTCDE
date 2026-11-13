@@ -4,20 +4,20 @@ A generative model is a sampleable probability distribution $p_0(x)$ of an under
 
 Normalising flows are appropriately named given that they learn a flow (transform) to a normal (simple distribution), and hence ``normalise'' $\pdata$. Key to this definition is the change-of-variables formula \citep{rudin,bogachev}. For a density $p_0(\rx)$, the change-of-variables formula states that the density of any $\rz=\rf^{-1}(\rx)$ is
 \[
-p_0(\rx)=p_1(\rz)\left| \det \frac{\partial \rf(\rz)}{\partial \rz} \right|^{-1}
+p_0(\rx)=p_1(\rz)\left| \det \frac{\partial \rf(\rz)}{\partial \rz} \right|^{-1},
 \]
 where $p_0$ models $\pdata$ and $p_1$ is a simple density, for example a normal density. Since $\rz=\rf^{-1}(\rx)$, the equivalent expression in terms of $\rx$ is
 \[
-p_0(\rx)=p_1(\rf^{-1}(\rx))\left| \det \frac{\partial \rf^{-1}(\rx)}{\partial \rx} \right|
+p_0(\rx)=p_1(\rf^{-1}(\rx))\left| \det \frac{\partial \rf^{-1}(\rx)}{\partial \rx} \right|.
 \]
 This has the log form
 \[
-\log p_0(\rx)=\log p_1(\rf^{-1}(\rx)) + \log\left|\det \frac{\partial \rf^{-1}(\rx)}{\partial\rx} \right|
+\log p_0(\rx)=\log p_1(\rf^{-1}(\rx)) + \log\left|\det \frac{\partial \rf^{-1}(\rx)}{\partial\rx} \right|.
 \label{eq:nfll}
 \]
 The density $p_0$ can be trained by specifying a transform $\rf_\vtheta$ and maximising the expected log likelihood over data samples $\rx\sim\pdata$:
 \[
-\vtheta^\ast=\underset{\vtheta}{\arg\max} \,\E_{\rx\sim\pdata}\left[\log p_0(\rx;\vtheta)\right]
+\vtheta^\ast=\underset{\vtheta}{\arg\max} \,\E_{\rx\sim\pdata}\left[\log p_0(\rx;\vtheta)\right].
 \]
 The population optimum matches $p_0$ to $\pdata$ when the model family contains the data density and the optimisation reaches a global optimum; finite data and model capacity need not yield an exact match.
 
@@ -25,7 +25,7 @@ A large factor in the success of a normalising flow is the choice of transform $
 
 A central motivation for continuous-depth normalising flows is that the change-of-variables formula can be expressed using the divergence of a vector field. For the ODE $\frac{\dd\rx_u}{\dd u}=\rf_\vtheta(\rx_u,u)$, the instantaneous-change-of-variables formula \cite{NEURIPS2018_69386f6b, song2021sde} gives
 \[
-\log p_0(\rx)=\log p_1(\rx_1) + \int_0^1\nabla\cdot\rf_\vtheta(\rx_u,u)\dd u
+\log p_0(\rx)=\log p_1(\rx_1) + \int_0^1\nabla\cdot\rf_\vtheta(\rx_u,u)\dd u.
 \label{eq:cnfll}
 \]
 The formula assumes a well-posed ODE flow (in particular, conditions ensuring existence and uniqueness). Computation still requires solving the ODE and evaluating its divergence; the cost depends on the solver and the method used to estimate the divergence.
@@ -45,7 +45,7 @@ but only describes evolution of samples from the origin. For more complicated pr
 \subsection{It\^o SDE}
 An It\^o SDE combines an ordinary drift with stochastic diffusion:
 \[
-\dd \rx \coloneqq f(\rx,u)\dd u + g(\rx,u)\dd \rw_u
+\dd \rx \coloneqq f(\rx,u)\dd u + g(\rx,u)\dd \rw_u.
 \]
 These processes are the first example SDEs to be introduced in this dissertation. For example, take an Ornstein-Uhlenbeck process which aims to model a stationary process. The key property is modelling reversion back to the mean despite diffusion perturbing samples randomly
 \[
