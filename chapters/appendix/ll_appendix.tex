@@ -1,59 +1,15 @@
-\chapter{Additional likelihood experiment results}
-\section{Matcha TTS}
-\label{apdx:matcha_ll}
-\begin{table}[htbp]
-    \centering
-    \caption{Quantitative assessment of pretrained Matcha-TTS from depth $u=1$ to $u=0$. BPD evaluates the final data density $p_0(x_u)$ in normalized mel coordinates.}
-    \begin{tabular}{l||l|rrrrrrrrr}
-        \toprule
-        \multirow{2}*{Metric} & \multirow{2}*{Ref} & \multicolumn{9}{c}{Depth $u$}\\
-         & & 1.00 & 0.88 & 0.75 & 0.62 & 0.50 & 0.38 & 0.25 & 0.12 & 0.00 \\
-        \midrule
-        BPD $\downarrow$ & -0.96 & 8.34 & 7.17 & 6.01 & 4.87 & 3.74 & 2.60 & 1.39 & 0.03 & -1.13 \\
-        log-$F_0$ RMSE $\downarrow$ & 0.00 & 0.50 & 0.49 & 0.46 & 0.38 & 0.31 & 0.28 & 0.26 & 0.26 & 0.26 \\
-        MCD $\downarrow$ & 0.00 & 13.80 & 12.80 & 11.49 & 10.17 & 8.86 & 7.58 & 6.48 & 5.84 & 5.80 \\
-        WER $\downarrow$ & 0.04 & 1.00 & 1.00 & 1.00 & 0.36 & 0.09 & 0.05 & 0.04 & 0.04 & 0.04 \\
-        ASV $\uparrow$ & 1.00 & -0.01 & -0.01 & 0.00 & 0.04 & 0.13 & 0.22 & 0.42 & 0.75 & 0.83 \\
-        \bottomrule
-    \end{tabular}
-    \label{tab:matcha_over_u}
-\end{table}
-
-\begin{table}[!htbp]
-    \centering
-    \caption{WER\% $\downarrow$ of n-best list rescoring strategies including Matcha-TTS. Whisper uses the repository base candidates, normalized before both likelihood scoring and WER. Random denotes the expected WER under uniform candidate selection.}
-    \begin{tabular}{lccccc}
-        \toprule
-        \textbf{AM Model} & AM Score & Matcha-TTS LL & Oracle Best & Oracle worst & Random \\
-        \midrule
-        wav2vec2 & 13.3 & 19.3 & 10.2 & 29.4 & 20.4 \\
-        Whisper & 3.3 & 4.2 & 1.5 & 6.7 & 4.3 \\
-        \bottomrule
-    \end{tabular}
-    \label{tab:matcha_asr_reranking}
-\end{table}
-
-Matcha likelihood rescoring significantly increases wav2vec2 WER compared with
-its original decoding score (two-sided Gillick--Cox matched-pairs test,
-$p=3.58\times10^{-24}$). For Whisper, the increase from $3.33\%$ to $4.17\%$
-is not significant at the $5\%$ level ($p=0.0818$). Whisper rescoring is also
-not significantly better than uniform random selection (exact one-sided
-$p=0.395$). Each rescoring condition contains 95 recordings and 1560 reference
-words; the trajectory experiment contains 100 recordings. Trajectory WER is a
-fraction and can exceed one because of insertions. Here $u=1-s$, where $s$ is
-Matcha's source-to-data time. Rounded depth headings represent eighth intervals. Whisper medium for WER and base for nbest list.
-
-
-\section{Additional tables}
-\note{maybe delete this.}
+\chapter{Additional SDXL experiment results}
+\label{apdx:likelihood-results}
+\section{Additional SDXL results}
+% Retained: the main chapter cites this table for the full experimental grid.
 \begin{table}[ht]
-  \caption{SDXL metrics across depth, CFG scale, resolution, and reconstruction settings. Height is the image side length in pixels; $r$ indicates reconstruction, with blank entries inheriting the preceding reconstruction indicator. BPD is in bits per dimension; FID and CLIP similarity are unitless scores. The ref columns report reference-data metrics.}
+  \caption{SDXL metrics across depth, CFG scale, resolution, and reconstruction settings. Height is the image side length in pixels; R indicates reconstruction, with blank entries inheriting the preceding reconstruction indicator. BPD follows the image reporting convention discussed in Chapter~\ref{ch:ll}; FID and CLIP similarity are unitless scores. The ref columns report reference-data metrics.}
 \centering\footnotesize
 \setlength{\tabcolsep}{4pt}
 \begin{tabular}{rrcrrrrrr}
 \toprule
-\multicolumn{3}{c}{pipe} & \multicolumn{3}{c}{1.00} & \multicolumn{3}{c}{0.75} \\
-CFG & height & r & BPD & FID & CLIP & BPD & FID & CLIP \\
+\multicolumn{3}{c}{Configuration} & \multicolumn{3}{c}{Depth $u=1.00$} & \multicolumn{3}{c}{Depth $u=0.75$} \\
+CFG & Height & R & BPD & FID & CLIP & BPD & FID & CLIP \\
 \midrule
 0 & 512 & \xmark & 0.02 & 417.58 & 22.58 & 0.02 & 399.30 & 23.62 \\
 3 & 512 &  & 0.02 & 412.40 & 22.60 & 0.02 & 391.65 & 23.90 \\
@@ -76,8 +32,8 @@ CFG & height & r & BPD & FID & CLIP & BPD & FID & CLIP \\
 \par\medskip
 \begin{tabular}{rrcrrrrrr}
 \toprule
-\multicolumn{3}{c}{pipe} & \multicolumn{3}{c}{0.50} & \multicolumn{3}{c}{0.25} \\
-CFG & height & r & BPD & FID & CLIP & BPD & FID & CLIP \\
+\multicolumn{3}{c}{Configuration} & \multicolumn{3}{c}{Depth $u=0.50$} & \multicolumn{3}{c}{Depth $u=0.25$} \\
+CFG & Height & R & BPD & FID & CLIP & BPD & FID & CLIP \\
 \midrule
 0 & 512 & \xmark & -0.01 & 310.19 & 22.68 & -0.01 & 308.96 & 22.23 \\
 3 & 512 &  & -0.01 & 280.20 & 23.75 & -0.02 & 279.52 & 23.45 \\
@@ -100,8 +56,8 @@ CFG & height & r & BPD & FID & CLIP & BPD & FID & CLIP \\
 \par\medskip
 \begin{tabular}{rrcrrrrrr}
 \toprule
-\multicolumn{3}{c}{pipe} & \multicolumn{3}{c}{0.00} & \multicolumn{3}{c}{ref} \\
-CFG & height & r & BPD & FID & CLIP & BPD & FID & CLIP \\
+\multicolumn{3}{c}{Configuration} & \multicolumn{3}{c}{Depth $u=0.00$} & \multicolumn{3}{c}{Reference} \\
+CFG & Height & R & BPD & FID & CLIP & BPD & FID & CLIP \\
 \midrule
 0 & 512 & \xmark & -0.01 & 310.24 & 22.55 & -0.04 & 0.00 & 29.56 \\
 3 & 512 &  & -0.01 & 278.99 & 23.66 & -0.04 & 0.00 & 29.56 \\

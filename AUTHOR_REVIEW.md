@@ -17,11 +17,14 @@ These points depend on experimental code, omitted figures, or intended modelling
 
 ## Likelihood experiments
 
-- SDXL likelihood in this chapter is described as a latent-space density. Confirm whether the reported BPD values are computed over autoencoder latents and state the latent dimensionality and any scaling or Jacobian correction. Without an invertible image transform and its Jacobian, this is not an exact image-space likelihood.
-- The CFG derivation gives the unconditional score at `omega=0`. The PACS/CLEVR tables report prompt-ranking scores at CFG 0 that vary with prompt. Confirm the actual score path and whether prompt conditioning remains active in the likelihood calculation.
-- State the number and identities of PACS classes used. The current manuscript reports nine classes, while the standard PACS benchmark is usually described with seven; the experimental subset or any expanded class set needs explanation.
-- Confirm the SDXL training-data description and exact CFG configuration from the checkpoint and pipeline used. The present text avoids an unsupported dataset assertion.
-- The text-to-image tables use FID and CLIP values with particular generated and reference sets. Confirm sample counts, preprocessing, and whether the reference sets are comparable before interpreting absolute FID values.
+Update, 17 November 2026: the supplied repositories have now been inspected. See [LIKELIHOOD_CODE_AUDIT.md](LIKELIHOOD_CODE_AUDIT.md) for pinned commits and source links. CFG 0 retains text conditioning; image grids match generation/reconstruction and likelihood scales. The code lists seven PACS classes, and image reporting divides latent log-density by RGB dimensions. These findings clarify the questions below, but saved runs still need to be matched to the manuscript tables. The audit also records CLEVR label/prompt issues, CLIP preprocessing, aggregation before ranking, and differing solver tolerances. Synthesis results are preserved. The later Grad-TTS reanalysis updates oracle/random comparator columns from archived candidate scores; see analysis/likelihood/README.md.
+
+- SDXL representation resolved: posterior-sampled scaled VAE latents, four channels with eightfold spatial downsampling and scaling factor 0.13025. Image score denominator is 3HW; this is not image-space likelihood. Official configuration is archived in analysis/likelihood/. Historical checkpoint-cache revision remains unpinned.
+- CFG convention resolved: the implementation keeps positive text conditioning at reported CFG 0, with no unconditional/conditional guidance combination. Saved image runs still need to be matched to the tables.
+- PACS class count resolved: seven classes, as confirmed by the author. The text and caption use seven, and the random class baseline is 14% (rounded from 100/7). The seven class identities, including house, agree with section 4.1 of the original PACS paper. Exact evaluated image identities still need the manifest.
+- SDXL checkpoint and training description resolved: base 1.0 without refiner; section 2.5 of the technical report describes internal pretraining data. The grids match generation/reconstruction and density guidance scales.
+- Image run provenance remains open: confirm completed counts, exact reference files, table-to-run mapping, and whether CLIP/FID preprocessing and reporting fixes were present. Source-level budgets and reference selection are documented in the code audit.
+- Grad-TTS significance resolved by archived-score reanalysis: both likelihood rescoring degradations versus ASR scores are significant under NIST MAPSSWE; neither improvement over uniform random candidate selection is significant at 5%. Script, per-recording metrics, and raw reports are in analysis/likelihood/.
 
 ## Missing material and remaining math checks
 
