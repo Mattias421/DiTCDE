@@ -8,8 +8,9 @@
 
 
 \section{CDEs}
+\note{figures}
 
-Let $\rn$ be the length of a sequence of observations $\rmX=\{\rvx_{\rt_i}\}_0^\rn$ known as the control path, whose time is $\rl=\rt_\rn$ long, and the time-stamp sequence $\rt_i$ is monotonic. At time $t$, $\rvx_t\in\mathbb R^{c+1}$ is a control path state, an important feature of a control path is that it is augmented with a time channel, in this example the first $c$ channels would be the data, and the final channel would be $\rt_i$. $\rvz_t\in\mathbb R^d$ the hidden state. The vector field is matrix-valued, $\rmF_\theta(\rvz,t)\in\mathbb R^{d\times c+1}$, so its product with the control increment $\dd\rvx$ is a hidden-state increment. 
+Let $\rn$ be the length of a sequence of observations $\rmX=\{\rvx_{\rt_i}\}_0^\rn$ known as the control path, whose time is $\rl=\rt_\rn$ long, and the time-stamp sequence $\rt_i$ is monotonic. At time $t$, $\rvx_t\in\mathbb R^{c+1}$ is a control path state, an important feature of a control path is that it is augmented with a time channel, in this example the first $c$ channels would be the data features, and the final channel would be $\rt_i$. $\rvz_t\in\mathbb R^d$ the hidden state. The vector field is matrix-valued, $\rmF_\vtheta(\rvz,t)\in\mathbb R^{d\times c+1}$, so its product with the control increment $\dd\rvx$ is a hidden-state increment 
 \[
 \rvz_t \coloneqq \rvz_0 + \int_0^t\rmF_\vtheta(\rvz,s)\dd\rvx_s.
 \label{eq:ode_ct}
@@ -25,13 +26,19 @@ This formulation is practical as it can be integrated with ODE solvers. Thus, no
 
 It may have become apparent by now that the initial hidden state $\rvz_0$ has not yet been defined. A typical definition is as a function $\rvl$ with parameters $\vzeta$
 \[
-\rvz_0=\rvl_\vzeta(\rvx_0),
+\rvz_0\coloneqq\rvl_\vzeta(\rvx_0),
 \]
 alternatively the initial state could depend on the entire control sequence
 \[
-\rvz_0=\rvl_\vzeta(\rmX),
+\rvz_0\coloneqq\rvl_\vzeta(\rmX),
 \]
 such design choices depend on the data and application.
+
+An additional design choice is the purpose of the hidden state. A typical use is to provide an expressive input to a readout layer, for example for a classification task, the final hidden state can be passed through a separate linear readout layer
+\[
+\rvg_\vphi(\rvz_\rl),
+\]
+the hidden state of an NCDE is much like the hidden state of an RNN, and its applications follow suit.
 
 
 
@@ -56,7 +63,7 @@ D_\mathrm{KL}\!\left(\rvy_i\,\middle\|\,\vg_\vphi(\rvz_{\rt_i})\right).
 \]
 The same optimisation problem applies with $\Ls_1$ replaced by $\Ls_2$.
 
-The parameters of Neural ODEs and CDEs can be updated with the continuous adjoint (optimise-then-discretise) approach \citep{NEURIPS2018_69386f6b,kidger2021thesis}.  The use of continuous adjoint allows a large reduction in memory compared to storing each forward operation and computing gradients with automatic differentiation. Here only concerns ODEs as CDEs are equivalent through Equation~\eqref{eq:cde-as-ode}.
+The parameters of Neural ODEs and CDEs can be updated with the continuous adjoint (optimise-then-discretise) approach \citep{NEURIPS2018_69386f6b,kidger2021thesis}.  The use of continuous adjoint allows a large reduction in memory compared to storing each forward operation and computing gradients with automatic differentiation. Only ODEs are considered here, as CDEs have an equivalent expression through equation~\ref{eq:cde-as-ode}.
 \[
 \frac{\dd \rvz}{\dd t}=\rvf_\vtheta(t,\rvz_t).
 \]
@@ -66,7 +73,7 @@ The parameters of Neural ODEs and CDEs can be updated with the continuous adjoin
 \[
 \rva_\vtheta(\rl)=0 \quad \frac{\dd \rva_\vtheta}{\dd t}=-\left(\frac{\partial \rvf_\vtheta}{\partial \vtheta}(t,\rvz_t)\right)^\top\rva_\rvz(t).
 \]
-Here $\rva_\vtheta(\rl)=0$ assumes that the loss has no direct dependence on $\vtheta$ other than through the state. If the loss also depends on intermediate hidden states $\rvz_{\rt_i}$, integration restarts at each such state, adding the local loss gradient to the accumulated state adjoint $\hat\rva_\rvz$; the parameter adjoint is carried across the restart:
+The equations above augment the hidden state with two adjoint variables ($\rva_\rvz,\rva_\vtheta$). The first is a hidden state adjoint that describes the sensitivity of the loss to the hidden state, then the second adjoint accumulates the parameter gradient and the first adjoint. Computation begins at $t=\rl$ and solves in reverse. Similar to the forward pass of a NODE, reverse integration is open to the design space of ODE solvers with a compute accuracy trade off. Additionally, the partials in equations \ref{adj1 adj2} are computed with automatic differentiation, leading to an efficient and effective backpropagation step. Here $\rva_\vtheta(\rl)=0$ assumes that the loss has no direct dependence on $\vtheta$ other than through the state. If the loss also depends on intermediate hidden states $\rvz_{\rt_i}$, integration restarts at each such state, adding the local loss gradient to the accumulated state adjoint $\hat\rva_\rvz$; the parameter adjoint is carried across the restart:
 \[
 \rva_\rvz(\rt_i)=\hat\rva_\rvz(\rt_i)+\nabla_{\rvz_{\rt_i}}\Ls.
 \]
@@ -77,9 +84,61 @@ Once the adjoint is computed, a standard parameter update takes place
 \[
 \vtheta_{j+1}\leftarrow\vtheta_j - \eta\rva_\vtheta(0).
 \]
+Using adjoints is not only useful for updating the parameters of the vector field, but also for gradient computation towards lower layers. This completes the introduction of NCDEs as a fully-fledged module for deep learning applications. From this, a question rises of whether CDE layers can be stacked, much like how RNNs may be stacked to form deeper architectures.
 
 \section{Stacked CDE}
 
+The CDE formulation permits multiple continuous-time conditioning layers to be stacked without explicitly materialising (and re-interpolating) intermediate trajectories \cite{jhin2021attncde,kidger2021thesis}. For example, consider two CDE layers in which the hidden path of the first layer, $\rvz_t$, serves as the control for a second layer:
+\[
+    \dd\rvu_t = \rmG_{\vphi}(\rvu_t)\,\dd\rvz_t,
+    \qquad
+    \dd\rvz_t = \rmF_{\vtheta}(\rvz_t)\,\dd\rvx_t.
+\]
+By the chain rule for CDEs, the stacked dynamics can be written directly with respect to the original control path $\mX_t$:
+\[
+    \dd\rvu_t
+    =
+    \rmG_{\vphi}(\rvu_t)\rmF_{\vtheta}(\rvz_t)\,\dd\rvx_t.
+\]
+Equivalently, define the augmented state
+\[
+    \rvv_t =
+    \begin{bmatrix}
+        \rvu_t \\
+        \rvz_t
+    \end{bmatrix}.
+\]
+Then the two layers may be integrated jointly via the single augmented CDE
+\[
+    \dd\rvv_t
+    =
+    \rmH_{\vtheta,\vphi}(\rvv_t)\,\dd\rvx_t,
+    \qquad
+    \rmH_{\vtheta,\vphi}(\rvv_t)
+    =
+    \begin{bmatrix}
+        \rmG_{\vphi}(\rvu_t)\rmF_{\vtheta}(\rvz_t) \\
+        \rmF_{\vtheta}(\rvz_t)
+    \end{bmatrix}.
+\]
+This avoids running a first-layer CDE solver, interpolating the sampled states $\mZ$, and then solving a second CDE driven by the reconstructed trajectory. Instead, both layers are propagated in a single augmented solve over the same control. The main practical restriction is that all stacked layers share the same numerical solver and integration grid; if different solvers, tolerances, or output resolutions are required, a two-stage (solve--interpolate--solve) approach remains more flexible.
+
+In the proposed model, this construction allows a hierarchy of CDE-based conditioning blocks to operate on the same duration-augmented control $\rvx_t$. The lower layer learns a continuous representation of the aligned phone-duration trajectory, while the upper layer integrates this representation into a higher-level conditioning state.
+
 \section{Example: speech synthesis}
+\note{Figure showing how emotion changes the dynamics of a cde, and how most systems skip this.}
+
+While part I has discussed TTS models, they are redefined here with a view that expresses the role NCDEs may take in TTS. Take $\rvx_{\rt_i}$ to be a text token vector representation, whose start times in acoustic time are $\rt_i$. A problem in TTS is that the monotonic alignment of $\rt_i$ is unknown, 
+\[
+\rt_i=\rt_{i-1}+? \quad \rt_0=0.
+\]
+In other words, the change in time for each text vector is unknown
+\[
+\frac{\dd t}{\dd i}=?
+\]
+This motivates the need for duration/alignment prediction. The duration is the number of acoustic frames that \textit{could} be assigned to a text token. There are many features of spoken language that make this an imperfect task, such as coarticulation and dropping sounds. After duration is predicted, an operation many TTS models use is alignment by repeating each text vector for its given duration. The aligned matrix is then input to an acoustic decoder to produce a waveform or vocodable acoustic feature.
+
+A key distinction such pipelines make is the text representation is not variant to duration. This leads to a separation between the physical nature of speech production and synthesis as an utterance can vary based on various factors such as emotion. The duration of phones plays a large role in emotional synthesis. CDEs not only react to the input stream of text features, but also the duration between them.
+
 
 

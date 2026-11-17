@@ -1,5 +1,6 @@
 \chapter{Simulation-free training of continuous normalising flows}
 \label{ch:simulation-free}
+\note{Maybe include OTFM?}
 \section{From simulation-based to simulation-free training}
 \Acfp{CNF} connect a source distribution to a data distribution through a depth-dependent vector field. Training through numerical integration can require repeated forward and backward solves. Simulation-free objectives instead sample intermediate states from a prescribed probability path and regress an available conditional target. Sampling and likelihood evaluation can still require numerical integration.
 
@@ -18,7 +19,7 @@ Figure~\ref{fig:path-overview} provides a visual overview of the paths considere
 
 The central tool for simulation-free training is the definition of a probability path $p_u$. A path is a depth-varying density, which is conditioned on the data endpoint. The goal of simulation-free training is to marginalise the conditional path by optimising an estimator to predict the conditional path. The conditional paths considered here are Gaussian, with intermediate states $\rmX_u\sim p_u$ sampled as
 \[
-\rmX_u=\rmM_u+\tSigma(u)^{1/2}\rmZ,\qquad \rmZ\sim\gN(\bm0,\tI).
+\rmX_u\coloneqq\rmM_u+\tSigma(u)^{1/2}\rmZ,\qquad \rmZ\sim\gN(\bm0,\tI).
 \label{eq:xu_sample}
 \]
 The mean $\rmM$ and covariance $\tSigma$ depend on the chosen construction and its conditioning variables. A typical mean function is an interpolation of endpoint samples such as
@@ -52,7 +53,7 @@ The paths presented in the rest of this thesis shall be more brief and only cons
 \[
 p_u(\rmX_u|\rmX_0,\rmY)\coloneqq\gN(\rmX_u;\rmM(u,\rmX_0,\rmY),\tSigma(u)).
 \]
-These are the conditional paths mentioned above, which become the target for a neural ODE to predict. From this, it should become clear that $p_0$ becomes similar to $\ptrain$ for small covariance at the target data boundary. Additionally, it should be trivial that the standard normal source stated earlier is still recoverable when $\rmY^{(i)}=\bm 0$ for all $i$.
+These are the conditional paths mentioned above, which become the target for a neural ODE to predict. From this, it should become clear that $p_0$ becomes similar to $\ptrain$ for small covariance at the target data boundary. Additionally, it should be trivial that the standard normal source stated earlier is still recoverable when $\rmY^{(i)}=\bm 0$ for all $i$ subject to $\tSigma(u)$.
 
 Conditional paths are used as a target for optimising a marginal path. This aspect is what makes training simulation-free, as the conditional path can be sampled at any depth $u$ during training, and the marginal path is optimised for any $u$. This format is useful, and is discussed in \secref{sec:learning-objectives}.
 
@@ -64,7 +65,7 @@ A contrast simulation-free training brings is through the optimisation objective
 These paths typically take the form of a closed expression of a differential equation, as this guarantees that there is a valid trainable vector field. Another common factor is the use of Gaussian probability paths. Although this may seem as an incorrect assumption of the underlying data, by considering the data as a mixture of Gaussians centred at the data points, the smaller the variance of each Gaussian, the closer to the data distribution the path endpoint becomes. Furthermore, variance at any depth other than $u=0$ does not imply error in data generation.
 
 
-Score-based diffusion models were first developed as a method for training a standard \acs{CNF}, but many proposed modifications have been made to support extended tasks and data such as conditional generation and paired endpoints. On the other hand, Schr\"odinger bridges specify a path problem with endpoint constraints and reference dynamics e.g. go from point A to point B and follow a diffusion-like path. Finally, flow matching also specify a path between endpoints, but no restrictions on the dynamics, thus allowing straight-line paths, which are optimal in the sense that they require the least amount of movement/kinetic energy.
+The development of CNFs has been widely researched. Score-based diffusion models were first developed as a method for training a standard \acs{CNF}, but many proposed modifications have been made to support extended tasks and data such as conditional generation and paired endpoints. On the other hand, Schr\"odinger bridges specify a path problem with endpoint constraints and reference dynamics e.g. go from point A to point B and follow a diffusion-like path. Finally, flow matching also specify a path between endpoints, but no restrictions on the dynamics, thus allowing straight-line paths, which are optimal in the sense that they require the least amount of movement/kinetic energy.
 
 
 The next sections detail the mechanics of these probability paths and how to construct them. The order these are presented in follows the chronology of ``breakthrough'' findings. First diffusion models proved that \acfp{SDE} can be used simulation-free training of \acsp{CNF} with a tractable log-likelihood, then \acfp{SB} use forward-backward \acsp{SDE} for exact-endpoint interpolation, finally flow-matching shows a generalised view through \acfp{ODE}. A key observation made in this thesis is the amount of stochasticity each method has, and its impact on training and sampling.
@@ -97,7 +98,7 @@ Of course, the marginal score at any point $u$ is unknown. However, a path may h
 
 
 \subsection{Mean reversion and variance preservation}
-\note{Image and speech example to show what adding noise looks like?}
+\note{Image and speech example to show what adding noise looks like? Do on 20/21 Nov.}
 \begin{figure}[tbp]
 \centering
 \subfigure[Common conditioning mean $Y=0$: standard-normal source]{\includegraphics[width=0.95\linewidth]{plots/simulation_free/bridge_1d_mr_vp_normal.pdf}\label{fig:mrvp-normal}}
@@ -269,9 +270,9 @@ There are many related yet distinct views of flow matching, all emerging in 2022
     \toprule
           &\acs{MR-VP}&  \acs{SB-VE}& \acs{ICFM}\\
          \midrule
-         Exact interpolation &n&  y& n\\
-         Static variance &n&  n& y\\
-         Static gradient &n&  n& y\\
+         Exact interpolation &\xmark&  \checkmark& \xmark\\
+         Static variance &\xmark&  \xmark& \checkmark\\
+         Static gradient &\xmark&  \xmark& \checkmark\\
          \bottomrule
     \end{tabular}
     \caption{Comparison of the \acs{SB-VE} and \acs{ICFM} conditional paths. Exact interpolation refers to unsmoothed endpoints; static gradient refers to the conditional mean velocity.}
@@ -668,6 +669,7 @@ When $\mR=I$, the flow-matching target also equals the additive-noise residual. 
 \section{Summary}
 Simulation-free training combines a prescribed probability path with an accessible conditional regression target. Diffusion, bridge, and linear flow-matching path constructions provide different endpoint and variance choices. Score, clean-data, and velocity prediction connect these paths to inference procedures, while conditioning supports generation and paired transport.
 
-Although the training objectives avoid numerical integration, likelihood evaluation generally requires integrating the learned dynamics and accumulating their divergence.
+Although the training objectives avoid numerical integration, likelihood evaluation generally requires integrating the learned dynamics and accumulating their divergence. Although it is known that the model likelihood of test data samples is high, little else is known about the model density, leading to the experiments on image and speech diffusion models in \chapref{ch:ll}.
 
-\Chapref{ch:ll} evaluates likelihood in practical diffusion models. \Chapref{ch:cfmse} examines paired paths, variance choices, and direct prediction for noise suppression.
+From the paths described above, it is unknown what the cause and effect of each design choice is. It is well known that the input variance imposes a challenge for neural network optimisation. This fact would motivate paths with constant speed and variance, as this requires less capacity from the network. Despite this, variance may act as a regulariser. \Chapref{ch:cfmse} sheds light on these mechanics in speech enhancement.
+
