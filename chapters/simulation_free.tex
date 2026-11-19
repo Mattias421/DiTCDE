@@ -199,11 +199,21 @@ This solution is related to the diffusion framework described in \secref{sec:dif
 \subsection{Variance-exploding bridge}
 Above has discussed that an \acs{SB} has two important features: boundary constraints and a reference path. Here an example reference path will be given. The path in question is \textit{variance-exploding}, motivated by results in speech enhancement \citep{jukic2024schr,gonzalez2023investigating}. This path continuously increases variance with $u$, an interesting property since the \acs{SB} solution must have zero variance at $u=1$. This conflict allows a path with high variance while ensuring the source distribution is exact, although the benefits of high variance are largely unknown but likely regularise neural network optimisation.
 
- A purely variance-exploding reference process has zero drift
+An OU-VE is defined as
+\[
+\dd\rmX=\gamma(\rmY-\rmX)\dd u + \sqrt{c}k^u\dd \rmW_u,
+\]
+with probability path
+\[
+\rmM(u)=e^{-\gamma u}\rmX_0 + (1-e^{-\gamma u})\rmY \quad \tSigma(u)=\frac{c(k^{2u}-e^{-2\gamma u})}{2(\gamma+\log k)},
+\]
+with stiffness $\gamma$, scale $c$ and base $k$ hyper parameters controlling the stochastic evolution. Samples from the target distribution exponentially degrade into clean-noisy mixture as $u\rightarrow1$.
+
+\note{add OUVE plots.}
+ On the other hand, a purely variance-exploding reference process has zero drift
 \[
 \dd \rmX \coloneqq \bm 0 \dd u + \sqrt{ck^{2u}}\dd\rmW_u.
 \]
-with scale $c$ and stiffness $k$ hyper parameters controlling the stochastic evolution.
 For clarity, define accumulated variance of the reference process
 \[
 \sigma_u^2 \coloneqq \int_0^ug^2(s)\dd s = \frac{c(k^{2u}-1)}{2 \log k}.
@@ -262,17 +272,25 @@ The conditional mean follows a straight path, with $\frac{\dd}{\dd u}\rmM_u=\mY-
 
 For $c>0$, the conditional endpoints retain covariance $c\tI$ rather than being exact point masses, as seen in \figref{fig:conditional_flow_matching}. The purpose of this covariance is to satisfy Gaussian assumptions and perhaps act as regularisation as well. The constant covariance used here is a choice of probability path, rather than a requirement of flow matching. Other constructions use depth-dependent conditional covariance such as ensuring a standard normal source.
 
+\note{Figure showing FM path.}
+
+For the standard normal source case, the variance must evolve to 1
+\[
+\rmM(\rmX_0,\rmY,u) = (1-u)\rmX_0 \quad \tSigma(u)= \bigl(u + (1 - u)c\bigr)\tI,
+\]
+this is refered to as flow-matching (FM) throughout.
+
 There are many related yet distinct views of flow matching, all emerging in 2022--2023. Liu, Gong, and Liu introduced rectified flow, using regression on straight interpolations and repeated rectification to straighten learned trajectories (preprint September 2022; \citealp{liuFlowStraightFast2022a}). Albergo and Vanden-Eijnden developed stochastic interpolants with a quadratic velocity objective (preprint September 2022; \citealp{albergoBuildingNormalizingFlows2023}). Lipman, Chen, and colleagues introduced flow matching through conditional probability paths (preprint October 2022; \citealp{lipman2023flow}). Tong and colleagues subsequently generalised conditional flow matching to arbitrary source distributions and endpoint couplings, including minibatch optimal-transport couplings (preprint February 2023; \citealp{tongImprovingGeneralizingFlowbased2024}).
 
 \begin{table}
     \centering
-    \begin{tabular}{cccc}
+    \begin{tabular}{ccccl}
     \toprule
-          &\acs{MR-VP}&  \acs{SB-VE}& \acs{ICFM}\\
+          &\acs{MR-VP}&  \acs{SB-VE}& \acs{ICFM} &FM\\
          \midrule
-         Exact interpolation &\xmark&  \checkmark& \xmark\\
-         Static variance &\xmark&  \xmark& \checkmark\\
-         Static gradient &\xmark&  \xmark& \checkmark\\
+         Exact interpolation &\xmark&  \checkmark& \xmark &\xmark\\
+         Static variance &\xmark&  \xmark& \checkmark &\xmark\\
+         Static gradient &\xmark&  \xmark& \checkmark &\checkmark\\
          \bottomrule
     \end{tabular}
     \caption{Comparison of the \acs{SB-VE} and \acs{ICFM} conditional paths. Exact interpolation refers to unsmoothed endpoints; static gradient refers to the conditional mean velocity.}
