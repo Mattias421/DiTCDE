@@ -19,6 +19,8 @@ Speech quality is evaluated with intrusive and non-intrusive metrics. The intrus
 \subsection{Data}
 The models in this section are trained and tested on the \ac{VB-DMD} dataset~\citep{valentini2016investigating}, a common benchmark for \ac{SE} containing clean speech recordings from 28 speakers with added background noise, e.g. caf\'e, traffic. Speakers p226 and p287 are used for validation. Non-intrusive evaluation of the clean speech yields 3.53 DNSMOS and 4.53 WhiSQA.
 
+\note{URGENT not explained.}
+
 \subsection{Models}
 Here, path velocity denotes the derivative of the conditional path mean with respect to depth $u$. Static variance means variance that is independent of $u$. Data prediction (DP) and flow matching (FM) denote training objectives, whereas \ac{DDP} denotes an inference scheme.
 Following \cite{jukic2024schr}, the original path-comparison models are trained until validation SI-SDR converges, after which the checkpoint with the best validation PESQ is selected. Unless otherwise stated, \ac{ODE} samplers are run for 50 steps, with batch size 8 and the same STFT settings as \cite{richterInvestigatingTrainingObjectives2025}.
