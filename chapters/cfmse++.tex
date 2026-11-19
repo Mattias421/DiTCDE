@@ -43,23 +43,23 @@ As an additional baseline, supervised U-Net maps a noisy spectrum directly to a 
      Noisy& -&-&-&-& 1.97& 0.79& 8.4&  3.05&3.11\\
              \midrule
 Direct U-Net & DP & Direct & - & - & $+0.82$ & \cellcolor{bestblue}$+0.09$ & $+11.0$ & $+0.48$ & $+1.23$\\
-OU-VE & Score matching & PC (100 NFE) & - & -& $+0.93$ & $+0.08$ & \cellcolor{worstred}$+8.8$& \cellcolor{worstred}$+0.45$ & \cellcolor{worstred}$+1.16$ \\
+OU-VE & Score matching & PC (100 NFE) & - & -& $+0.93$ & \cellcolor{secondorange}$+0.08$ & $+8.8$& $+0.45$ & $+1.16$ \\
 OU-VE & Score matching & Euler ODE (50 NFE) & - & -& \cellcolor{worstred}$+0.55$& \cellcolor{worstred}$+0.06$& \cellcolor{worstred}$+4.2$& \cellcolor{worstred}$+0.37$& \cellcolor{worstred}$+0.79$ \\
-SB-VE & DP & ODE & 2.6 & 0.4 & $+0.95$ & \cellcolor{worstred}$+0.08$ & $+10.9$ & $+0.51$ & $+1.35$\\
+SB-VE & DP & ODE & 2.6 & 0.4 & $+0.95$ & \cellcolor{secondorange}$+0.08$ & $+10.9$ & $+0.51$ & $+1.35$\\
 SB-VE & DP & ODE & 0.99 & 0.375 & $+0.95$ & \cellcolor{bestblue}$+0.09$ & $+11.1$ & $+0.51$ & $+1.36$\\
              \midrule
 SB-SV & DP & ODE & 2.6 & 0.15 & $+1.01$ & \cellcolor{bestblue}$+0.09$ & $+11.0$ & $+0.53$ & \cellcolor{bestblue}$+1.40$\\
 SB-SV & DP & ODE & 0.99 & 0.1 & $+0.89$ & \cellcolor{bestblue}$+0.09$ & $+11.1$ & $+0.53$ & $+1.36$\\
 ICFM & DP & ODE & - & 0.1 & $+1.01$ & \cellcolor{bestblue}$+0.09$ & $+11.7$ & \cellcolor{secondorange}$+0.54$ & $+1.38$\\
 ICFM & FM & ODE & - & 0.1 & $+0.94$ & \cellcolor{bestblue}$+0.09$ & \cellcolor{secondorange}$+11.9$ & \cellcolor{bestblue}$+0.55$ & \cellcolor{secondorange}$+1.39$\\
-Gaussian FM & FM & ODE & - & - & $+1.03$ & $+0.08$ & \cellcolor{worstred}$+9.37$ & $+0.49$ & \cellcolor{bestblue}$+1.4$\\
+Gaussian FM & FM & ODE & - & - & \cellcolor{secondorange}$+1.03$ & \cellcolor{secondorange}$+0.08$ & $+9.37$ & $+0.49$ & \cellcolor{bestblue}$+1.4$\\
     \midrule
-SB-VE & DP & DDP & 2.6 & 0.4 & $+0.95$ & \cellcolor{worstred}$+0.08$ & $+11.0$ & $+0.50$ & $+1.34$\\
+SB-VE & DP & DDP & 2.6 & 0.4 & $+0.95$ & \cellcolor{secondorange}$+0.08$ & $+11.0$ & $+0.50$ & $+1.34$\\
 SB-SV & DP & DDP & 2.6 & 0.15 & $+1.01$ & \cellcolor{bestblue}$+0.09$ & $+11.5$ & $+0.53$ & \cellcolor{secondorange}$+1.39$\\
 SB-SV & DP & DDP & 0.99 & 0.1 & $+1.02$ & \cellcolor{bestblue}$+0.09$ & $+11.6$ & $+0.52$ & \cellcolor{secondorange}$+1.39$\\
 ICFM & DP & DDP & - & 0.1 & \cellcolor{bestblue}$+1.08$ & \cellcolor{bestblue}$+0.09$ & $+11.8$ & $+0.53$ & \cellcolor{bestblue}$+1.40$\\
 ICFM & FM & DDP & - & 0.1 & \cellcolor{secondorange}$+1.03$ & \cellcolor{bestblue}$+0.09$ & \cellcolor{bestblue}$+12.0$ & \cellcolor{secondorange}$+0.54$ & \cellcolor{bestblue}$+1.40$\\
-Gaussian FM & FM & DDP & - & - & $+0.87$ & $+0.08$ & $+10.3$ & $+0.49$ & $+1.36$\\
+Gaussian FM & FM & DDP & - & - & $+0.87$ & \cellcolor{secondorange}$+0.08$ & $+10.3$ & $+0.49$ & $+1.36$\\
             \bottomrule
         \end{tabular}
 }
