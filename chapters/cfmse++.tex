@@ -1,15 +1,19 @@
 \chapter{Deep noise suppression}
 \label{ch:cfmse}
-In conditional flow matching for speech enhancement, the noisy observation can enter through the initial state, the conditioning input, or both. On VoiceBank--DEMAND, the noisy and clean speech have the same representation, so the noisy observation can serve as the starting point of a path towards clean speech. The experiments compare path shapes, including the effect of depth-dependent variance, and assess when a flow-trained model can be used for one-evaluation direct prediction. On CHiME-9 ECHI, the model receives four microphone signals and speaker enrolment and estimates a single target signal. A Gaussian source lets the flow evolve a mono state while receiving the multichannel observation through conditioning.
+\note{XXXX}, the noisy observation can enter through the initial state, the conditioning input, or both. On VoiceBank--DEMAND, the noisy and clean speech have the same representation, so the noisy observation can serve as the starting point of a path towards clean speech. The experiments compare path shapes, including the effect of depth-dependent variance, and assess when a flow-trained model can be used for one-evaluation direct prediction. On CHiME-9 ECHI, the model receives four microphone signals and speaker enrolment and estimates a single target signal. A Gaussian source lets the flow evolve a mono state while receiving the multichannel observation through conditioning.
 
 Related work applies flow matching to speech enhancement through several distinct design choices. FlowSE uses conditional flow matching to reduce the number of function evaluations required for enhancement \citep{leeFlowSEFlowMatchingbased2025}. \citet{korostikModifyingFlowMatching2025} investigate an informed source prior, a data-prediction objective, deterministic generation, and early stopping, including a deterministic one-step configuration for denoising. Their results also distinguish denoising from dereverberation, for which stochastic generation without the informed prior is preferable. These changes concern the source distribution, prediction objective, and generation procedure, rather than path variance alone.
 
 FlowAVSE combines acoustic and visual conditioning with conditional flow matching for single-step audiovisual speech enhancement \citep{jungFlowAVSEEfficientAudioVisual2024}. Complementary work on generative speech foundation models pretrains a restoration model directly on complex-valued short-time Fourier transform coefficients and adapts it to tasks including denoising and target-speaker extraction \citep{kuGenerativeSpeechFoundation2025}.
 
+\note{Remember to read the latest in flow amtching SE.}
+
+\note{Maybe report +/- compared to the noisy instead of absolute value?}
+
 
 \section{VoiceBank--DEMAND experiments}
 \subsection{Metrics}
-Speech quality is evaluated with intrusive and non-intrusive metrics. The intrusive speech-enhancement metrics are \ac{PESQ}~\citep{rixPerceptualEvaluationSpeech2001}, \ac{ESTOI}~\citep{jensen2016algorithm}, and \ac{SI-SDR}~\citep{leroux2018sdr}. SI-SDR is measured in dB. The evaluation also includes non-intrusive metrics that estimate quality from the enhanced speech alone: DNSMOS~\citep{reddy2021dnsmos},\footnote{https://github.com/microsoft/DNS-Challenge/tree/master/DNSMOS} a neural predictor trained on human ratings (\ac{MOS}), and WhiSQA, a non-intrusive \ac{MOS} predictor reported to correlate with human judgments \citep{closeHallucinationPerceptualMetricDriven2024,close2025whisqanonintrusivespeechquality}.\footnote{https://github.com/leto19/WhiSQA} Higher scores indicate better quality for all metrics used here.
+Speech quality is evaluated with intrusive and non-intrusive metrics. The intrusive speech-enhancement metrics are \ac{PESQ}~\citep{rixPerceptualEvaluationSpeech2001}, \ac{ESTOI}~\citep{jensen2016algorithm}, and \ac{SI-SDR}~\citep{leroux2018sdr}. SI-SDR is measured in dB. The evaluation also includes non-intrusive metrics that estimate quality from the enhanced speech alone: DNSMOS~\citep{reddy2021dnsmos},\footnote{https://github.com/microsoft/DNS-Challenge/tree/master/DNSMOS} a neural predictor trained on human ratings (\ac{MOS}), and WhiSQA, a non-intrusive \ac{MOS} predictor reported to correlate with human judgments \citep{closeHallucinationPerceptualMetricDriven2024,close2025whisqanonintrusivespeechquality}.\footnote{https://github.com/leto19/WhiSQA} Evaluation of a model takes all of these metrics into consideration, as simply optimising a single metric does not result in high quality SE \citep{deoliveira2024pesqetarian}. Higher scores indicate better quality for all metrics used here.
 
 
 \subsection{Data}
@@ -18,9 +22,14 @@ The models in this section are trained and tested on the \ac{VB-DMD} dataset~\ci
 \subsection{Models}
 Here, path velocity denotes the derivative of the conditional path mean with respect to depth $u$. Static variance means variance that is independent of $u$. Data prediction (DP) and flow matching (FM) denote training objectives, whereas \ac{DDP} denotes an inference scheme.
 Following \cite{jukic2024schr}, the original path-comparison models are trained until validation SI-SDR converges, after which the checkpoint with the best validation PESQ is selected. Unless otherwise stated, \ac{ODE} samplers are run for 50 steps, with batch size 8 and the same STFT settings as \cite{richterInvestigatingTrainingObjectives2025}.
-In the original path comparison, the neural estimator $F_\theta$ employs the NCSN++ architecture \citep{song2021sde} using the same parameterisation described in \cite{richter2023speech}. The original path comparison uses the time-domain auxiliary loss \citep{jukic2024schr}.
+In the original path comparison, the neural estimator $\rmF_\vtheta$ employs the NCSN++ architecture \citep{song2021sde} using the same parameterisation described in \cite{richter2023speech}. The original path comparison uses the time-domain auxiliary loss \citep{jukic2024schr}.
 
 \subsection{Full-data comparison}
+\note{Stay consistent with my original work and only report the P.808 DNSMOS not OVRL.}
+
+\note{Why doesn't table cfmse-local have sbve? and why only historical sgmse? I don't see sgmse++ either.}
+
+\note{Maybe consider using best, second best and worst colours like in part II? (obviously put noisy row in red)}
 
 \begin{table}[htbp]
 \centering
@@ -94,7 +103,7 @@ Figure~\ref{fig:se-ode-steps} compares the supplied ODE-step results. The $N=1$ 
 \begin{figure}[tb]
 \centering
 \includegraphics[width=\linewidth]{plots/se/vbdmd_atlas_nfe.pdf}
-\caption{VB-DMD test results for the two flow-matching checkpoints in Table~\ref{tab:cfmse-local} across ODE evaluation budgets. Each point uses 824 utterances. The one-evaluation points use the ODE sampler.}
+\caption{VB-DMD test results for the two flow-matching checkpoints in Table~\ref{tab:cfmse-local} across ODE evaluation budgets. Each point uses 824 utterances. The one-evaluation points use the ODE sampler. \note{Need dnsmos and whisqa too.}}
 \label{fig:vbdmd-atlas-nfe}
 \end{figure}
 In Figure~\ref{fig:vbdmd-atlas-nfe}, noisy-source ICFM gains most of its SI-SDR by ten evaluations. Gaussian FM reaches its highest PESQ at 20 evaluations, while its SI-SDR peaks at two. These budgets were compared on the test set.
@@ -136,6 +145,8 @@ SGMSE+ & 13.572 & 15.008 & 14.845 & 14.292 & 14.977 \\
 \end{table}
 
 Best validation PESQ is recorded to the precision of the checkpoint filenames. Final SI-SDR comes from the final epoch on 20 validation utterances. The two tables describe different checkpoint summaries. SGMSE+ retains higher PESQ across the subsets, while ICFM exceeds SGMSE+ in final SI-SDR at 7, 13, and 26 speakers. SB-VE has the highest final SI-SDR at seven speakers (16.417~dB).
+
+\note{this table is stupid, we need real metrics not validation pesq.}
 
 \subsection{Explicit observation conditioning}
 \begin{table}[htbp]
@@ -179,6 +190,8 @@ Official SB-VE m5 &  2.820 & 2.256 & 3.147 & 3.216 \\
 
 URGENT was evaluated on channel 0 at 16~kHz using four-second windows with 0.5-second overlap. Noisy-source ICFM at 50 ODE evaluations achieves higher WhiSQA than the one-evaluation direct U-Net on both splits.
 
+\note{Why not include the original ICFM model. The choice of models in these tables seems completly random... SBVE and ICFM are available in the data efficiency experiment if the originals are archived.}
+
 \section{CHiME-9 ECHI experiments}
 A single-microphone transfer evaluation would measure how a mono enhancement model transfers to CHiME-9 recordings. The ECHI experiments instead use models optimised for extraction of the enrolled speaker from four microphone signals.
 
@@ -213,6 +226,8 @@ SBVE adaptation & 16 & 1.091 & 0.492 & -32.719 & 1.440 & 1.609\\
 \caption{CHiME-9 ECHI development results at matched budgets of one and 16 network evaluations. Direct and GridNet are one-evaluation references. NFE counts evaluations per window. Means use the valid segments for each metric.}
 \label{tab:cfmse-echi}
 \end{table}
+
+\note{Why not eval SBVE?}
 
 \begin{figure}[tb]
 \centering
