@@ -101,7 +101,7 @@ During the generation process for $u\rightarrow 0$, the reported FID improves ov
 
 \begin{table}[!htbp]
 \centering
-\caption{Effect of CFG on final SDXL samples ($u=0$) at $1024\times1024$ resolution on the PACS dataset. \note{verify pacs}}
+\caption{Effect of CFG on final SDXL samples ($u=0$) at $1024\times1024$ resolution on the PACS dataset.}
 \label{tab:sdxl_cfg_reconstruct}
 \begin{tabular}{rrrr}
 \toprule
@@ -208,7 +208,7 @@ The trajectory evaluations score intermediate outputs under each model's final-d
         BPD $\downarrow$ & -0.06 & 2.79 & 2.79 & 2.79 & 2.79 & 2.77 & 2.72 & 2.55 & 1.35 & -0.08 \\
         log-$F_0$ RMSE $\downarrow$ & 0.00 & 0.28 & 0.28 & 0.28 & 0.28 & 0.28 & 0.27 & 0.27 & 0.27 & 0.27 \\
         MCD $\downarrow$ & 0.00 & 6.52 & 6.52 & 6.52 & 6.50 & 6.47 & 6.43 & 6.39 & 6.34 & 6.31 \\
-        WER $\downarrow$ & 0.03 & 0.08 & 0.08 & 0.08 & 0.09 & 0.08 & 0.10 & 0.13 & 0.16 & 0.19 \\
+        WER (\%) $\downarrow$ & 3 & 8 & 8 & 8 & 9 & 8 & 10 & 13 & 16 & 19 \\
         ASV $\uparrow$ & 1.00 & 0.74 & 0.74 & 0.73 & 0.73 & 0.74 & 0.75 & 0.78 & 0.84 & 0.86 \\
         \bottomrule
     \end{tabular}
@@ -216,7 +216,7 @@ The trajectory evaluations score intermediate outputs under each model's final-d
 \end{table}
 Table \ref{tab:gtts_over_t} shows that although likelihood increases as $\rmX_1$ is denoised into data $\rmX_0$, the pattern of BPD and other metrics is surprising. The BPD of the synthesis is -0.08, surpassing the data -0.06, a contrast to the image results which consistently assigned higher likelihood to dataset samples. There are many variables that could explain the difference between SDXL and Grad-TTS such as data scale, modality, probability-flow construction.
 
-The largest BPD reductions occur in the later stages of the Grad-TTS trajectory. MCD decreases and ASV increases, while log-$F_0$ RMSE changes little. WER rises from 0.08 at the source to 0.19 at the final output, despite the increase in likelihood. Since WER is measured with an ASR system, this result describes recognition of the generated speech rather than a direct human intelligibility judgement. It nevertheless shows that increasing Grad-TTS density does not ensure a lower transcription error rate.
+The largest BPD reductions occur in the later stages of the Grad-TTS trajectory. MCD decreases and ASV increases, while log-$F_0$ RMSE changes little. WER rises from 8\% at the source to 19\% at the final output, despite the increase in likelihood. Since WER is measured with an ASR system, this result describes recognition of the generated speech rather than a direct human intelligibility judgement. It nevertheless shows that increasing Grad-TTS density does not ensure a lower transcription error rate.
 
 \begin{table}[htbp]
     \centering
@@ -229,15 +229,14 @@ The largest BPD reductions occur in the later stages of the Grad-TTS trajectory.
         BPD $\downarrow$ & -0.96 & 8.34 & 7.17 & 6.01 & 4.87 & 3.74 & 2.60 & 1.39 & 0.03 & -1.13 \\
         log-$F_0$ RMSE $\downarrow$ & 0.00 & 0.50 & 0.49 & 0.46 & 0.38 & 0.31 & 0.28 & 0.26 & 0.26 & 0.26 \\
         MCD $\downarrow$ & 0.00 & 13.80 & 12.80 & 11.49 & 10.17 & 8.86 & 7.58 & 6.48 & 5.84 & 5.80 \\
-        WER $\downarrow$ & 0.04 & 1.00 & 1.00 & 1.00 & 0.36 & 0.09 & 0.05 & 0.04 & 0.04 & 0.04 \\
+        WER (\%) $\downarrow$ & 4 & 100 & 100 & 100 & 36 & 9 & 5 & 4 & 4 & 4 \\
         ASV $\uparrow$ & 1.00 & -0.01 & -0.01 & 0.00 & 0.04 & 0.13 & 0.22 & 0.42 & 0.75 & 0.83 \\
         \bottomrule
     \end{tabular}
     \label{tab:matcha_over_u}
 \end{table}
-\note{Report wer as percentage in the above tables}
 
-Matcha-TTS exhibits a different trajectory in Table~\ref{tab:matcha_over_u}. BPD decreases from 8.34 to $-1.13$, approximately linearly across the evaluated depths. Over the same trajectory, MCD decreases from 13.80 to 5.80, log-$F_0$ RMSE decreases from 0.50 to 0.26, and ASV increases from $-0.01$ to 0.83. WER decreases from 1.00 to 0.04 and remains at 0.04 over the final three reported depths. The source laws provide context for these contrasting starting points: Matcha-TTS begins with zero-mean Gaussian noise, whereas Grad-TTS begins near its text-derived encoder representation. These differences do not by themselves establish a causal effect of source choice, since the models also differ in architecture and optimisation objective.
+Matcha-TTS exhibits a different trajectory in Table~\ref{tab:matcha_over_u}. BPD decreases from 8.34 to $-1.13$, approximately linearly across the evaluated depths. Over the same trajectory, MCD decreases from 13.80 to 5.80, log-$F_0$ RMSE decreases from 0.50 to 0.26, and ASV increases from $-0.01$ to 0.83. WER decreases from 100\% to 4\% and remains at 4\% over the final three reported depths. The source laws provide context for these contrasting starting points: Matcha-TTS begins with zero-mean Gaussian noise, whereas Grad-TTS begins near its text-derived encoder representation. These differences do not by themselves establish a causal effect of source choice, since the models also differ in architecture and optimisation objective.
 
 Both speech models assign their final generated outputs a lower BPD than their respective reference recordings. However, only Matcha-TTS shows improving trajectory WER alongside increasing likelihood. Transcript rescoring tests a separate property: whether the density of a fixed observed recording ranks alternative texts appropriately.
 
