@@ -11,6 +11,8 @@ FlowAVSE combines acoustic and visual conditioning with conditional flow matchin
 \section{Data}
 VoiceBank--DEMAND pairs clean and noisy speech \citep{valentini2016investigating}. Speakers p226 and p287 supply the validation data, \note{mention test speakers}, leaving 26 training speakers. 
 
+\note{URGENT not explained.}
+
 \section{Evaluation}
 Speech quality is evaluated with intrusive and non-intrusive metrics. The intrusive speech-enhancement metrics are \ac{PESQ}~\citep{rixPerceptualEvaluationSpeech2001}, \ac{ESTOI}~\citep{jensen2016algorithm}, and \ac{SI-SDR}~\citep{leroux2018sdr}. SI-SDR is measured in dB. The evaluation also includes non-intrusive metrics that estimate quality from the enhanced speech alone: DNSMOS~\citep{reddy2021dnsmos},\footnote{https://github.com/microsoft/DNS-Challenge/tree/master/DNSMOS} a neural predictor trained on human ratings (\ac{MOS}), and WhiSQA, a non-intrusive \ac{MOS} predictor reported to correlate with human judgments \citep{closeHallucinationPerceptualMetricDriven2024,close2025whisqanonintrusivespeechquality}.\footnote{https://github.com/leto19/WhiSQA}
 
