@@ -1,0 +1,29 @@
+\begin{table}[htbp]\centering\small
+\setlength{\tabcolsep}{4pt}
+\resizebox{\linewidth}{!}{%
+\begin{tabular}{lllrrrrrr}\toprule
+Path or system & Objective & Checkpoint & NFE & PESQ & ESTOI & SI-SDR (dB) & P.808 & WhiSQA \\ \midrule
+Noisy & -- & -- & 0 & 1.97 & 0.787 & 8.45 & 3.09 & 3.12 \\
+\midrule\multicolumn{9}{l}{\itshape One evaluation} \\
+Direct U-Net, regression & Supervised & best-pesq-2.43 & 1 & \cellcolor{worstred}$+0.820$ & \cellcolor{secondorange}$+0.0864$ & \cellcolor{secondorange}$+11.0$ & \cellcolor{worstred}$+0.479$ & \cellcolor{worstred}$+1.23$ \\
+Later ICFM, DDP & FM & best-pesq-2.34 & 1 & \cellcolor{bestblue}$+0.981$ & \cellcolor{bestblue}$+0.0917$ & \cellcolor{bestblue}$+11.5$ & \cellcolor{bestblue}$+0.504$ & \cellcolor{bestblue}$+1.38$ \\
+Gaussian FM, DDP & FM & best-pesq-2.64 & 1 & \cellcolor{secondorange}$+0.869$ & \cellcolor{worstred}$+0.0806$ & \cellcolor{worstred}$+10.3$ & \cellcolor{secondorange}$+0.488$ & \cellcolor{secondorange}$+1.36$ \\
+\midrule\multicolumn{9}{l}{\itshape 50 Euler evaluations} \\
+Later ICFM, Euler & FM & best-pesq-2.34 & 50 & \cellcolor{worstred}$+0.886$ & \cellcolor{bestblue}$+0.0935$ & \cellcolor{bestblue}$+11.4$ & \cellcolor{bestblue}$+0.508$ & \cellcolor{worstred}$+1.38$ \\
+Gaussian FM, Euler & FM & best-pesq-2.64 & 50 & \cellcolor{bestblue}$+1.03$ & \cellcolor{worstred}$+0.0812$ & \cellcolor{worstred}$+9.37$ & \cellcolor{worstred}$+0.488$ & \cellcolor{bestblue}$+1.40$ \\
+\midrule\multicolumn{9}{l}{\itshape Common-protocol scores pending} \\
+SB-VE $(2.6,0.4)$, ODE & DP & Unconfirmed & 50 & -- & -- & -- & -- & -- \\
+SB-VE $(2.6,0.4)$, DDP & DP & Unconfirmed & 1 & -- & -- & -- & -- & -- \\
+SB-VE $(0.99,0.375)$, ODE & DP & Unconfirmed & 50 & -- & -- & -- & -- & -- \\
+SB-SV $(2.6,0.15)$, ODE & DP & 7arzavsi & 50 & -- & -- & -- & -- & -- \\
+SB-SV $(2.6,0.15)$, DDP & DP & 7arzavsi & 1 & -- & -- & -- & -- & -- \\
+SB-SV $(0.99,0.1)$, ODE & DP & j39kz2aj & 50 & -- & -- & -- & -- & -- \\
+SB-SV $(0.99,0.1)$, DDP & DP & j39kz2aj & 1 & -- & -- & -- & -- & -- \\
+ICFM $(c=0.1)$, ODE & DP & Unconfirmed & 50 & -- & -- & -- & -- & -- \\
+ICFM $(c=0.1)$, DDP & DP & Unconfirmed & 1 & -- & -- & -- & -- & -- \\
+ICFM $(c=0.1)$, ODE & FM & 6foffv3i & 50 & -- & -- & -- & -- & -- \\
+ICFM $(c=0.1)$, DDP & FM & 6foffv3i & 1 & -- & -- & -- & -- & -- \\
+SGMSE+, PC & Score matching & best-pesq-2.52 & 100 & -- & -- & -- & -- & -- \\
+\bottomrule\end{tabular}}
+\caption{Full-data path comparison. Bridge settings are $(k,c)$. PC denotes predictor--corrector generation. Dashes in metric columns indicate pending verification and those rows are excluded from ranks. The noisy row gives absolute means for channel~0 on 824 whole VoiceBank--DEMAND test utterances. Enhanced rows give mean paired changes on the same utterances. All 824 pairs are valid for each metric.}\label{tab:cfmse-local}
+\end{table}

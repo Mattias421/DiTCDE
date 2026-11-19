@@ -1,0 +1,13 @@
+\begin{table}[htbp]\centering\small
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{lrrrrr}\toprule
+System & PESQ & ESTOI & SI-SDR (dB) & P.808 & WhiSQA \\ \midrule
+Noisy & 1.97 & 0.787 & 8.45 & 3.09 & 3.12 \\
+\midrule\multicolumn{6}{l}{\itshape One DDP evaluation} \\
+ICFM, DDP & \cellcolor{bestblue}$+0.981$ & \cellcolor{bestblue}$+0.0917$ & \cellcolor{bestblue}$+11.5$ & \cellcolor{bestblue}$+0.504$ & \cellcolor{bestblue}$+1.38$ \\
+Fixed-time ICFM & \cellcolor{worstred}$+0.882$ & \cellcolor{worstred}$+0.0865$ & \cellcolor{worstred}$+10.9$ & $+0.498$ & \cellcolor{worstred}$+1.31$ \\
+Annealed DDP & $+0.936$ & $+0.0903$ & $+11.1$ & \cellcolor{worstred}$+0.496$ & \cellcolor{secondorange}$+1.34$ \\
+Fine-tuned DDP & \cellcolor{secondorange}$+0.959$ & \cellcolor{secondorange}$+0.0913$ & \cellcolor{secondorange}$+11.2$ & \cellcolor{secondorange}$+0.499$ & \cellcolor{bestblue}$+1.38$ \\
+\bottomrule\end{tabular}
+\caption{Effect of the DDP training protocol. The noisy row gives absolute means for channel~0 on 824 whole VoiceBank--DEMAND test utterances. Enhanced rows give mean paired changes on the same utterances. All 824 pairs are valid for each metric.}\label{tab:cfmse-ddp}
+\end{table}

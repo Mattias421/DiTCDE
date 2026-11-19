@@ -170,7 +170,6 @@ plainpages=false]{hyperref}
 \setlength{\notationgap}{1pc}
 
 \typeout{START_CHAPTER "TOC" \theabspage}
-\frontmatter
 % Keep a single Arabic page sequence, including preliminary pages.
 \pagenumbering{arabic}
 \input{frontmatter.tex}
@@ -182,7 +181,6 @@ plainpages=false]{hyperref}
  \input{notation.tex}
  % Enable numbered chapters without resetting the page counter.
  \cleardoublepage
- \makeatletter\@mainmattertrue\makeatother
  \input{chapters/intro}
  \input{chapters/background_stuff}
  \part{Continuous depth}

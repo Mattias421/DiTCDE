@@ -32,7 +32,14 @@ The University of Sheffield\par
 \textbf{Draft for author completion and confirmation before submission.}
 
 % Allow printing full formatted references inline via \bibentry{...}
+\begingroup
+\makeatletter
+% Read entries without backref's paragraph scanner for the publication list.
+\let\bibliography\BR@bib
+\let\BR@bibitem\@undefined
+\makeatother
 \nobibliography*
+\endgroup
 
 \section*{GenAI self-declaration}
 I acknowledge the use of GenAI software to [INSERT ALL USES]. I declare that my use of GenAI software is consistent with the research degree award criteria outlined in the Code of Practice for Research Degree Programmes. This thesis is a genuine account of the research I have undertaken, and the content can still be considered my own, with all references cited accordingly.

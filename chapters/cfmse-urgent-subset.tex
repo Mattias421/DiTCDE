@@ -1,0 +1,20 @@
+\begin{table}[htbp]\centering\small
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{lrrrrr}\toprule
+System & PESQ & Intell. & SI-SDR (dB) & P.808 & WhiSQA \\ \midrule
+\rowcolor{worstred}Noisy & -- & -- & -- & 0 & 0 \\
+\midrule\multicolumn{6}{l}{\itshape Blind, ODE, 50 NFE} \\
+Stanage ICFM & -- & -- & -- & \cellcolor{secondorange}$+0.639$ & \cellcolor{secondorange}$+0.702$ \\
+Local SB-VE & -- & -- & -- & \cellcolor{worstred}$+0.617$ & \cellcolor{worstred}$+0.390$ \\
+Gaussian FM & -- & -- & -- & \cellcolor{bestblue}$+0.857$ & \cellcolor{bestblue}$+1.02$ \\
+\midrule\multicolumn{6}{l}{\itshape Blind, PC, 60 NFE} \\
+SGMSE+ & -- & -- & -- & $+0.813$ & $+1.17$ \\
+\midrule\multicolumn{6}{l}{\itshape Nonblind, ODE, 50 NFE} \\
+Stanage ICFM & -- & -- & -- & \cellcolor{worstred}$+0.728$ & \cellcolor{secondorange}$+1.30$ \\
+Local SB-VE & -- & -- & -- & \cellcolor{secondorange}$+0.773$ & \cellcolor{worstred}$+0.987$ \\
+Gaussian FM & -- & -- & -- & \cellcolor{bestblue}$+0.869$ & \cellcolor{bestblue}$+1.48$ \\
+\midrule\multicolumn{6}{l}{\itshape Nonblind, PC, 60 NFE} \\
+SGMSE+ & -- & -- & -- & $+0.849$ & $+1.53$ \\
+\bottomrule\end{tabular}
+\caption{URGENT checkpoint comparison on 32 recordings per split. P.808 and WhiSQA changes use every recording, paired with channel 0 (red zero reference). Intrusive scores are unavailable.}\label{tab:cfmse-urgent-subset}
+\end{table}

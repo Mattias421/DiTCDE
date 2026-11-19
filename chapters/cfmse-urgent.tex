@@ -1,0 +1,20 @@
+\begin{table}[htbp]\centering\small
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{lrrrrr}\toprule
+System & PESQ & Intell. & SI-SDR (dB) & P.808 & WhiSQA \\ \midrule
+\rowcolor{worstred}Noisy & -- & -- & -- & 0 & 0 \\
+\midrule\multicolumn{6}{l}{\itshape Blind, direct or DDP, 1 NFE} \\
+Direct U-Net & -- & -- & -- & \cellcolor{worstred}$+0.538$ & \cellcolor{worstred}$+0.285$ \\
+Fine-tuned DDP & -- & -- & -- & \cellcolor{bestblue}$+0.558$ & \cellcolor{bestblue}$+0.485$ \\
+\midrule\multicolumn{6}{l}{\itshape Blind, ODE, 50 NFE} \\
+Later ICFM & -- & -- & -- & \cellcolor{worstred}$+0.583$ & \cellcolor{bestblue}$+0.657$ \\
+Official SB-VE m5 & -- & -- & -- & \cellcolor{bestblue}$+0.637$ & \cellcolor{worstred}$+0.439$ \\
+\midrule\multicolumn{6}{l}{\itshape Nonblind, direct or DDP, 1 NFE} \\
+Direct U-Net & -- & -- & -- & \cellcolor{worstred}$+0.714$ & \cellcolor{worstred}$+0.820$ \\
+Fine-tuned DDP & -- & -- & -- & \cellcolor{bestblue}$+0.772$ & \cellcolor{bestblue}$+1.14$ \\
+\midrule\multicolumn{6}{l}{\itshape Nonblind, ODE, 50 NFE} \\
+Later ICFM & -- & -- & -- & \cellcolor{worstred}$+0.793$ & \cellcolor{bestblue}$+1.28$ \\
+Official SB-VE m5 & -- & -- & -- & \cellcolor{bestblue}$+0.828$ & \cellcolor{worstred}$+1.05$ \\
+\bottomrule\end{tabular}
+\caption{URGENT transfer on 1,000 recordings per split. P.808 and WhiSQA changes use every recording, paired with channel 0 (red zero reference). Intrusive scores are unavailable.}\label{tab:cfmse-urgent}
+\end{table}

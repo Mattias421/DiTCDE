@@ -1,0 +1,26 @@
+\begin{table}[htbp]\centering\small
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{lrrrrr}\toprule
+System & PESQ & ESTOI & SI-SDR (dB) & P.808 & WhiSQA \\ \midrule
+Noisy & 1.97 & 0.787 & 8.45 & 3.09 & 3.12 \\
+\midrule\multicolumn{6}{l}{\itshape 1 Euler evaluation} \\
+ICFM & \cellcolor{bestblue}$+0.945$ & \cellcolor{worstred}$+0.0766$ & \cellcolor{worstred}$+4.74$ & \cellcolor{worstred}$+0.402$ & \cellcolor{worstred}$+1.10$ \\
+Gaussian FM & \cellcolor{worstred}$+0.870$ & \cellcolor{bestblue}$+0.0807$ & \cellcolor{bestblue}$+10.3$ & \cellcolor{bestblue}$+0.488$ & \cellcolor{bestblue}$+1.36$ \\
+\midrule\multicolumn{6}{l}{\itshape 2 Euler evaluations} \\
+ICFM & \cellcolor{bestblue}$+0.905$ & \cellcolor{worstred}$+0.0742$ & \cellcolor{worstred}$+4.51$ & -- & -- \\
+Gaussian FM & \cellcolor{worstred}$+0.889$ & \cellcolor{bestblue}$+0.0842$ & \cellcolor{bestblue}$+10.7$ & -- & -- \\
+\midrule\multicolumn{6}{l}{\itshape 5 Euler evaluations} \\
+ICFM & \cellcolor{bestblue}$+1.00$ & \cellcolor{bestblue}$+0.0921$ & \cellcolor{worstred}$+8.51$ & -- & -- \\
+Gaussian FM & \cellcolor{worstred}$+0.962$ & \cellcolor{worstred}$+0.0866$ & \cellcolor{bestblue}$+10.5$ & -- & -- \\
+\midrule\multicolumn{6}{l}{\itshape 10 Euler evaluations} \\
+ICFM & \cellcolor{worstred}$+0.931$ & \cellcolor{bestblue}$+0.0943$ & \cellcolor{bestblue}$+11.0$ & -- & -- \\
+Gaussian FM & \cellcolor{bestblue}$+1.04$ & \cellcolor{worstred}$+0.0866$ & \cellcolor{worstred}$+10.1$ & -- & -- \\
+\midrule\multicolumn{6}{l}{\itshape 20 Euler evaluations} \\
+ICFM & \cellcolor{worstred}$+0.899$ & \cellcolor{bestblue}$+0.0939$ & \cellcolor{bestblue}$+11.4$ & -- & -- \\
+Gaussian FM & \cellcolor{bestblue}$+1.06$ & \cellcolor{worstred}$+0.0846$ & \cellcolor{worstred}$+9.75$ & -- & -- \\
+\midrule\multicolumn{6}{l}{\itshape 50 Euler evaluations} \\
+ICFM & \cellcolor{worstred}$+0.886$ & \cellcolor{bestblue}$+0.0935$ & \cellcolor{bestblue}$+11.4$ & \cellcolor{bestblue}$+0.508$ & \cellcolor{worstred}$+1.38$ \\
+Gaussian FM & \cellcolor{bestblue}$+1.03$ & \cellcolor{worstred}$+0.0812$ & \cellcolor{worstred}$+9.37$ & \cellcolor{worstred}$+0.488$ & \cellcolor{bestblue}$+1.40$ \\
+\bottomrule\end{tabular}
+\caption{Generation budget for the two full-data flow checkpoints. Each entry is the mean change from channel 0 on the same 824 whole VoiceBank--DEMAND test utterances. The noisy row gives absolute reference means. Dashes mark incomplete score sets.}\label{tab:cfmse-budget}
+\end{table}
