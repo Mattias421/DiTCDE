@@ -104,21 +104,6 @@ The full-split comparison carries the direct U-Net, fine-tuned DDP and later noi
 
 At 50 evaluations, ICFM gives a larger WhiSQA gain than official SB-VE m5 on both splits, while m5 gives a larger P.808 gain (Table~\ref{tab:cfmse-urgent}). Table~\ref{tab:cfmse-urgent-subset} compares the 26-speaker Stanage ICFM and local SB-VE with Gaussian FM on the same 32 recordings per split. SGMSE+ uses 30 predictor--corrector steps. The smaller comparison uses the Stanage ICFM checkpoint selected at validation PESQ 2.17, whereas the full-split comparison uses the later checkpoint selected at 2.34.
 
-\subsection{Target-speaker extraction on CHiME-9 ECHI}
-ECHI requires extraction of an enrolled speaker from four microphone signals. The microphones and enrolment audio condition a mono complex spectral state. A data-derived source would require a microphone selection or projection into this state space. A Gaussian source can be sampled directly in the target representation.
-
-For OT-FM, depth $u$ runs from noise at zero to speech at one, reversing the VoiceBank convention. With clean spectrum $X$ and standard circular complex Gaussian noise $\epsilon$, the state is $(1-u)\epsilon+uX$. Euler generation starts from $\epsilon$ and integrates the predicted velocity $X-\epsilon$.
-
-The matched systems use a seven-level, width-64 NCSN++ backbone with a speaker encoder. The frontend uses a 510-sample Hann window and a 128-sample hop at 16~kHz. Evaluation uses four-second windows with two-second stride and normalised overlap-add.The development set contains 4,309 target-speaker segments and includes segments used for checkpoint selection. The SB-VE adaptation also draws a mono Gaussian endpoint. Its velocity target differentiates the bridge interpolant with $k=2.6$ and $c=0.4$. Generation uses one midpoint-field evaluation or eight explicit midpoint steps at a budget of 16 calls per window.
-
-\begin{figure}[htbp]
-\centering
-\includegraphics[width=\linewidth]{plots/se/echi_development.pdf}
-\caption{ECHI development means at one and 16 network calls per window. GridNet and the direct predictor use one call. Of 4,309 segments, two lack valid STOI. PESQ excludes two segments for VE and one-call SB-VE, and one segment for each remaining configuration. All segments contribute to SI-SDR, P.808 and WhiSQA.}
-\label{fig:echi-euler-nfe}
-\end{figure}
-On the ECHI development set, increasing the OT-FM budget from one to 16 calls raises STOI from $0.531$ to $0.587$ and lowers SI-SDR from $-23.8$ to $-28.0$~dB under the official alignment without lag search (Figure~\ref{fig:echi-euler-nfe}). At 16 calls OT-FM exceeds one-call GridNet by $+0.204$ STOI on 4,307 common valid segments (95\% paired bootstrap interval $+0.197$ to $+0.210$). These single-seed results establish that a mono Gaussian source supports extraction conditioned on four microphones and speaker enrolment. Testing whether that source improves extraction requires a second system starting from a specified mono projection of the observation, with the same conditioning, backbone, training budget and sampler.
-
 \section{Standard source models for target speaker hearing-aid}
 
 The probability paths covered in the first section are not applicable to all SE tasks. Some tasks such as hearing-aid SE involve predicting two-channel audio from four channels. This is problematic for paths with data-derived source distributions as there is a mismatch between the model input and output, which is hard to construct an interpolating path. 
