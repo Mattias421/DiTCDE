@@ -4,13 +4,14 @@ On VoiceBank--DEMAND, noisy and clean speech have the same complex spectral repr
 
 The source specifies the state from which generation starts. The probability path specifies the distribution of intermediate states used during optimisation. The objective determines what the network estimates at each depth, and the sampler determines how those estimates produce an enhanced signal. Chapter~\ref{ch:simulation-free} describes the path constructions.
 
+OU-VE was proposed in SGMSE+. It was found XXXX SB-VE was found better in richter et al; jukic et al.
+
 FlowSE achieved comparable enhancement with five conditional-flow evaluations to its diffusion reference with 60 evaluations \citep{leeFlowSEFlowMatchingbased2025}. \citet{korostikModifyingFlowMatching2025} investigate an informed source prior, a data-prediction objective, deterministic generation, and early stopping, including a deterministic one-step configuration for denoising. Their results also distinguish denoising from dereverberation, for which stochastic generation without the informed prior is preferable. The preferred source and generation procedure therefore depend on the distortion.
 
 FlowAVSE combines acoustic and visual conditioning with conditional flow matching for single-step audiovisual speech enhancement \citep{jungFlowAVSEEfficientAudioVisual2024}. Complementary work on generative speech foundation models pretrains a restoration model directly on complex-valued short-time Fourier transform coefficients and adapts it to tasks including denoising and target-speaker extraction \citep{kuGenerativeSpeechFoundation2025}.
 
 Stream.FM ... 
 
-richter et al; jukic et al.
 
 \section{Data}
 VoiceBank--DEMAND pairs clean and noisy speech \citep{valentini2016investigating}. Speakers p226 and p287 supply the validation data, \note{mention test speakers}, leaving 26 training speakers. 
@@ -28,16 +29,14 @@ Higher values indicate better performance for all reported metrics. The metrics 
 \note{To stay consistent with the dissertation, sgmse+ will be dubbed ``OU-VE'', but we will mention that this is known as sgmse.}
 \note{Is it necessary to use PC sampling, surely euler is sufficient.}
 
-The majority of models use paths defined in \note{chap and sec ref}, using the problem set up in \note{ref}. The vector field is parametrised by a U-Net modified for SE \citep{sgmse}. Models are trained until SI-SDR converges, then the checkpoint with best PESQ is chosen. An additional time-domain loss is used with weight 0.001 \note{add 1 or 2 more points.}
+The majority of models use paths defined in \note{chap and sec ref}, using the problem set up in \note{ref}. The vector field is parametrised by a U-Net modified for SE \citep{sgmse+}. Models are trained until SI-SDR converges, then the checkpoint with best PESQ is chosen. An additional time-domain loss is used with weight 0.001 \cite{jukic} \note{add 1 or 2 more points.}
 
 Unless otherwise stated, ODE generation uses 50 Euler steps.
 
 As an additional baseline, supervised U-Net maps a noisy spectrum directly to a clean-spectrum estimate in one evaluation. This baseline is dubbed ``direct'' in the experiments below. To ablate the significance of a data source, an ICFM model trained from a standard normal is provided, labelled ICFM ($\gN$).
 
-Hyperparameter selection typically follows judgement from previous work \citep{sgmse,sbve}, 
+Hyperparameter selection typically follows judgement from previous work \citep{sgmse,sbve}, but for newly investigated models the $c$ parameter was sweeped between 0.05 and 0.4, with the proposed $c$ being that with the highest validation PESQ.
 
-
-\note{Write points about k c hparam sweep}
 
 
 
@@ -202,3 +201,5 @@ Gaussian FM & FM & DDP & - & - & $+0.87$ & $+0.08$ & $+10.3$ & $+0.49$ & $+1.36$
 \note{The results table should largly follow table style above,
 But rows should be noisy, direct, ou-ve, sb-ve, icfm, fm. And use stoi instead of estoi.
 }
+
+\note{extensions: 2-point flow e.g. with beam forming. eval ddp.}
