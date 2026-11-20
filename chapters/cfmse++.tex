@@ -29,7 +29,22 @@ Higher values indicate better performance for all reported metrics. The metrics 
 \note{To stay consistent with the dissertation, sgmse+ will be dubbed ``OU-VE'', but we will mention that this is known as sgmse.}
 \note{Is it necessary to use PC sampling, surely euler is sufficient.}
 
-The majority of models use paths defined in \note{chap and sec ref}, using the problem set up in \note{ref}. The vector field is parametrised by a U-Net modified for SE \citep{sgmse+}. Models are trained until SI-SDR converges, then the checkpoint with best PESQ is chosen. An additional time-domain loss is used with weight 0.001 \cite{jukic} \note{add 1 or 2 more points.}
+\begin{table}
+    \centering
+    \begin{tabular}{cclccl}
+    \toprule
+          &\acs{MR-VP}&   OU-VE&\acs{SB-VE}& \acs{ICFM} &FM\\
+         \midrule
+         Exact interpolation &\xmark&   \xmark&\checkmark& \xmark &\xmark\\
+         Static variance &\xmark&   \xmark&\xmark& \checkmark &\xmark\\
+         Static gradient &\xmark&   \xmark&\xmark& \checkmark &\checkmark\\
+         \bottomrule
+    \end{tabular}
+    \caption{Comparison of the \acs{SB-VE} and \acs{ICFM} conditional paths. Exact interpolation refers to unsmoothed endpoints; static gradient refers to the conditional mean velocity.}
+    \label{tab:sb-icfm-path-properties}
+\end{table}
+
+The majority of models use paths defined in chapter \ref{ch:simulation-free}, using the speech enhancement problem set up. Table \ref{tab:sb-icfm-path-properties} summarises the properties of each path. The vector field is parametrised by a U-Net modified for SE \citep{sgmse+}. Models are trained until SI-SDR converges, then the checkpoint with best PESQ is chosen. An additional time-domain loss is used with weight 0.001 \cite{jukic} \note{add 1 or 2 more points.}
 
 Unless otherwise stated, ODE generation uses 50 Euler steps.
 
