@@ -282,20 +282,6 @@ this is refered to as flow-matching (FM) throughout.
 
 There are many related yet distinct views of flow matching, all emerging in 2022--2023. Liu, Gong, and Liu introduced rectified flow, using regression on straight interpolations and repeated rectification to straighten learned trajectories (preprint September 2022; \citealp{liuFlowStraightFast2022a}). Albergo and Vanden-Eijnden developed stochastic interpolants with a quadratic velocity objective (preprint September 2022; \citealp{albergoBuildingNormalizingFlows2023}). Lipman, Chen, and colleagues introduced flow matching through conditional probability paths (preprint October 2022; \citealp{lipman2023flow}). Tong and colleagues subsequently generalised conditional flow matching to arbitrary source distributions and endpoint couplings, including minibatch optimal-transport couplings (preprint February 2023; \citealp{tongImprovingGeneralizingFlowbased2024}).
 
-\begin{table}
-    \centering
-    \begin{tabular}{ccccl}
-    \toprule
-          &\acs{MR-VP}&  \acs{SB-VE}& \acs{ICFM} &FM\\
-         \midrule
-         Exact interpolation &\xmark&  \checkmark& \xmark &\xmark\\
-         Static variance &\xmark&  \xmark& \checkmark &\xmark\\
-         Static gradient &\xmark&  \xmark& \checkmark &\checkmark\\
-         \bottomrule
-    \end{tabular}
-    \caption{Comparison of the \acs{SB-VE} and \acs{ICFM} conditional paths. Exact interpolation refers to unsmoothed endpoints; static gradient refers to the conditional mean velocity.}
-    \label{tab:sb-icfm-path-properties}
-\end{table}
 For the sake of ablation, this thesis proposes \acs{SB-SV}. This path shares \acs{SB} interpolation with \acs{FM} variance. The goal here is to observe the practical implications of interpolation and variance design. \acs{SB-SV} is similar to \acs{FM} because it is possible to construct an \acs{SB-SV} path with almost linear interpolation (recall \figref{fig:sb_kc}). Table \ref{tab:sb-icfm-path-properties} summarises the paths discussed above, which are explored later.
 
 
