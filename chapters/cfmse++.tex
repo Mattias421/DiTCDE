@@ -44,13 +44,15 @@ Higher values indicate better performance for all reported metrics. The metrics 
     \label{tab:sb-icfm-path-properties}
 \end{table}
 
-The majority of models use paths defined in chapter \ref{ch:simulation-free}, using the speech enhancement problem set up. Table \ref{tab:sb-icfm-path-properties} summarises the properties of each path. The vector field is parametrised by a U-Net modified for SE \citep{sgmse+}. Models are trained until SI-SDR converges, then the checkpoint with best PESQ is chosen. An additional time-domain loss is used with weight 0.001 \cite{jukic} \note{add 1 or 2 more points.}
+The majority of models use paths defined in chapter \ref{ch:simulation-free}, using the speech enhancement problem set up. Table \ref{tab:sb-icfm-path-properties} summarises the properties of each path. The vector field is parametrised by a U-Net modified for SE \citep{richter2023speech}. Models are trained until SI-SDR converges, then the checkpoint with best PESQ is chosen. An additional time-domain loss is used with weight 0.001 \cite{jukic2024schr}. Unless otherwise stated, ODE generation uses 50 Euler steps.
 
-Unless otherwise stated, ODE generation uses 50 Euler steps.
+Hyperparameter selection typically follows judgement from previous work \citep{jukic2024schr,richter2023speech}, but for newly investigated models the $c$ parameter was sweeped between 0.05 and 0.4, with the proposed $c$ being that with the highest validation PESQ.
 
-As an additional baseline, supervised U-Net maps a noisy spectrum directly to a clean-spectrum estimate in one evaluation. This baseline is dubbed ``direct'' in the experiments below. To ablate the significance of a data source, an ICFM model trained from a standard normal is provided, labelled ICFM ($\gN$).
+The OU-VE is implemented using SGMSE+ \citep{richter2023speech}, and within the same repository SB-VE is implemented using \citeauthor{richterInvestigatingTrainingObjectives2025}'s implementation of \cite{jukic2024schr}. ICFM is implemented by adding the paths derived from \cite{tongImprovingGeneralizingFlowbased2024} to the repository. This also includes data processing pipelines for VB+DMD.
 
-Hyperparameter selection typically follows judgement from previous work \citep{sgmse,sbve}, but for newly investigated models the $c$ parameter was sweeped between 0.05 and 0.4, with the proposed $c$ being that with the highest validation PESQ.
+
+As an additional baseline, supervised U-Net maps a noisy spectrum directly to a clean-spectrum estimate in one evaluation. This baseline is dubbed ``direct'' in the experiments below. To ablate the significance of a data source, an FM model trained from a standard normal is provided, labelled Gaussian FM.
+
 
 
 
@@ -67,8 +69,8 @@ Hyperparameter selection typically follows judgement from previous work \citep{s
      Noisy& -&-&-&-& 1.97& 0.79& 8.4& 3.09& 3.12\\
              \midrule
 Direct U-Net & DP & Direct & - & - & $+0.82$ & \cellcolor{bestblue}$+0.09$ & $+11.0$ & $+0.48$ & $+1.23$\\
-OU-VE & Score matching & PC (100 NFE) & - & -& $+0.93$ & \cellcolor{secondorange}$+0.08$ & $+8.8$& $+0.45$ & $+1.16$ \\
-OU-VE & Score matching & Euler ODE (50 NFE) & - & -& \cellcolor{worstred}$+0.55$& \cellcolor{worstred}$+0.06$& \cellcolor{worstred}$+4.2$& \cellcolor{worstred}$+0.37$& \cellcolor{worstred}$+0.79$ \\
+OU-VE & SM & PC (100 NFE) & - & -& $+0.93$ & \cellcolor{secondorange}$+0.08$ & $+8.8$& $+0.45$ & $+1.16$ \\
+OU-VE & SM & ODE  & - & -& \cellcolor{worstred}$+0.55$& \cellcolor{worstred}$+0.06$& \cellcolor{worstred}$+4.2$& \cellcolor{worstred}$+0.37$& \cellcolor{worstred}$+0.79$ \\
 SB-VE & DP & ODE & 2.6 & 0.4 & $+0.95$ & \cellcolor{secondorange}$+0.08$ & $+10.9$ & $+0.51$ & $+1.35$\\
 SB-VE & DP & ODE & 0.99 & 0.375 & $+0.95$ & \cellcolor{bestblue}$+0.09$ & $+11.1$ & $+0.51$ & $+1.36$\\
              \midrule
@@ -83,33 +85,38 @@ SB-SV & DP & DDP & 2.6 & 0.15 & $+1.01$ & \cellcolor{bestblue}$+0.09$ & $+11.5$ 
 SB-SV & DP & DDP & 0.99 & 0.1 & $+1.02$ & \cellcolor{bestblue}$+0.09$ & $+11.6$ & $+0.52$ & \cellcolor{secondorange}$+1.39$\\
 ICFM & DP & DDP & - & 0.1 & \cellcolor{bestblue}$+1.08$ & \cellcolor{bestblue}$+0.09$ & $+11.8$ & $+0.53$ & \cellcolor{bestblue}$+1.40$\\
 ICFM & FM & DDP & - & 0.1 & \cellcolor{secondorange}$+1.03$ & \cellcolor{bestblue}$+0.09$ & \cellcolor{bestblue}$+12.0$ & \cellcolor{secondorange}$+0.54$ & \cellcolor{bestblue}$+1.40$\\
-Gaussian FM & FM & DDP & - & - & $+0.87$ & \cellcolor{secondorange}$+0.08$ & $+10.3$ & $+0.49$ & $+1.36$\\
+Gaussian FM & FM & DDP & - & 0.1 & $+0.87$ & \cellcolor{secondorange}$+0.08$ & $+10.3$ & $+0.49$ & $+1.36$\\
             \bottomrule
         \end{tabular}
 }
-\caption{Mean speech quality metrics on \ac{VB-DMD} for the proposed SB-SV and ICFM systems, with FM loss and \ac{DDP} inference, compared with the SB-VE \citep{jukic2024schr} baseline. $k=0.99$ induces straightness and $c$ scales variance.}
+\caption{Mean speech quality metrics on \ac{VB-DMD} for different probability paths. $k=0.99$ induces straightness and $c$ scales variance.}
 \label{tab:results}
 \end{table}
-The results are displayed in \tableref{tab:results}. The tested SB-SV and ICFM settings improve several metrics over the SB-VE baseline, but the table does not show improvement on every metric. Using SB-SV with $k=0.99$ lowers PESQ and WhiSQA relative to $k=2.6$. ICFM with depth-independent path velocity and variance improves several reported scores. For ODE inference, FM loss gives a slightly higher SI-SDR and DNSMOS than DP, while DP gives higher PESQ; for DDP, DP has the highest PESQ and FM has the highest SI-SDR. These results do not establish a single objective as superior on all metrics.
+The results are displayed in \tableref{tab:results}. After viewing the absolute noisy speech values and direct U-Net, the table should be interpreted as adding more constraints on the path and reducing variance and gradient dynamics. OU-VE is the least constrained model, and performs the worst with ODE inference. Sampling the OU-VE model with PC improves metrics to a comparable range with direct U-Net. PC sampling however requires twice as many function evaluations, and will be used to keep OU-VE as a stronger baseline despite the additional compute.
+
+The tested SB-SV and ICFM settings improve several metrics over the SB-VE baseline, but the table does not show improvement on every metric. Using SB-SV with $k=0.99$ lowers PESQ (-0.12) and WhiSQA (-0.04) relative to $k=2.6$. ICFM with depth-independent path velocity and variance improves several reported scores. For ODE inference, FM loss gives a slightly higher SI-SDR and DNSMOS than DP, while DP gives higher PESQ; for DDP, DP has the highest PESQ and FM has the highest SI-SDR. These results do not establish a single superior model on all metrics, but is clear that path design does have an effect. ICFM appears to be the most advantageous when the context of the application requires a simpler path with reliable performance, and without the tuning of the $k$ hyperparameter.
+
+The DDP results are especially important when comparing with the direct U-Net. Both have one-step generation, yet training with SB or ICFM will likely yield a stronger model. This however is less reliable for Gaussian FM, which is more comparable to direct U-Net apart from reaching a high WhiSQA score (+1.40) with ODE inference. Such findings suggest the importance of choosing an appropriate source distribution and probability flow if the application allows it.
+
 \begin{figure}[tb]
 \centering
 \includegraphics[width=\linewidth]{plots/se/ode_step_metrics.pdf}
   \caption{Speech-enhancement quality against the number of ODE sampling steps $N$ on a logarithmic axis. Panels show PESQ, SI-SDR, DNSMOS, and WhiSQA, ordered from left to right and top to bottom. Unqualified SB-VE and SB-SV curves use $k=2.6$; the second SB-SV curve uses $k=0.99$. ICFM-DP and ICFM-FM denote the two training objectives. Higher scores indicate better quality. \note{Could add more models here but it wouldn't change the story that much.}}
 \label{fig:se-ode-steps}
 \end{figure}
-Figure~\ref{fig:se-ode-steps} compares the supplied ODE-step results. The $N=1$ points represent one-step ODE sampling; DDP results are reported separately in \tableref{tab:results}.
+Figure~\ref{fig:se-ode-steps} compares the supplied ODE-step results. The $N=1$ points represent one-step ODE sampling. It can be seen that SB-VE is much more robust at smaller NFE. A likely cause of this is the use of exact interpolation, as SB-SV is an almost identical model yet much less robust. As NFE increases, SB-VE is surpassed yet not by a large margin.
 
 
 
-\subsection{Generation budget}
-\note{I'm thinking of removing this section, but it does show a further investigation into DDP.}
-A single Euler step advances the initial state using the estimated field. DDP evaluates the endpoint predictor directly. For the later ICFM checkpoint, Euler uses evaluation depths descending towards $0.03$ and excludes the initial endpoint. Gaussian FM evaluates the left endpoint of each step and integrates to zero. Figure~\ref{fig:vbdmd-budget} varies the integration budget within each checkpoint.
-\begin{figure}[htbp]
-\centering
-\includegraphics[width=\linewidth]{plots/se/vbdmd_budget.pdf}
-\caption{Mean paired changes on 824 VoiceBank--DEMAND test utterances, with all pairs valid for each metric. Circles show Euler integrations, open diamonds show DDP and crosses show direct U-Net regression. The verified Euler budgets shown are 1, 2 and 50 evaluations.}
-\label{fig:vbdmd-budget}
-\end{figure}
+% \subsection{Generation budget}
+% \note{I'm thinking of removing this section, but it does show a further investigation into DDP.}
+% A single Euler step advances the initial state using the estimated field. DDP evaluates the endpoint predictor directly. For the later ICFM checkpoint, Euler uses evaluation depths descending towards $0.03$ and excludes the initial endpoint. Gaussian FM evaluates the left endpoint of each step and integrates to zero. Figure~\ref{fig:vbdmd-budget} varies the integration budget within each checkpoint.
+% \begin{figure}[htbp]
+% \centering
+% \includegraphics[width=\linewidth]{plots/se/vbdmd_budget.pdf}
+% \caption{Mean paired changes on 824 VoiceBank--DEMAND test utterances, with all pairs valid for each metric. Circles show Euler integrations, open diamonds show DDP and crosses show direct U-Net regression. The verified Euler budgets shown are 1, 2 and 50 evaluations.}
+% \label{fig:vbdmd-budget}
+% \end{figure}
 
 \section{Data efficiency}
 \begin{table}[htbp]
@@ -147,14 +154,15 @@ Speakers & Model & Updates & NFE & PESQ & ESTOI & SI-SDR (dB) & DNSMOS P.808 & W
 \end{table}
 
 \section{Which findings carry beyond the VoiceBank test set?}
-\subsection{Transfer to URGENT}
 The full-split comparison carries the direct U-Net, fine-tuned DDP and later noisy-source ICFM checkpoints from VoiceBank to URGENT. The released SB-VE m5 supplies a bridge reference. Generation uses channel~0 at 16~kHz in four-second windows with 0.5-second overlap. Clean references are unavailable on the blind split. The archived nonblind evaluation also scored only the two non-intrusive measures.
-\input{chapters/cfmse-urgent}
-\input{chapters/cfmse-urgent-subset}
+
+\note{Need URGENT table, need to reinterpret results.}
 
 At 50 evaluations, ICFM gives a larger WhiSQA gain than official SB-VE m5 on both splits, while m5 gives a larger P.808 gain (Table~\ref{tab:cfmse-urgent}). Table~\ref{tab:cfmse-urgent-subset} compares the 26-speaker Stanage ICFM and local SB-VE with Gaussian FM on the same 32 recordings per split. SGMSE+ uses 30 predictor--corrector steps. The smaller comparison uses the Stanage ICFM checkpoint selected at validation PESQ 2.17, whereas the full-split comparison uses the later checkpoint selected at 2.34.
 
 \section{Standard source models for target speaker hearing-aid}
+
+\note{Listening to the audio: gridnet is a fail, and the other models are quiet, something clearly went wrong.}
 
 The probability paths covered in the first section are not applicable to all SE tasks. Some tasks such as hearing-aid SE involve predicting two-channel audio from four channels. This is problematic for paths with data-derived source distributions as there is a mismatch between the model input and output, which is hard to construct an interpolating path. 
 
@@ -218,3 +226,9 @@ But rows should be noisy, direct, ou-ve, sb-ve, icfm, fm. And use stoi instead o
 }
 
 \note{extensions: 2-point flow e.g. with beam forming. eval ddp.}
+
+
+\section{Summary and extensions}
+
+\paragraph{extensions}
+Broader hparam/architeture search.
