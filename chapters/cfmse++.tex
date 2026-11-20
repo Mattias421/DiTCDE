@@ -8,6 +8,10 @@ FlowSE achieved comparable enhancement with five conditional-flow evaluations to
 
 FlowAVSE combines acoustic and visual conditioning with conditional flow matching for single-step audiovisual speech enhancement \citep{jungFlowAVSEEfficientAudioVisual2024}. Complementary work on generative speech foundation models pretrains a restoration model directly on complex-valued short-time Fourier transform coefficients and adapts it to tasks including denoising and target-speaker extraction \citep{kuGenerativeSpeechFoundation2025}.
 
+Stream.FM ... 
+
+richter et al; jukic et al.
+
 \section{Data}
 VoiceBank--DEMAND pairs clean and noisy speech \citep{valentini2016investigating}. Speakers p226 and p287 supply the validation data, \note{mention test speakers}, leaving 26 training speakers. 
 \ainote{State that the experimental protocol follows Welker et al. (SGMSE) and Juki\'c et al. (SB-VE). The original 28-speaker training partition contains 11,572 paired utterances before reserving speakers p226 and p287 for validation, leaving 26 speakers for optimisation. Training mixtures use ten noise types (eight DEMAND recordings, synthetic babble and speech-shaped noise) at SNRs of 0, 5, 10 and 15~dB. The test partition contains 824 utterances from unseen speakers p232 (393 utterances) and p257 (431 utterances), with five unseen DEMAND noise types at SNRs of 2.5, 7.5, 12.5 and 17.5~dB. The original release is at 48~kHz; distinguish this from the experimental resampling rate when documenting preprocessing. Dataset source: \url{https://doi.org/10.7488/ds/2117}; split and noise details: \url{https://doi.org/10.1121/10.0004823}. Check the dataset citation: the official record associates the 28-speaker version with the Interspeech 2016 paper ``Speech Enhancement for a Noise-Robust Text-to-Speech Synthesis System using Deep Recurrent Neural Networks'', whereas ``Investigating RNN-based speech enhancement methods for noise-robust Text-to-Speech'' describes the 56-speaker version.}
@@ -30,7 +34,8 @@ Unless otherwise stated, ODE generation uses 50 Euler steps.
 
 As an additional baseline, supervised U-Net maps a noisy spectrum directly to a clean-spectrum estimate in one evaluation. This baseline is dubbed ``direct'' in the experiments below. To ablate the significance of a data source, an ICFM model trained from a standard normal is provided, labelled ICFM ($\gN$).
 
-\note{Need to explain fm from normal better in the intro chapter. And make sure OU-VE is also labelled in that chapter.}
+Hyperparameter selection typically follows judgement from previous work \citep{sgmse,sbve}, 
+
 
 \note{Write points about k c hparam sweep}
 
@@ -45,7 +50,7 @@ As an additional baseline, supervised U-Net maps a noisy spectrum directly to a 
         \toprule
                Path& Loss&Inference& k&$c$&  PESQ &  ESTOI &  SI-SDR&   DNSMOS&WhiSQA \\
     \midrule
-     Noisy& -&-&-&-& 1.97& 0.79& 8.4&  3.05&3.11\\
+     Noisy& -&-&-&-& 1.97& 0.79& 8.4& 3.09& 3.12\\
              \midrule
 Direct U-Net & DP & Direct & - & - & $+0.82$ & \cellcolor{bestblue}$+0.09$ & $+11.0$ & $+0.48$ & $+1.23$\\
 OU-VE & Score matching & PC (100 NFE) & - & -& $+0.93$ & \cellcolor{secondorange}$+0.08$ & $+8.8$& $+0.45$ & $+1.16$ \\
@@ -83,6 +88,7 @@ Figure~\ref{fig:se-ode-steps} compares the supplied ODE-step results. The $N=1$ 
 
 
 \subsection{Generation budget}
+\note{I'm thinking of removing this section, but it does show a further investigation into DDP.}
 A single Euler step advances the initial state using the estimated field. DDP evaluates the endpoint predictor directly. For the later ICFM checkpoint, Euler uses evaluation depths descending towards $0.03$ and excludes the initial endpoint. Gaussian FM evaluates the left endpoint of each step and integrates to zero. Figure~\ref{fig:vbdmd-budget} varies the integration budget within each checkpoint.
 \begin{figure}[htbp]
 \centering
@@ -92,14 +98,39 @@ A single Euler step advances the initial state using the estimated field. DDP ev
 \end{figure}
 
 \section{Data efficiency}
-The speaker study uses training sets of 1, 3, 7, 13 and 26 speakers and a maximum of 300 epochs. Validation PESQ selects the checkpoint within each run. For ICFM the selected checkpoints received 4,750, 18,400, 51,600, 92,400 and 189,280 optimiser updates respectively. The corresponding counts are 4,250, 24,000, 51,600, 99,000 and 175,760 for SB-VE, and 7,250, 21,600, 44,720, 49,500 and 67,600 for SGMSE+. Increasing the speaker count therefore changes both the variety of training speech and the number of updates. The common-protocol subset evaluations are pending (Figure~\ref{fig:vbdmd-speakers}). Isolating speaker diversity requires a matched update budget.
-
-\begin{figure}[htbp]
+\begin{table}[htbp]
 \centering
-\includegraphics[width=\linewidth]{plots/se/vbdmd_speakers.pdf}
-\caption{Data-efficiency comparison on the common 824-utterance test set. Performance points require a verified five-metric evaluation at the indicated speaker count. All subset scores are pending in this snapshot.}
-\label{fig:vbdmd-speakers}
-\end{figure}
+\resizebox{\linewidth}{!}{%
+\begin{tabular}{rlrrrrrrr}
+\toprule
+Speakers & Model & Updates & NFE & PESQ & ESTOI & SI-SDR (dB) & DNSMOS P.808 & WhiSQA \\
+\midrule
+-- & Noisy & -- & -- & $1.97$ & $0.79$ & $8.4$ & $3.09$ & $3.12$ \\
+\midrule
+1 & OU-VE & 7,250 & 100 & \cellcolor{bestblue}$-0.03$ & \cellcolor{worstred}$-0.16$ & \cellcolor{worstred}$-0.9$ & \cellcolor{worstred}$+0.24$ & \cellcolor{bestblue}$+0.45$ \\
+1 & SB-VE & 4,250 & 50 & \cellcolor{secondorange}$-0.14$ & \cellcolor{secondorange}$-0.09$ & \cellcolor{secondorange}$+0.7$ & \cellcolor{bestblue}$+0.35$ & \cellcolor{worstred}$+0.13$ \\
+1 & ICFM & 4,750 & 50 & \cellcolor{worstred}$-0.20$ & \cellcolor{bestblue}$-0.04$ & \cellcolor{bestblue}$+3.7$ & \cellcolor{secondorange}$+0.28$ & \cellcolor{secondorange}$+0.28$ \\
+\midrule
+3 & OU-VE & 21,600 & 100 & \cellcolor{bestblue}$+0.86$ & \cellcolor{bestblue}$+0.07$ & \cellcolor{worstred}$+9.5$ & \cellcolor{bestblue}$+0.50$ & \cellcolor{bestblue}$+1.37$ \\
+3 & SB-VE & 24,000 & 50 & \cellcolor{secondorange}$+0.52$ & \cellcolor{bestblue}$+0.07$ & \cellcolor{bestblue}$+10.2$ & \cellcolor{bestblue}$+0.50$ & \cellcolor{secondorange}$+1.13$ \\
+3 & ICFM & 18,400 & 50 & \cellcolor{worstred}$+0.22$ & \cellcolor{worstred}$+0.06$ & \cellcolor{secondorange}$+9.9$ & \cellcolor{worstred}$+0.43$ & \cellcolor{worstred}$+0.73$ \\
+\midrule
+7 & OU-VE & 44,720 & 100 & \cellcolor{bestblue}$+0.95$ & \cellcolor{worstred}$+0.07$ & \cellcolor{worstred}$+9.3$ & \cellcolor{worstred}$+0.50$ & \cellcolor{bestblue}$+1.41$ \\
+7 & SB-VE & 51,600 & 50 & \cellcolor{secondorange}$+0.72$ & \cellcolor{bestblue}$+0.08$ & \cellcolor{secondorange}$+10.5$ & \cellcolor{worstred}$+0.50$ & \cellcolor{secondorange}$+1.26$ \\
+7 & ICFM & 51,600 & 50 & \cellcolor{worstred}$+0.62$ & \cellcolor{bestblue}$+0.08$ & \cellcolor{bestblue}$+10.7$ & \cellcolor{bestblue}$+0.52$ & \cellcolor{worstred}$+1.24$ \\
+\midrule
+13 & OU-VE & 49,500 & 100 & \cellcolor{secondorange}$+0.87$ & \cellcolor{worstred}$+0.07$ & \cellcolor{worstred}$+8.6$ & \cellcolor{worstred}$+0.46$ & \cellcolor{worstred}$+1.24$ \\
+13 & SB-VE & 99,000 & 50 & \cellcolor{bestblue}$+0.89$ & \cellcolor{secondorange}$+0.08$ & \cellcolor{secondorange}$+10.4$ & \cellcolor{secondorange}$+0.48$ & \cellcolor{secondorange}$+1.31$ \\
+13 & ICFM & 92,400 & 50 & \cellcolor{worstred}$+0.78$ & \cellcolor{bestblue}$+0.09$ & \cellcolor{bestblue}$+11.3$ & \cellcolor{bestblue}$+0.52$ & \cellcolor{bestblue}$+1.32$ \\
+\midrule
+26 & OU-VE & 67,600 & 100 & \cellcolor{bestblue}$+0.93$ & \cellcolor{worstred}$+0.08$ & \cellcolor{worstred}$+8.8$ & \cellcolor{worstred}$+0.45$ & \cellcolor{worstred}$+1.16$ \\
+26 & SB-VE & 175,760 & 50 & \cellcolor{bestblue}$+0.93$ & \cellcolor{bestblue}$+0.09$ & \cellcolor{secondorange}$+10.9$ & \cellcolor{secondorange}$+0.49$ & \cellcolor{secondorange}$+1.34$ \\
+26 & ICFM & 189,280 & 50 & \cellcolor{worstred}$+0.71$ & \cellcolor{bestblue}$+0.09$ & \cellcolor{bestblue}$+11.8$ & \cellcolor{bestblue}$+0.52$ & \cellcolor{bestblue}$+1.37$ \\
+\bottomrule
+\end{tabular}}
+\caption{Mean paired changes from the noisy input on all 824 VoiceBank--DEMAND test utterances for checkpoints selected by validation PESQ at five training-speaker counts. All five metrics are valid for every utterance; no items are excluded. ICFM and SB-VE use 50-step Euler ODE generation (50 NFE); OU-VE (SGMSE+) uses predictor--corrector generation (100 NFE). Updates are the selected checkpoints\textquotesingle{} optimiser update counts under a maximum of 300 epochs; speaker count and optimisation budget therefore vary together. Colours rank the three enhanced systems separately within each speaker split and metric: blue denotes best, orange second-best and red worst, with ties ranked at displayed precision. The uncoloured noisy row gives absolute mean scores; enhanced rows give signed changes from that reference, with negative changes indicating degradation.}
+\label{tab:vbdmd-speakers}
+\end{table}
 
 \section{Which findings carry beyond the VoiceBank test set?}
 \subsection{Transfer to URGENT}
@@ -115,15 +146,23 @@ The probability paths covered in the first section are not applicable to all SE 
 
 This motivates paths that use a standard source and use the model input as conditioning channels. The microphone input channels are highly coreelated due to spatial and head turing effects, which may be easier to resolve if there is a clear separation between clean and noisy audio.
 
+\note{Get dnsmos and whisqa of the clean speech}
+
 \subsection{Data}
 \note{draw data figure}
 
-The ECHI CHiME-9 dataset contains 4-person conversations. All wear close talk microphones. One person wears \textit{meta aria smart glasses}, the other three wear hearing aids. Each hearing-aid has two channels, resulting in two left and two rights channels. The acoustic environment contains XXXX loudspeakers playing distracting audio. The goal is to predict one of the close-talk microphone signals given the hearing-aid signals.
+The ECHI CHiME-9 dataset contains 4-person conversations. All wear close talk microphones and sit at a table together. One person wears \textit{meta aria smart glasses}, the other three wear hearing aids. Each hearing-aid has two channels, resulting in two left and two rights channels. The acoustic environment contains XXXX loudspeakers playing distracting audio. The goal is to predict one of the close-talk microphone signals given the hearing-aid signals.
 
 The dataset contains XXXX minutes across XXXX conversations. Due to the challenge nature of the data, the official datset does not contain labels.
 
+There also exists a task using the XXXX-channel aria smart glasses.
+
 \subsection{Evaluation}
 Evaluation largly follows secref. STOI is used instead of ESTOI, which XXXX. 
+
+\subsection{Models}
+\note{Confirmation needed}
+Models use the same architecture as the first section, with a few modifications. The input to the U-Net is a 5 channel complex STFT, one channel for the probability path and four for conditioning. Auxiliary inputs include depth parameter $u$ and a speaker embedding to select the target speaker. The baseline is a TF-gridnet \citep{chime9,gridnet}, comprised of convolution, recurrent, and attention-based modules. The baseline is causal with a look ahead of XXXX ms. The U-Net used for the proposed systems is non-causal, which offers an unfair advantage compared to the challenge systems.
 
 \subsection{Results}
 
@@ -134,7 +173,7 @@ Evaluation largly follows secref. STOI is used instead of ESTOI, which XXXX.
         \toprule
                Path& Loss&Inference& k&$c$&  PESQ &  ESTOI &  SI-SDR&   DNSMOS&WhiSQA \\
     \midrule
-     Noisy& -&-&-&-& 1.97& 0.79& 8.4&  3.05&3.11\\
+     Noisy& -&-&-&-& 1.97& 0.79& 8.4& 3.09& 3.12\\
              \midrule
 Direct U-Net & DP & Direct & - & - & \cellcolor{worstred}$+0.82$ & \cellcolor{secondorange}$+0.09$ & $+11.0$ & \cellcolor{worstred}$+0.48$ & \cellcolor{worstred}$+1.23$\\
      OU-VE & Score matching &PC (100 NFE)&-&-& --& --& --& --& --\\
