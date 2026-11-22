@@ -1,16 +1,19 @@
 \chapter{Simulation-free training of continuous normalising flows}
 \label{ch:simulation-free}
+
+This chapter discusses an alternative method for training CNFs that does not require simulating the ODE from input to output. It begins by outlining the background of probability paths, which are the core mechanism for sampling the hidden state at any depth. Following on from there it covers learning objectives and paths suitable for conditional generation. Then samplers for generating samples are covered, follower by a discussion on likelihood computation and evaluation. Finally it gives some application examples and chapter summary.
+
 \note{Maybe include OTFM?}
 \section{From simulation-based to simulation-free training}
-\Acfp{CNF} connect a source distribution to a data distribution through a depth-dependent vector field. Training through numerical integration can require repeated forward and backward solves. Simulation-free objectives instead sample intermediate states from a prescribed probability path and regress an available conditional target. Sampling and likelihood evaluation can still require numerical integration.
+As discussed in the previous section, \Acfp{CNF} connect a source distribution to a data distribution through a depth-dependent vector field. Although it is possible to optimise through numerical integration alone, that would require repeated forward and backward solves. If instead constraints are allowed on the hidden state, such as those that admit an easy specification of intermediate states e.g. linear interpolation between the target input and outputs, then training becomes easier.  Simulation-free training achieves this by sampling intermediate states from a prescribed probability path and regressing an conditional target available from training data. Although such constraints avoid integrating the vector field with black box ODE solvers, generating new samples and likelihood evaluation still require numerical integration.
 
-This chapter organises these methods around probability paths, prediction targets, conditioning, and generation. Throughout, $u=0$ denotes the data endpoint and $u=1$ the source endpoint; generation proceeds towards decreasing $u$. Those with a deep learning background will notice that in many cases throughout this chapter $\rmY$ is associated with the model input, and $\rmX_0$ the output. The purpose of this choice is to stay consistent with the DE and diffusion model literature, where $\rmX$ is the state of the probability path.
+Throughout this chapter, depth $u=0$ denotes the target data endpoint and $u=1$ the source endpoint; generation proceeds towards decreasing $u$, whilst training samples any $\ru\in[0,1]$. Those with a deep learning background will notice that in many cases throughout this chapter $\rmY$ is associated with the model input, and $\rmX_0$ is associated with the output or target. Although such a choice is inconsistent with conventional $\rmX$ as input and $\rmY$ as output, this choice stays consistent with differential equations and the diffusion model literature, where $\rmX$ is the state of the probability path.
 
 Figure~\ref{fig:path-overview} provides a visual overview of the paths considered below: \acf{MR-VP}, \acf{SB-VE}, \acf{SB-SV}, and the linear interpolation paths used for flow matching (labelled \acs{ICFM}, for \acl{ICFM}, in the figure).
 \begin{figure}[p]
 \centering
 \includegraphics[width=\linewidth]{plots/simulation_free/ripple_paths_paired_diracs.pdf}
-\caption{Probability-path overview for three paired target and source points. Each row shows density contours at increasing depth $u$; generation proceeds from right to left. \acs{MR-VP} approaches a Gaussian mixture about the source points, \acs{SB-VE} has exact point-mass endpoints, and \acs{SB-SV} and the flow-matching paths retain Gaussian smoothing at both endpoints. The two \acs{SB-VE} schedules and two flow-matching variances illustrate their effects on the intermediate densities. Here \acs{ICFM} denotes the linear, constant-variance path form used with the displayed pairing, rather than independent endpoint sampling.}
+\caption{Probability-path overview for three paired target (blue) and source (red) points. Each row shows density contours at increasing depth $u$; generation proceeds from right to left. \acs{MR-VP} approaches a Gaussian mixture about the source points, \acs{SB-VE} has exact point-mass endpoints, and \acs{SB-SV} and the flow-matching paths retain Gaussian smoothing at both endpoints. The two \acs{SB-VE} schedules and two flow-matching variances illustrate their effects on the intermediate densities. Here \acs{ICFM} denotes the linear, constant-variance path form used with the displayed pairing, rather than independent endpoint sampling.}
 \label{fig:path-overview}
 \end{figure}
 \clearpage
@@ -19,27 +22,28 @@ Figure~\ref{fig:path-overview} provides a visual overview of the paths considere
 
 The central tool for simulation-free training is the definition of a probability path $p_u$. A path is a depth-varying density, which is conditioned on the data endpoint. The goal of simulation-free training is to marginalise the conditional path by optimising an estimator to predict the conditional path. The conditional paths considered here are Gaussian, with intermediate states $\rmX_u\sim p_u$ sampled as
 \[
-\rmX_u\coloneqq\rmM_u+\tSigma(u)^{1/2}\rmZ,\qquad \rmZ\sim\gN(\bm0,\tI).
+\rmX_u\coloneqq\rmM(u)+\tSigma(u)^{1/2}\rmZ,\qquad \rmZ\sim\gN(\bm0,\tI).
 \label{eq:xu_sample}
 \]
-The mean $\rmM$ and covariance $\tSigma$ depend on the chosen construction and its conditioning variables. A typical mean function is an interpolation of endpoint samples such as
+The above is the standard parametrisation trick for sampling Gaussian distributed variables. The mean $\rmM$ and covariance $\tSigma$ depend on the chosen construction and its conditioning variables. A typical mean function admits additional arguments as an interpolation of endpoint samples such as
 \[
 \rmM(u,\rmX,\rmY)\coloneqq a(u)\rmX + b(u)\rmY,
 \]
-where $a(0)=b(1)=1$ and $a(1)=b(0)=0$. When $\rmY=0$ for all $\rmX$, the marginal at $u=1$ becomes similar to a standard normal $p_1(\rmX_1)\simeq\gN(\bm0,\tSigma)$. The boundaries $p_0$ and $p_1$ are known as the \textit{target} and \textit{source} distribution respectively. A path derived from a data endpoint is known as a \textit{conditional} path $p_u(\rmX_u|\rmX_0)$, which may also be conditioned on $\rmX_1$ or $\rmY$ as well.
+where $a(0)=b(1)=1$ and $a(1)=b(0)=0$. When $\rmY=0$ for all $\rmX$, the marginal at $u=1$ becomes similar to a standard normal $p_1(\rmX_1)\simeq\gN(\bm0,\tSigma)$. The boundaries $p_0$ and $p_1$ are known as the \textit{target} and \textit{source} distribution respectively. A path that begins from a specific data point is known as a \textit{conditional} path $p_u(\rmX_u|\rmX_0)$, which may also be conditioned on $\rmX_1$ or $\rmY$ as well.
 
-For paired endpoints, their joint law is denoted by $\pi(\rmX,\rmY)$. This contrasts the original idea of a normalising flow, as now the flow is a coupling between two potentially non-normal distributions. Despite this, such flows still lie within the \acs{CNF} framework, despite \textit{normalising} becoming a slight inaccuracy.
+For paired endpoints, their joint law is denoted by $\pi(\rmX_0,\rmY)$. This contrasts the original idea of a normalising flow, as now the flow is a coupling between two potentially non-standard normal distributions. 
 
-From viewing \figref{fig:path-overview}, it can be seen that the above equations do not completely explain the full story. Imagine the data distribution as a point cloud, each point is a data sample, and each interpolation is between points, not clouds. The next few equations describe the distinction between points and distributions, and motivate the use of conditional paths. For training, consider target and source distributions of $N$ samples as Dirac masses
+From viewing \figref{fig:path-overview}, it can be seen that the above equations only explain paths between pairs of points, and not the full distribution evolution e.g. of three point masses. The next few equations describe the distinction between points and distributions, and motivate the use of conditional paths. For training, consider target and source distributions of $N$ samples as Dirac masses
 \[
-\ptrain^{(\rmX)}(\rmX)\coloneqq\frac{1}{N}\sum_{i=1}^N\delta_{\rmX^{(i)}}(\rmX) \quad
-\ptrain^{(\rmY)}(\rmY)\coloneqq\frac{1}{N}\sum_{i=1}^N\delta_{\rmY^{(i)}}(\rmY),
+\ptrain^{(\gX)}(\rmX)\coloneqq\frac{1}{N}\sum_{i=1}^N\delta_{\rmX^{(i)}}(\rmX) \quad
+\ptrain^{(\gY)}(\rmY)\coloneqq\frac{1}{N}\sum_{i=1}^N\delta_{\rmY^{(i)}}(\rmY),
 \]
-whose coupling is
+normalised by the number of samples $N$.
+The coupling of paired data is described as
 \[
 \pi(\rmX,\rmY)\coloneqq\frac{1}{N}\sum_{i=1}^N\delta_{(\rmX^{(i)},\rmY^{(i)})}(\rmX,\rmY).
 \]
-This leads to the definition of the paired marginal Gaussian mixture probability path as
+Let us now derive the marginal path by applying the Gaussian interpolation to every data pair, leading to the definition of the paired marginal Gaussian mixture probability path as
 \[
 p_u(\rmX_u)\coloneqq\frac{1}{N}\sum_{i=1}^N\gN(\rmX_u;\rmM(u,\rmX^{(i)},\rmY^{(i)}),\tSigma(u)),
 \]
@@ -254,7 +258,7 @@ As illustrated in \figref{fig:sb_kc}, the speed of interpolation for the varianc
 \begin{figure}[tb]
 \centering
 \includegraphics[width=\linewidth]{plots/simulation_free/bridge_1d_icfm_c0.04.pdf}
-\caption{Conditional path for flow matching: linear interpolation with constant covariance $0.04\tI$, including at the endpoints.}\label{fig:conditional_flow_matching}
+\caption{Conditional path for flow matching: linear interpolation with constant covariance $0.04\tI$, including at the endpoints. \note{make this figure a sub figure with icfm on top and gaussian fm on bottom.}}\label{fig:conditional_flow_matching}
 \end{figure}
 
 
