@@ -102,7 +102,13 @@ Of course, the marginal score at any point $u$ is unknown. However, a path may h
 
 
 \subsection{Mean reversion and variance preservation}
-\note{Image and speech example to show what adding noise looks like? Do on 20/21 Nov.}
+Figure~\ref{fig:dog-gaussian-path} gives an image example of a Gaussian probability path. It uses a linear interpolation to make the increasing contribution of Gaussian noise visible; the \acs{MR-VP} path below instead uses the depth-dependent mean and variance defined in this subsection.
+\begin{figure}[tbp]
+\centering
+\includegraphics[width=\linewidth]{plots/simulation_free/dog_gaussian_path.pdf}
+\caption{One sample path from a dog image $\rmX_0$ to independent standard Gaussian noise $\rmZ$, shown at five depths. Pixel values are mapped to $[-1,1]$ before sampling $\rmX_u=(1-u)\rmX_0+u\rmZ$; the same noise draw is used throughout. Images are clipped to the display range only for rendering. This linear Gaussian path illustrates intermediate samples, rather than the \acs{MR-VP} schedule derived below.}
+\label{fig:dog-gaussian-path}
+\end{figure}
 \begin{figure}[tbp]
 \centering
 \subfigure[Common conditioning mean $Y=0$: standard-normal source]{\includegraphics[width=0.95\linewidth]{plots/simulation_free/bridge_1d_mr_vp_normal.pdf}\label{fig:mrvp-normal}}
@@ -213,7 +219,7 @@ with probability path
 \]
 with stiffness $\gamma$, scale $c$ and base $k$ hyper parameters controlling the stochastic evolution. Samples from the target distribution exponentially degrade into clean-noisy mixture as $u\rightarrow1$.
 
-\note{add OUVE plots.}
+Figure~\ref{fig:schrodinger_bridge} compares this path with the variance-exploding bridge.
  On the other hand, a purely variance-exploding reference process has zero drift
 \[
 \dd \rmX \coloneqq \bm 0 \dd u + \sqrt{ck^{2u}}\dd\rmW_u.
@@ -233,10 +239,12 @@ Substituting this accumulated variance into \eqref{eq:bridge-mean} and \eqref{eq
 
 
 
-\begin{figure}[tb]
+\begin{figure}[!htbp]
 \centering
-\includegraphics[width=\linewidth]{plots/simulation_free/bridge_1d_sb_ve_k2.6.pdf}
-\caption{Variance-exploding bridge with $k=2.6$. The conditional variance vanishes at both endpoints.}\label{fig:schrodinger_bridge}
+\subfigure[SB-VE: exact source and target endpoints.]{\includegraphics[width=0.95\linewidth]{plots/simulation_free/bridge_1d_sb_ve_k2.6.pdf}\label{fig:sbve-path}}
+\par\medskip
+\subfigure[OU-VE: mean reversion with increasing variance.]{\includegraphics[width=0.95\linewidth]{plots/simulation_free/bridge_1d_ou_ve_k2.6.pdf}\label{fig:ouve-path}}
+\caption{Comparison of SB-VE and OU-VE for the same three equally weighted target points and paired conditioning means, with $k=2.6$ and $c=0.4$; OU-VE uses $\gamma=1.5$. Left: marginal densities. Right: marginal probability-flow trajectories towards $u=0$. SB-VE has zero conditional variance at both endpoints. OU-VE starts at the target points and ends at a Gaussian mixture with nonzero variance and means that retain a contribution from the target points. Red arrows mark conditioning means, rather than exact OU-VE endpoints.}\label{fig:schrodinger_bridge}
 \end{figure}
 
 \Figref{fig:schrodinger_bridge} shows a one-dimensional example. Reading from $u=0 \rightarrow 1$, the path is a mixture of Gaussians with increasing variance to a point, and then returning to zero around the data points to satisfy the endpoint constraints. This evolution of variance between exact endpoints is characteristic of \acs{SB}, diffusion evolves variance without reverting to zero, and flow matching keeps variance constant for every $u$.
@@ -252,13 +260,17 @@ As illustrated in \figref{fig:sb_kc}, the speed of interpolation for the varianc
 
 
 
+\FloatBarrier
 \subsection{Path variance and flow matching}
 \label{sec:icfm}
 \label{sec:sbsv}
-\begin{figure}[tb]
+\begin{figure}[!htbp]
 \centering
-\includegraphics[width=\linewidth]{plots/simulation_free/bridge_1d_icfm_c0.04.pdf}
-\caption{Conditional path for flow matching: linear interpolation with constant covariance $0.04\tI$, including at the endpoints. \note{make this figure a sub figure with icfm on top and gaussian fm on bottom.}}\label{fig:conditional_flow_matching}
+\subfigure[ICFM: paired source and target points, with constant covariance $c\tI$.]{\includegraphics[width=0.95\linewidth]{plots/simulation_free/bridge_1d_icfm_c0.04.pdf}\label{fig:icfm_path}}
+
+\subfigure[Gaussian FM: standard normal source, with covariance $(u+(1-u)c)\tI$.]{\includegraphics[width=0.95\linewidth]{plots/simulation_free/bridge_1d_fm_c0.04_normal.pdf}\label{fig:gaussian_flow_matching}}
+\caption{Flow-matching paths with $c=0.04$ for three equally weighted target points. Left: marginal densities at increasing depth $u$. Right: marginal probability-flow trajectories computed by preserving mixture quantiles, with generation proceeding from $u=1$ towards $u=0$. Both paths retain Gaussian smoothing of variance $c$ at the target endpoint. ICFM also retains this variance about each paired source point; Gaussian FM has source distribution exactly $\gN(0,1)$. Arrows mark endpoint means. Marginal trajectories need not be straight even though the conditional means interpolate linearly.}
+\label{fig:conditional_flow_matching}
 \end{figure}
 
 
@@ -276,19 +288,21 @@ The conditional mean follows a straight path, with $\frac{\dd}{\dd u}\rmM_u=\mY-
 
 For $c>0$, the conditional endpoints retain covariance $c\tI$ rather than being exact point masses, as seen in \figref{fig:conditional_flow_matching}. The purpose of this covariance is to satisfy Gaussian assumptions and perhaps act as regularisation as well. The constant covariance used here is a choice of probability path, rather than a requirement of flow matching. Other constructions use depth-dependent conditional covariance such as ensuring a standard normal source.
 
-\note{Figure showing FM path.}
-
 For the standard normal source case, the variance must evolve to 1
 \[
 \rmM(\rmX_0,\rmY,u) = (1-u)\rmX_0 \quad \tSigma(u)= \bigl(u + (1 - u)c\bigr)\tI,
 \]
-this is refered to as flow-matching (FM) throughout.
+this is refered to as flow-matching (FM) throughout. Figure~\ref{fig:gaussian_flow_matching} illustrates this Gaussian-source path.
+
+
+
 
 There are many related yet distinct views of flow matching, all emerging in 2022--2023. Liu, Gong, and Liu introduced rectified flow, using regression on straight interpolations and repeated rectification to straighten learned trajectories (preprint September 2022; \citealp{liuFlowStraightFast2022a}). Albergo and Vanden-Eijnden developed stochastic interpolants with a quadratic velocity objective (preprint September 2022; \citealp{albergoBuildingNormalizingFlows2023}). Lipman, Chen, and colleagues introduced flow matching through conditional probability paths (preprint October 2022; \citealp{lipman2023flow}). Tong and colleagues subsequently generalised conditional flow matching to arbitrary source distributions and endpoint couplings, including minibatch optimal-transport couplings (preprint February 2023; \citealp{tongImprovingGeneralizingFlowbased2024}).
 
 For the sake of ablation, this thesis proposes \acs{SB-SV}. This path shares \acs{SB} interpolation with \acs{FM} variance. The goal here is to observe the practical implications of interpolation and variance design. \acs{SB-SV} is similar to \acs{FM} because it is possible to construct an \acs{SB-SV} path with almost linear interpolation (recall \figref{fig:sb_kc}). Table \ref{tab:sb-icfm-path-properties} summarises the paths discussed above, which are explored later.
 
 
+\FloatBarrier
 \section{Learning objectives}
 \label{sec:learning-objectives}
 
