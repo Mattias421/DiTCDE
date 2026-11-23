@@ -1,16 +1,28 @@
 \chapter{Controlled differential equations}
 
+\section{Related work}
 \note{Have a background/related chapter e.g. to mention neural SDEs and contiformer? and GP for infinite dimensional }
 \ainote{A focused related-work section in this chapter should suffice unless the later experiments require a larger survey. Compare ODEs, controlled equations, stochastic equations, and attention-based models by their inputs, treatment of irregular observations, and uncertainty. Use \citet{kidger2020neuralcde,kidger2021thesis} for the CDE foundation. Introduce Gaussian processes as distributions over functions; merely writing continuous-time equations does not establish an infinite-dimensional neural state. Include ContiFormer only with a precise comparison and its original citation.}
+
+Before diving into Neural CDEs and their application to speech technology, let us cover relevant work. A popular view of continuous-time models is that they are \textit{infinite-dimensional} in the sense that the input and output can be discretised to any precision. This is useful because there is less separation between the model and the data, where the data may be a finite discretisation of a continuous process. Furthermore, tying model input to continuous time provides a natural way to feed temporal information into the model, an important aspect for data of irregularly sampled observations.
+
+In addition to neural ODEs and CDEs, there are also formulations for neural SDEs \citep{kidger2021sdegan}. Neural SDEs can form generative models through adversarial training. This operates by parametrising drift and diffusion coefficients of SDE as neural networks. Then, the output of the neural SDE is processed by a discriminator CDE to predict generated data versus training data examples. The neural SDE is optimised to minimise the discriminators accuracy and discerning real from generated data. This approach serves as a way to learn a model from the data in a constrained manner, which may be an excellent choice if SDEs describe the problem well but are expensive to derive a plausible formula from the data e.g. physics and finance data may be too complex to write a generalised SDE by hand, but a neural SDE shares the same drift and diffusion terms as an SDE but with parameters optimised to fit the data. There also exists simulation-free methods for training neural SDEs \citep{zhang2024trajflow}.
+
+The powerful relation modelling of Transformers has been generalised to continuous-time data through ContiFormer \citep{chen2023contiformer}. This model uses continuous-time attention. The generalisation to continuous-time involves parametrising the key and value states between observations with neural ODEs, and queries as interpolations e.g. linear or cubic spline. The scaled dot product then operates on keys and queries sampled from their continuous-time trajectories and interpolating functions. This is particularly useful as it combines the Transformer architecture with continuous-time models, where empirical results suggest that ContiFormer achieves improved predictive accuracy and computational efficiency compared with existing continuous-time architectures.
+
+
 
 \note{Neural ODE depends on $\rmX_1$, CDE depends on continuous incoming data.}
 \ainote{For a fixed vector field, an ODE trajectory is determined by its initial state, whereas a CDE also depends on the driving control path \citep{kidger2020neuralcde}. Use $\rvz_0$ for the initial hidden state here; $\rmX_1$ belongs to the continuous-depth endpoint convention. Observations may arrive discretely and irregularly, with interpolation supplying the continuous control. Online processing additionally requires a causal interpolation and initialisation; conditioning on the whole sequence can use future observations.}
 
 
-\section{CDEs}
+\section{Neural controlled differential equations}
 \note{figures}
-
-Let $\rn$ be the length of a sequence of observations $\rmX=\{\rvx_{\rt_i}\}_0^\rn$ known as the control path, whose time is $\rl=\rt_\rn$ long, and the time-stamp sequence $\rt_i$ is monotonic. At time $t$, $\rvx_t\in\mathbb R^{c+1}$ is a control path state, an important feature of a control path is that it is augmented with a time channel, in this example the first $c$ channels would be the data features, and the final channel would be $\rt_i$. $\rvz_t\in\mathbb R^d$ the hidden state. The vector field is matrix-valued, $\rmF_\vtheta(\rvz,t)\in\mathbb R^{d\times c+1}$, so its product with the control increment $\dd\rvx$ is a hidden-state increment 
+\note{thinking of explaining the problem a little something like this
+\[
+p(\rmY|\rmX)\iint p(\rmY|\rmX)p(\rmX|\rn)\dd\rn
+\]}
+Let $\rn$ be the length of a sequence of observations $\rmX=\{\rvx_{\rt_i}\}_0^\rn$ known as the control path, whose time is $\rl=\rt_\rn$ long, and the time-stamp sequence $\rt_i$ is monotonic. At time $t$, $\rvx_t\in\mathbb R^{c+1}$ is a control path state, an important feature of a control path is that it is augmented with a time channel, in this example the first $c$ channels would be the data features, and the final channel would be $\rt_i$. $\rvz_t\in\mathbb R^d$ is the hidden state. The vector field is matrix-valued, $\rmF_\vtheta(\rvz,t)\in\mathbb R^{d\times c+1}$, so its product with the control increment $\dd\rvx$ is a hidden-state increment 
 \[
 \rvz_t \coloneqq \rvz_0 + \int_0^t\rmF_\vtheta(\rvz,s)\dd\rvx_s.
 \label{eq:ode_ct}
@@ -49,7 +61,7 @@ The vector-field parameters $\vtheta$, readout parameters $\vphi$, and initial-s
 \Ls_1(\rmX,\rvy;\vtheta,\vphi,\vzeta)
 \coloneqq D_\mathrm{KL}\!\left(\rvy\,\middle\|\,\vg_\vphi(\rvz_\rl)\right),
 \]
-where $\rvz_\rl$ is obtained by integrating the CDE from its initial state $\rvz_0=\rvl_\vzeta(\rvx_0)$, or from the sequence-dependent initialisation defined above. The optimisation problem is
+where $\rvz_\rl$ is obtained by integrating the CDE. The optimisation problem is
 \[
 (\vtheta^*,\vphi^*,\vzeta^*)
 \in\operatorname*{arg\,min}_{\vtheta,\vphi,\vzeta}

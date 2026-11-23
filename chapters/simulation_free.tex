@@ -3,13 +3,17 @@
 
 This chapter discusses an alternative method for training CNFs that does not require simulating the ODE from input to output. It begins by outlining the background of probability paths, which are the core mechanism for sampling the hidden state at any depth. Following on from there it covers learning objectives and paths suitable for conditional generation. Then samplers for generating samples are covered, follower by a discussion on likelihood computation and evaluation. Finally it gives some application examples and chapter summary.
 
-\note{Maybe include OTFM?}
 \section{From simulation-based to simulation-free training}
-As discussed in the previous section, \Acfp{CNF} connect a source distribution to a data distribution through a depth-dependent vector field. Although it is possible to optimise through numerical integration alone, that would require repeated forward and backward solves. If instead constraints are allowed on the hidden state, such as those that admit an easy specification of intermediate states e.g. linear interpolation between the target input and outputs, then training becomes easier.  Simulation-free training achieves this by sampling intermediate states from a prescribed probability path and regressing an conditional target available from training data. Although such constraints avoid integrating the vector field with black box ODE solvers, generating new samples and likelihood evaluation still require numerical integration.
+
+As discussed in the previous section, \acp{CNF} connect a source distribution to a data distribution through a depth-dependent vector field. Source and target samples exist in some space, and the vector field pushes samples along some path with limited constraints. The hidden state in this case is represented by points along the path between the source and target.
+
+\ar{Give  an illustration of this. This assumes that they hang in some space one next to each other separated by depth and the space is traversed by a field that transports one into another, as the depth is traversed the original distribution undergoes transformations leading to its final form being the data distribution. Something like that. Help them to visualise what is going on}
+
+Although the vector field is possible to optimise through numerical integration alone, that would require repeated forward and backward solves. If instead constraints are allowed on the hidden state, such as those that admit an easy specification of intermediate states e.g. linear interpolation between the target input and outputs, then training becomes easier.  Simulation-free training achieves this by sampling intermediate states from a prescribed probability path and regressing an conditional target available from training data. Although such constraints avoid integrating the vector field with black box ODE solvers, generating new samples and likelihood evaluation still require numerical integration.
 
 Throughout this chapter, depth $u=0$ denotes the target data endpoint and $u=1$ the source endpoint; generation proceeds towards decreasing $u$, whilst training samples any $\ru\in[0,1]$. Those with a deep learning background will notice that in many cases throughout this chapter $\rmY$ is associated with the model input, and $\rmX_0$ is associated with the output or target. Although such a choice is inconsistent with conventional $\rmX$ as input and $\rmY$ as output, this choice stays consistent with differential equations and the diffusion model literature, where $\rmX$ is the state of the probability path.
 
-Figure~\ref{fig:path-overview} provides a visual overview of the paths considered below: \acf{MR-VP}, \acf{SB-VE}, \acf{SB-SV}, and the linear interpolation paths used for flow matching (labelled \acs{ICFM}, for \acl{ICFM}, in the figure).
+Figure~\ref{fig:path-overview} provides a visual overview of the paths considered below: \acf{MR-VP} \citep{popov21gradtts}, \acf{SB-VE} \cite{jukic2024schr}, \acf{SB-SV}, and \acf{ICFM} \cite{tongImprovingGeneralizingFlowbased2024} .
 \begin{figure}[p]
 \centering
 \includegraphics[width=\linewidth]{plots/simulation_free/ripple_paths_paired_diracs.pdf}
@@ -31,9 +35,9 @@ The above is the standard parametrisation trick for sampling Gaussian distribute
 \]
 where $a(0)=b(1)=1$ and $a(1)=b(0)=0$. When $\rmY=0$ for all $\rmX$, the marginal at $u=1$ becomes similar to a standard normal $p_1(\rmX_1)\simeq\gN(\bm0,\tSigma)$. The boundaries $p_0$ and $p_1$ are known as the \textit{target} and \textit{source} distribution respectively. A path that begins from a specific data point is known as a \textit{conditional} path $p_u(\rmX_u|\rmX_0)$, which may also be conditioned on $\rmX_1$ or $\rmY$ as well.
 
-For paired endpoints, their joint law is denoted by $\pi(\rmX_0,\rmY)$. This contrasts the original idea of a normalising flow, as now the flow is a coupling between two potentially non-standard normal distributions. 
+For paired endpoints, their joint law is denoted by $\pi(\rmX_0,\rmY)$. 
 
-From viewing \figref{fig:path-overview}, it can be seen that the above equations only explain paths between pairs of points, and not the full distribution evolution e.g. of three point masses. The next few equations describe the distinction between points and distributions, and motivate the use of conditional paths. For training, consider target and source distributions of $N$ samples as Dirac masses
+From viewing \figref{fig:path-overview}, it can be seen that the above equations only explain paths between pairs of points, and not the full distribution evolution e.g. of three point masses. The next few equations describe the distinction between points and distributions, and motivate the use of conditional paths. For training, consider target and source distributions as Dirac masses
 \[
 \ptrain^{(\gX)}(\rmX)\coloneqq\frac{1}{N}\sum_{i=1}^N\delta_{\rmX^{(i)}}(\rmX) \quad
 \ptrain^{(\gY)}(\rmY)\coloneqq\frac{1}{N}\sum_{i=1}^N\delta_{\rmY^{(i)}}(\rmY),
@@ -109,6 +113,9 @@ Figure~\ref{fig:dog-gaussian-path} gives an image example of a Gaussian probabil
 \caption{One sample path from a dog image $\rmX_0$ to independent standard Gaussian noise $\rmZ$, shown at five depths. Pixel values are mapped to $[-1,1]$ before sampling $\rmX_u=(1-u)\rmX_0+u\rmZ$; the same noise draw is used throughout. Images are clipped to the display range only for rendering. This linear Gaussian path illustrates intermediate samples, rather than the \acs{MR-VP} schedule derived below.}
 \label{fig:dog-gaussian-path}
 \end{figure}
+\note{Should we do an image fig for each path?}
+
+
 \begin{figure}[tbp]
 \centering
 \subfigure[Common conditioning mean $Y=0$: standard-normal source]{\includegraphics[width=0.95\linewidth]{plots/simulation_free/bridge_1d_mr_vp_normal.pdf}\label{fig:mrvp-normal}}
@@ -117,6 +124,8 @@ Figure~\ref{fig:dog-gaussian-path} gives an image example of a Gaussian probabil
 \caption{One-dimensional \acs{MR-VP} paths for the same three target Diracs. Left: forward densities; right: marginal probability-flow trajectories towards the data at $u=0$. In (a), $Y=0$ for every data point and the source approaches $\gN(0,1)$. In (b), each target point $x_i$ is paired with a fixed conditioning point $y_i$, with conditional law $Y\mid X=x_i\sim\delta_{y_i}$. The source approaches $\frac{1}{3}\sum_i\gN(y_i,1)$. The conditioning Diracs specify the reversion means; the source itself is a Gaussian mixture. With the finite noise schedule shown, these source distributions are approximate. In practice, the Diracs are a minimal-variance Gaussian mixture.}
 \label{fig:mean_reverting_sde}
 \end{figure}
+
+\note{does diffusion have 0 variance at $u=0$?}
 
 Often, the properties of the source distribution must be designed for a given application. This means specifying how the path evolves through $u$ is important, as the terminal boundary of the path is the source distribution of the generative model. A key characteristic of a Gaussian is the mean and variance. The path described in this section uses mean-reversion to control the terminal mean, and variance preservation to influence a source with unit variance. In other words, a time-inhomogeneous Ornstein-Uhlenbeck process.
 
@@ -499,6 +508,13 @@ where $h\leq 1$ is the step size. The number of steps required is $\frac{1}{h}$.
 There are many options for \acs{ODE} solvers. For example, the fourth-order Runge-Kutta method evaluates the vector-field four times per step \citep{Runge1895UeberDN,kutta1901beitrag}. Adaptive methods dynamically increase or decrease the step size under select criteria such as an error tolerance between fourth and fifth order evaluations \citep{dormandFamilyEmbeddedRungeKutta1980}. The development of diffusion models has lead to customised solvers for the generative task e.g. with special weighting schemes \citep{cheng2022dpmsolvr}.
 
 A key area of research here is improving quality with less steps. Flow matching addresses this with straight paths, since less variation in the estimator target likely results in less variation in estimator error during sampling. Additionally, the speed of a path reduces variation, further removing potentially disruptive noise from the optimisation landscape. Rectified flows are one of the first to directly address this issue \citep{liuFlowStraightFast2022a}, and Peyre chapter XXX supports details for one-step generative models.
+
+\subsection{Predictor-corrector sampling}
+Score-based models are not just useful for probability flow ODEs, they are also compatible within the score matching framework and can be sampled with \ac{MCMC} methods such as Langevin dynamics. These methods can be interlaced such that the ODE acts as a predictor and then the MCMC approach corrects the prediction \citep{song2021sde}. The Langevin corrector step is defined as
+\[
+\rmX_i\leftarrow\rmX_i + \epsilon_i\rmS_\vtheta(\rmX_i,u_i) + \sqrt{2\epsilon_i}\rmZ \quad \rmZ\sim\gN(\bm0,\tI)
+\]
+where $\epsilon_i$ is a step size that may be adaptive during e.g. according to the amount of noise in $\rmX_i$. The number of corrector steps per predictor step is a choice trading compute for sample quality.
 
 
 \subsection{Bridge sampling}
