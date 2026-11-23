@@ -23,14 +23,14 @@ The population optimum matches $p_0$ to $\pdata$ when the model family contains 
 
 A large factor in the success of a normalising flow is the choice of transform $\rf$. It must be invertible, expressive, and computationally tractable. With a discrete composition such as $f_1\circ f_2\circ f_3$, evaluating \eqref{eq:nfll} requires the log determinant of each layer Jacobian. A dense determinant generally costs cubic time in the state dimension, although specialised architectures can make it cheaper.
 
-A central motivation for continuous-depth normalising flows is that the change-of-variables formula can be expressed using the divergence of a vector field. For the ODE $\frac{\dd\rx_u}{\dd u}=\rf_\vtheta(\rx_u,u)$, the instantaneous-change-of-variables formula \cite{NEURIPS2018_69386f6b, song2021sde} gives
+A central motivation for continuous-depth normalising flows is that the change-of-variables formula can be expressed using the divergence of a vector field. For the \ac{ODE} $\frac{\dd\rx_u}{\dd u}=\rf_\vtheta(\rx_u,u)$, the instantaneous-change-of-variables formula \cite{NEURIPS2018_69386f6b, song2021sde} gives
 \[
 \log p_0(\rx)=\log p_1(\rx_1) + \int_0^1\nabla\cdot\rf_\vtheta(\rx_u,u)\dd u.
 \label{eq:cnfll}
 \]
-The formula assumes a well-posed ODE flow (in particular, conditions ensuring existence and uniqueness). Computation still requires solving the ODE and evaluating its divergence; the cost depends on the solver and the method used to estimate the divergence.
+The formula assumes a well-posed \ac{ODE} flow (in particular, conditions ensuring existence and uniqueness). Computation still requires solving the \ac{ODE} and evaluating its divergence; the cost depends on the solver and the method used to estimate the divergence.
 
-A remaining critique would be that the ODE must be solved between $0$ and $1$ for every optimisation iteration. In other words, the ODE must be simulated during training. This problem has been alleviated through \textit{simulation-free} training, which aims to sample intermediate states $\rx_\ru$ through closed-form solutions and optimises the vector-field at the sampled point $\ru$. A method for defining differential equations from a structured initialisation towards a normal distribution is through stochastic differential equations.
+A remaining critique would be that the \ac{ODE} must be solved between $0$ and $1$ for every optimisation iteration. In other words, the \ac{ODE} must be simulated during training. This problem has been alleviated through \textit{simulation-free} training, which aims to sample intermediate states $\rx_\ru$ through closed-form solutions and optimises the vector-field at the sampled point $\ru$. A method for defining differential equations from a structured initialisation towards a normal distribution is through \acp{SDE}.
 
 \section{Stochastic differential equations}
 \subsection{The Wiener process}
@@ -42,25 +42,25 @@ The Wiener process is useful here as it can be used to predict the likelihood of
 \]
 but only describes evolution of samples from the origin. For more complicated processes, more mechanisms are required.
 
-\subsection{It\^o SDE}
-An It\^o SDE combines an ordinary drift with stochastic diffusion:
+\subsection{It\^o stochastic differential equations}
+An It\^o \ac{SDE} combines an ordinary drift with stochastic diffusion:
 \[
 \dd \rx \coloneqq f(\rx,u)\dd u + g(\rx,u)\dd \rw_u.
 \]
-These processes are the first example SDEs to be introduced in this dissertation. For example, take an Ornstein-Uhlenbeck process which aims to model a stationary process. The key property is modelling reversion back to the mean despite diffusion perturbing samples randomly
+These processes are the first example \acp{SDE} to be introduced in this dissertation. For example, take an Ornstein-Uhlenbeck process which aims to model a stationary process. The key property is modelling reversion back to the mean despite diffusion perturbing samples randomly
 \[
 \dd \rx \coloneqq \gamma(y - \rx)\dd u + \sigma\dd \rw_u.
 \label{eq:ousde}
 \]
-SDEs are characterised by a deterministic component \textit{drift}, and non-deterministic diffusion. This process scales reversion to the selected mean $y$ with $\gamma$ and diffusion with $\sigma$. Although less obvious than the Wiener process, \eqref{eq:ousde} also has a closed-form solution
+\acp{SDE} are characterised by a deterministic component \textit{drift}, and non-deterministic diffusion. This process scales reversion to the selected mean $y$ with $\gamma$ and diffusion with $\sigma$. Although less obvious than the Wiener process, \eqref{eq:ousde} also has a closed-form solution
 \[
 \rx_u\sim\mathcal N\left(y+e^{-\gamma u}(\rx_0-y),\frac{\sigma^2}{2\gamma}(1-e^{-2\gamma u})\right),\qquad \gamma>0.
 \]
 As $u\to\infty$, this conditional distribution converges to the stationary distribution $\mathcal N(y,\sigma^2/(2\gamma))$.
 
 \section{Other continuous-depth models}
-This thesis focusses on neural DEs, but the reader should be aware that this is not the only way to achieve ``implicit layers''. Neural DEs are implicit because the parameters describe a single layer which can be used by black-box equation solvers to simulate depth. Another way to simulate depth is with DEQs.
+This thesis focusses on neural differential equations, but the reader should be aware that this is not the only way to achieve ``implicit layers''. Neural differential equations are implicit because the parameters describe a single layer which can be used by black-box equation solvers to simulate depth. Another way to simulate depth is with deep equilibrium models.
 
-DEQs are solved by finding an equilibrium point, where the output of the layer is equal to or within a small margin of error from the input.
+Deep equilibrium models are solved by finding an equilibrium point, where the output of the layer is equal to or within a small margin of error from the input.
 
 Loop transformers are also continuous-depth.

@@ -36,6 +36,8 @@
 \usepackage{epsfig}
 \usepackage{subfigure}
 \usepackage{acronym}
+% Reintroduce acronyms on first use in each chapter, including the abstract.
+\AddToHook{cmd/chapter/before}{\acresetall}
 \usepackage{pifont}
 \usepackage[utf8]{inputenc}
 
@@ -127,6 +129,17 @@ plainpages=false]{hyperref}
 \definecolor{bestblue}{HTML}{BFD7EA}
 \definecolor{secondorange}{HTML}{F6D7A7}
 \definecolor{worstred}{HTML}{F4B6B6}
+\newacro{NDE}{neural differential equation}
+\newacro{CDE}{controlled differential equation}
+\newacro{OU-VE}{Ornstein--Uhlenbeck variance-exploding diffusion}
+\newacro{MCMC}{Markov chain Monte Carlo}
+\newacro{PC}{predictor--corrector}
+\newacro{NFE}{number of function evaluations}
+\newacro{STFT}{short-time Fourier transform}
+\newacro{STOI}{short-time objective intelligibility}
+\newacro{LSTM}{long short-term memory}
+\newacro{SLM}{speech language model}
+\newacro{MUSHRA}{multiple stimuli with hidden reference and anchor}
 \newacro{CNF}{continuous normalising flow}
 \newacro{SDE}{stochastic differential equation}
 \newacro{SB}{Schr\"odinger bridge}
@@ -138,6 +151,7 @@ plainpages=false]{hyperref}
 \newacro{MR-VP}{mean-reverting variance-preserving diffusion}
 \newacro{SB-VE}{variance-exploding Schr\"odinger bridge}
 \newacro{AM}{acoustic model}
+\newacro{ASV}{automatic speaker verification}
 \newacro{ASR}{automatic speech recognition}
 \newacro{BPD}{bits per dimension}
 \newacro{CFG}{classifier-free guidance}

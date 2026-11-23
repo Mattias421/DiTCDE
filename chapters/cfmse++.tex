@@ -4,7 +4,7 @@ On VoiceBank--DEMAND, noisy and clean speech have the same complex spectral repr
 
 The source specifies the state from which generation starts. The probability path specifies the distribution of intermediate states used during optimisation. The objective determines what the network estimates at each depth, and the sampler determines how those estimates produce an enhanced signal. Chapter~\ref{ch:simulation-free} describes the path constructions.
 
-OU-VE was proposed in SGMSE+. It was found XXXX SB-VE was found better in richter et al; jukic et al.
+\ac{OU-VE} uses a diffusion process that reverts towards the noisy observation, whereas \ac{SB-VE} uses a bridge between noisy and clean speech.
 
 FlowSE achieved comparable enhancement with five conditional-flow evaluations to its diffusion reference with 60 evaluations \citep{leeFlowSEFlowMatchingbased2025}. \citet{korostikModifyingFlowMatching2025} investigate an informed source prior, a data-prediction objective, deterministic generation, and early stopping, including a deterministic one-step configuration for denoising. Their results also distinguish denoising from dereverberation, for which stochastic generation without the informed prior is preferable. The preferred source and generation procedure therefore depend on the distortion.
 
@@ -20,7 +20,7 @@ VoiceBank--DEMAND pairs clean and noisy speech \citep{valentini2016investigating
 \note{URGENT not explained.}
 
 \section{Evaluation}
-Speech quality is evaluated with intrusive and non-intrusive metrics. The intrusive speech-enhancement metrics are \ac{PESQ}~\citep{rixPerceptualEvaluationSpeech2001}, \ac{ESTOI}~\citep{jensen2016algorithm}, and \ac{SI-SDR}~\citep{leroux2018sdr}. SI-SDR is measured in dB. The evaluation also includes non-intrusive metrics that estimate quality from the enhanced speech alone: DNSMOS~\citep{reddy2021dnsmos},\footnote{https://github.com/microsoft/DNS-Challenge/tree/master/DNSMOS} a neural predictor trained on human ratings (\ac{MOS}), and WhiSQA, a non-intrusive \ac{MOS} predictor reported to correlate with human judgments \citep{closeHallucinationPerceptualMetricDriven2024,close2025whisqanonintrusivespeechquality}.\footnote{https://github.com/leto19/WhiSQA}
+Speech quality is evaluated with intrusive and non-intrusive metrics. The intrusive speech-enhancement metrics are \ac{PESQ}~\citep{rixPerceptualEvaluationSpeech2001}, \ac{ESTOI}~\citep{jensen2016algorithm}, and \ac{SI-SDR}~\citep{leroux2018sdr}. \ac{SI-SDR} is measured in dB. The evaluation also includes non-intrusive metrics that estimate quality from the enhanced speech alone: DNSMOS~\citep{reddy2021dnsmos},\footnote{https://github.com/microsoft/DNS-Challenge/tree/master/DNSMOS} a neural predictor trained on human ratings (\ac{MOS}), and WhiSQA, a non-intrusive \ac{MOS} predictor reported to correlate with human judgments \citep{closeHallucinationPerceptualMetricDriven2024,close2025whisqanonintrusivespeechquality}.\footnote{https://github.com/leto19/WhiSQA}
 
 Higher values indicate better performance for all reported metrics. The metrics assess complementary aspects of speech quality, intelligibility and signal fidelity; improvement in one metric need not imply improvement in the others or in perceived speech quality \citep{pesqeterian}. Enhancement gains are reported as the enhanced score minus the noisy score, averaged over valid paired items. Where a noisy reference row contains absolute scores, these provide the baseline against which the signed gains are measured. The evaluation set and any metric-specific exclusions are specified alongside each comparison. Blue, orange and red identify the best, second-best and lowest distinct displayed values within a comparison group. In a two-way comparison the lower value is red.
 
@@ -28,6 +28,8 @@ Higher values indicate better performance for all reported metrics. The metrics 
 \ainote{The probability paths are already explained earlier in the thesis, so cross-reference those definitions rather than repeat their derivations here. Focus this section on the experimental configuration: identify which previously defined path and objective each table label denotes; reconcile ``ICFM ($\gN$)'' with ``Gaussian FM''; and state that OU-VE is the SGMSE+ baseline. Give the shared backbone and conditioning setup, with references for inherited settings. Clarify which validation metrics determine stopping and checkpoint selection, and define or cross-reference the auxiliary time-domain loss weighted by 0.001. Specify the generation procedures and network-evaluation budgets used in the comparisons, distinguishing DDP from one-step Euler generation.}
 \note{To stay consistent with the dissertation, sgmse+ will be dubbed ``OU-VE'', but we will mention that this is known as sgmse.}
 \note{Is it necessary to use PC sampling, surely euler is sufficient.}
+
+In the tables, DP denotes data prediction, SM denotes score matching, PC denotes predictor--corrector sampling, and NFE denotes the number of function evaluations.
 
 \begin{table}
     \centering
@@ -44,14 +46,14 @@ Higher values indicate better performance for all reported metrics. The metrics 
     \label{tab:sb-icfm-path-properties}
 \end{table}
 
-The majority of models use paths defined in chapter \ref{ch:simulation-free}, using the speech enhancement problem set up. Table \ref{tab:sb-icfm-path-properties} summarises the properties of each path. The vector field is parametrised by a U-Net modified for SE \citep{richter2023speech}. Models are trained until SI-SDR converges, then the checkpoint with best PESQ is chosen. An additional time-domain loss is used with weight 0.001 \cite{jukic2024schr}. Unless otherwise stated, ODE generation uses 50 Euler steps.
+The majority of models use paths defined in chapter \ref{ch:simulation-free}, using the speech enhancement problem set up. Table \ref{tab:sb-icfm-path-properties} summarises the properties of each path. The vector field is parametrised by a U-Net modified for speech enhancement \citep{richter2023speech}. Models are trained until \ac{SI-SDR} converges, then the checkpoint with best \ac{PESQ} is chosen. An additional time-domain loss is used with weight 0.001 \cite{jukic2024schr}. Unless otherwise stated, \ac{ODE} generation uses 50 Euler steps.
 
 Hyperparameter selection typically follows judgement from previous work \citep{jukic2024schr,richter2023speech}, but for newly investigated models the $c$ parameter was sweeped between 0.05 and 0.4, with the proposed $c$ being that with the highest validation PESQ.
 
-The OU-VE is implemented using SGMSE+ \citep{richter2023speech}, and within the same repository SB-VE is implemented using \citeauthor{richterInvestigatingTrainingObjectives2025}'s implementation of \cite{jukic2024schr}. ICFM is implemented by adding the paths derived from \cite{tongImprovingGeneralizingFlowbased2024} to the repository. This also includes data processing pipelines for VB+DMD.
+The \ac{OU-VE} is implemented using SGMSE+ \citep{richter2023speech}, and within the same repository \ac{SB-VE} is implemented using \citeauthor{richterInvestigatingTrainingObjectives2025}'s implementation of \cite{jukic2024schr}. \ac{ICFM} is implemented by adding the paths derived from \cite{tongImprovingGeneralizingFlowbased2024} to the repository. This also includes data processing pipelines for VoiceBank--DEMAND.
 
 
-As an additional baseline, supervised U-Net maps a noisy spectrum directly to a clean-spectrum estimate in one evaluation. This baseline is dubbed ``direct'' in the experiments below. To ablate the significance of a data source, an FM model trained from a standard normal is provided, labelled Gaussian FM.
+As an additional baseline, supervised U-Net maps a noisy spectrum directly to a clean-spectrum estimate in one evaluation. This baseline is dubbed ``direct'' in the experiments below. To ablate the significance of a data source, an \ac{FM} model trained from a standard normal is provided, labelled Gaussian FM.
 
 
 
@@ -92,12 +94,12 @@ Gaussian FM & FM & DDP & - & 0.1 & $+0.87$ & \cellcolor{secondorange}$+0.08$ & $
 \caption{Mean speech quality metrics on \ac{VB-DMD} for different probability paths. $k=0.99$ induces straightness and $c$ scales variance.}
 \label{tab:results}
 \end{table}
-The results are displayed in \tableref{tab:results}. After viewing the absolute noisy speech values and direct U-Net, the table should be interpreted as adding more constraints on the path and reducing variance and gradient dynamics. OU-VE is the least constrained model, and performs the worst with ODE inference. Sampling the OU-VE model with PC improves metrics to a comparable range with direct U-Net. PC sampling however requires twice as many function evaluations, and will be used to keep OU-VE as a stronger baseline despite the additional compute.
+The results are displayed in \tableref{tab:results}. After viewing the absolute noisy speech values and direct U-Net, the table should be interpreted as adding more constraints on the path and reducing variance and gradient dynamics. \ac{OU-VE} is the least constrained model, and performs the worst with \ac{ODE} inference. Sampling the \ac{OU-VE} model with \ac{PC} improves metrics to a comparable range with direct U-Net. \ac{PC} sampling however requires twice as many function evaluations, and will be used to keep \ac{OU-VE} as a stronger baseline despite the additional compute.
 
 
-The tested SB-SV and ICFM settings improve several metrics over the SB-VE baseline, but the table does not show improvement on every metric. Using SB-SV with $k=0.99$ lowers PESQ (-0.12) and WhiSQA (-0.04) relative to $k=2.6$. ICFM with depth-independent path velocity and variance improves several reported scores. For ODE inference, FM loss gives a slightly higher SI-SDR and DNSMOS than DP, while DP gives higher PESQ; for DDP, DP has the highest PESQ and FM has the highest SI-SDR. These results do not establish a single superior model on all metrics, but is clear that path design does have an effect. ICFM appears to be the most advantageous when the context of the application requires a simpler path with reliable performance, and without the tuning of the $k$ hyperparameter.
+The tested \ac{SB-SV} and \ac{ICFM} settings improve several metrics over the \ac{SB-VE} baseline, but the table does not show improvement on every metric. Using \ac{SB-SV} with $k=0.99$ lowers \ac{PESQ} (-0.12) and WhiSQA (-0.04) relative to $k=2.6$. \ac{ICFM} with depth-independent path velocity and variance improves several reported scores. For \ac{ODE} inference, \ac{FM} loss gives a slightly higher \ac{SI-SDR} and DNSMOS than DP, while DP gives higher \ac{PESQ}; for \ac{DDP}, DP has the highest \ac{PESQ} and \ac{FM} has the highest SI-SDR. These results do not establish a single superior model on all metrics, but is clear that path design does have an effect. \ac{ICFM} appears to be the most advantageous when the context of the application requires a simpler path with reliable performance, and without the tuning of the $k$ hyperparameter.
 
-The DDP results are especially important when comparing with the direct U-Net. Both have one-step generation, yet training with SB or ICFM will likely yield a stronger model. This however is less reliable for Gaussian FM, which is more comparable to direct U-Net apart from reaching a high WhiSQA score (+1.40) with ODE inference. Such findings suggest the importance of choosing an appropriate source distribution and probability flow if the application allows it.
+The \ac{DDP} results are especially important when comparing with the direct U-Net. Both have one-step generation, yet training with SB or \ac{ICFM} will likely yield a stronger model. This however is less reliable for Gaussian \ac{FM}, which is more comparable to direct U-Net apart from reaching a high WhiSQA score (+1.40) with \ac{ODE} inference. Such findings suggest the importance of choosing an appropriate source distribution and probability flow if the application allows it.
 
 \begin{figure}[tb]
 \centering
@@ -105,7 +107,7 @@ The DDP results are especially important when comparing with the direct U-Net. B
   \caption{Speech-enhancement quality against the number of ODE sampling steps $N$ on a logarithmic axis. Panels show PESQ, SI-SDR, DNSMOS, and WhiSQA, ordered from left to right and top to bottom. Unqualified SB-VE and SB-SV curves use $k=2.6$; the second SB-SV curve uses $k=0.99$. ICFM-DP and ICFM-FM denote the two training objectives. Higher scores indicate better quality. \note{Could add more models here but it wouldn't change the story that much.}}
 \label{fig:se-ode-steps}
 \end{figure}
-Figure~\ref{fig:se-ode-steps} compares the supplied ODE-step results. The $N=1$ points represent one-step ODE sampling. It can be seen that SB-VE is much more robust at smaller NFE. A likely cause of this is the use of exact interpolation, as SB-SV is an almost identical model yet much less robust. As NFE increases, SB-VE is surpassed yet not by a large margin.
+Figure~\ref{fig:se-ode-steps} compares the supplied ODE-step results. The $N=1$ points represent one-step \ac{ODE} sampling. It can be seen that \ac{SB-VE} is much more robust at smaller NFE. A likely cause of this is the use of exact interpolation, as \ac{SB-SV} is an almost identical model yet much less robust. As \ac{NFE} increases, \ac{SB-VE} is surpassed yet not by a large margin.
 
 
 
@@ -155,17 +157,17 @@ Speakers & Model & Updates & NFE & PESQ & ESTOI & SI-SDR (dB) & DNSMOS P.808 & W
 \end{table}
 
 \section{Which findings carry beyond the VoiceBank test set?}
-The full-split comparison carries the direct U-Net, fine-tuned DDP and later noisy-source ICFM checkpoints from VoiceBank to URGENT. The released SB-VE m5 supplies a bridge reference. Generation uses channel~0 at 16~kHz in four-second windows with 0.5-second overlap. Clean references are unavailable on the blind split. The archived nonblind evaluation also scored only the two non-intrusive measures.
+The full-split comparison carries the direct U-Net, fine-tuned \ac{DDP} and later noisy-source \ac{ICFM} checkpoints from VoiceBank to URGENT. The released \ac{SB-VE} m5 supplies a bridge reference. Generation uses channel~0 at 16~kHz in four-second windows with 0.5-second overlap. Clean references are unavailable on the blind split. The archived nonblind evaluation also scored only the two non-intrusive measures.
 
 \note{Need URGENT table, need to reinterpret results.}
 
-At 50 evaluations, ICFM gives a larger WhiSQA gain than official SB-VE m5 on both splits, while m5 gives a larger P.808 gain (Table~\ref{tab:cfmse-urgent}). Table~\ref{tab:cfmse-urgent-subset} compares the 26-speaker Stanage ICFM and local SB-VE with Gaussian FM on the same 32 recordings per split. SGMSE+ uses 30 predictor--corrector steps. The smaller comparison uses the Stanage ICFM checkpoint selected at validation PESQ 2.17, whereas the full-split comparison uses the later checkpoint selected at 2.34.
+At 50 evaluations, \ac{ICFM} gives a larger WhiSQA gain than official \ac{SB-VE} m5 on both splits, while m5 gives a larger P.808 gain (Table~\ref{tab:cfmse-urgent}). Table~\ref{tab:cfmse-urgent-subset} compares the 26-speaker Stanage \ac{ICFM} and local \ac{SB-VE} with Gaussian \ac{FM} on the same 32 recordings per split. SGMSE+ uses 30 predictor--corrector steps. The smaller comparison uses the Stanage \ac{ICFM} checkpoint selected at validation \ac{PESQ} 2.17, whereas the full-split comparison uses the later checkpoint selected at 2.34.
 
 \section{Standard source models for target speaker hearing-aid}
 
 \note{Listening to the audio: gridnet is a fail, and the other models are quiet, something clearly went wrong.}
 
-The probability paths covered in the first section are not applicable to all SE tasks. Some tasks such as hearing-aid SE involve predicting two-channel audio from four channels. This is problematic for paths with data-derived source distributions as there is a mismatch between the model input and output, which is hard to construct an interpolating path. 
+The probability paths covered in the first section are not applicable to all speech-enhancement tasks. Some tasks such as hearing-aid speech enhancement involve predicting two-channel audio from four channels. This is problematic for paths with data-derived source distributions as there is a mismatch between the model input and output, which is hard to construct an interpolating path. 
 
 This motivates paths that use a standard source and use the model input as conditioning channels. The microphone input channels are highly coreelated due to spatial and head turing effects, which may be easier to resolve if there is a clear separation between clean and noisy audio.
 
@@ -174,18 +176,19 @@ This motivates paths that use a standard source and use the model input as condi
 \subsection{Data}
 \note{draw data figure}
 
-The ECHI CHiME-9 dataset contains 4-person conversations. All wear close talk microphones and sit at a table together. One person wears \textit{meta aria smart glasses}, the other three wear hearing aids. Each hearing-aid has two channels, resulting in two left and two rights channels. The acoustic environment contains XXXX loudspeakers playing distracting audio. The goal is to predict one of the close-talk microphone signals given the hearing-aid signals.
+The ECHI CHiME-9 dataset contains 4-person conversations. All wear close talk microphones and sit at a table together. One person wears \textit{meta aria smart glasses}, the other three wear hearing aids. Each hearing-aid has two channels, resulting in two left and two rights channels. The acoustic environment contains 18 loudspeakers playing distracting audio. The goal is to predict one of the close-talk microphone signals given the hearing-aid signals.
 
-The dataset contains XXXX minutes across XXXX conversations. Due to the challenge nature of the data, the official datset does not contain labels.
+The dataset contains 49 recording sessions of 36 minutes each, totalling 1,764 minutes. Due to the challenge nature of the data, the official datset does not contain labels.
 
-There also exists a task using the XXXX-channel aria smart glasses.
+A separate track uses the seven-channel audio recorded by the Aria smart glasses.
 
 \subsection{Evaluation}
-Evaluation largly follows secref. STOI is used instead of ESTOI, which XXXX. 
+\label{sec:cfmse-vbdmd-evaluation}
+Evaluation largely follows Section~\ref{sec:cfmse-vbdmd-evaluation}. \ac{STOI}~\citep{taal2011stoi} is used instead of \ac{ESTOI} to follow the CHiME-9 ECHI evaluation protocol~\citep{chime9ECHIRules}. 
 
 \subsection{Models}
 \note{Confirmation needed}
-Models use the same architecture as the first section, with a few modifications. The input to the U-Net is a 5 channel complex STFT, one channel for the probability path and four for conditioning. Auxiliary inputs include depth parameter $u$ and a speaker embedding to select the target speaker. The baseline is a TF-gridnet \citep{chime9,gridnet}, comprised of convolution, recurrent, and attention-based modules. The baseline is causal with a look ahead of XXXX ms. The U-Net used for the proposed systems is non-causal, which offers an unfair advantage compared to the challenge systems.
+Models use the same architecture as the first section, with a few modifications. The input to the U-Net is a 5 channel complex \ac{STFT}, one channel for the probability path and four for conditioning. Auxiliary inputs include depth parameter $u$ and a speaker embedding to select the target speaker. The baseline is a TF-gridnet \citep{chime9,gridnet}, comprised of convolution, recurrent, and attention-based modules. The baseline uses causal GridNet blocks~\citep{chime9ECHIBaseline}. CHiME-9 ECHI requires ranked systems to operate in a streaming manner with a maximum algorithmic latency of 20~ms~\citep{chime9ECHIRules}. The U-Net used for the proposed systems is non-causal, which offers an unfair advantage compared to the challenge systems.
 
 \subsection{Results}
 
