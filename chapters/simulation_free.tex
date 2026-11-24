@@ -106,15 +106,14 @@ Of course, the marginal score at any point $u$ is unknown. However, a path may h
 
 
 \subsection{Mean reversion and variance preservation}
-Figure~\ref{fig:dog-gaussian-path} gives an image example of a Gaussian probability path. It uses a linear interpolation to make the increasing contribution of Gaussian noise visible; the \ac{MR-VP} path below instead uses the depth-dependent mean and variance defined in this subsection.
-\begin{figure}[tbp]
+
+\begin{figure}[!htbp]
 \centering
-\includegraphics[width=\linewidth]{plots/simulation_free/dog_gaussian_path.pdf}
-\caption{One sample path from a dog image $\rmX_0$ to independent standard Gaussian noise $\rmZ$, shown at five depths. Pixel values are mapped to $[-1,1]$ before sampling $\rmX_u=(1-u)\rmX_0+u\rmZ$; the same noise draw is used throughout. Images are clipped to the display range only for rendering. This linear Gaussian path illustrates intermediate samples, rather than the \acs{MR-VP} schedule derived below.}
+\includegraphics[width=\linewidth]{plots/simulation_free/animal_paths/mr_vp.pdf}
+\caption{Image examples of the MR-VP conditional path with $\beta(u)=0.05+19.95u$. Rows show kitten and puppy targets approaching a standard-normal source (conditioning mean zero), followed by the same targets approaching Gaussian sources centred on the cat and dog images. Pixel values are mapped to $[-1,1]$; clipping is applied only for display. Each row uses fixed independent standard Gaussian endpoint and residual draws across depths. These snapshots illustrate conditional marginals, rather than simulated SDE paths or fitted marginal probability-flow trajectories. At finite depth $u=1$, the target weight is approximately $0.0067$ and conditional variance approximately $0.99996$; the adult images are conditioning means, not clean endpoints.}
+\label{fig:animal-mr-vp}
 \label{fig:dog-gaussian-path}
 \end{figure}
-\note{Should we do an image fig for each path?}
-
 
 \begin{figure}[tbp]
 \centering
@@ -215,6 +214,7 @@ The mean and covariance of the solution $p$ are
 \]
 This solution is related to the diffusion framework described in \secref{sec:diffusion-paths}. Bridge paths can connect prescribed endpoint distributions, and this Gaussian example has zero conditional variance at its boundaries. This property alone does not establish lower prediction error or better generalisation than a mean-reverting \ac{SDE}.
 
+
 \subsection{Variance-exploding bridge}
 Above has discussed that an \ac{SB} has two important features: boundary constraints and a reference path. Here an example reference path will be given. The path in question is \textit{variance-exploding}, motivated by results in speech enhancement \citep{jukic2024schr,gonzalez2023investigating}. This path continuously increases variance with $u$, an interesting property since the \ac{SB} solution must have zero variance at $u=1$. This conflict allows a path with high variance while ensuring the source distribution is exact, although the benefits of high variance are largely unknown but likely regularise neural network optimisation.
 
@@ -270,6 +270,22 @@ As illustrated in \figref{fig:sb_kc}, the speed of interpolation for the varianc
 
 
 \FloatBarrier
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=\linewidth]{plots/simulation_free/animal_paths/sb_ve.pdf}
+\caption{SB-VE image examples with $k=2.6$ and $c=0.4$, using the mean and covariance in Equation~\ref{eq:sb_mean_variance}. Rows connect kitten and puppy images to standard-normal draws, then to the cat and dog images. Both endpoints are exact; the nonlinear interpolation weight delays the transition towards the source. Residual variance vanishes at both boundaries. Fixed draws and display scaling follow Figure~\ref{fig:animal-mr-vp}.}
+\label{fig:animal-sb-ve}
+\end{figure}
+
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=\linewidth]{plots/simulation_free/animal_paths/ou_ve.pdf}
+\caption{OU-VE image examples with $\gamma=1.5$, $k=2.6$ and $c=0.4$. The first two rows use zero conditioning mean; the last two use the cat and dog images. Unlike SB-VE, this path retains target weight $e^{-1.5}$ and nonzero noise at $u=1$. Consequently the first two rows do not reach a standard normal, and the last two do not reach clean adult images. Fixed draws and display scaling follow Figure~\ref{fig:animal-mr-vp}.}
+\label{fig:animal-ou-ve}
+\end{figure}
+
 \subsection{Path variance and flow matching}
 \label{sec:icfm}
 \label{sec:sbsv}
@@ -312,6 +328,22 @@ For the sake of ablation, this thesis proposes \ac{SB-SV}. This path shares \ac{
 
 
 \FloatBarrier
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=\linewidth]{plots/simulation_free/animal_paths/fm.pdf}
+\caption{Flow-matching image examples with $c=0.04$. The first two rows use the Gaussian-source path: mean $(1-u)\rmX_0$ and variance $u+(1-u)c$, reaching a standard normal at $u=1$. The last two rows use paired ICFM: mean $(1-u)\rmX_0+u\rmY$ and constant variance $c$. These paired endpoints retain Gaussian smoothing, as does the target endpoint of the Gaussian-source path. Fixed draws and display scaling follow Figure~\ref{fig:animal-mr-vp}.}
+\label{fig:animal-fm}
+\end{figure}
+
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=\linewidth]{plots/simulation_free/animal_paths/sb_sv.pdf}
+\caption{SB-SV image examples using the SB-VE interpolation weight with $k=2.6$ and constant conditional variance $c=0.04$. Rows connect kitten and puppy endpoint means to independent standard-normal draws, then to cat and dog endpoint means. All endpoints retain residual variance $0.04$; integrating over the Gaussian source endpoint gives source variance $1.04$ in the first two rows. Fixed draws and display scaling follow Figure~\ref{fig:animal-mr-vp}.}
+\label{fig:animal-sb-sv}
+\end{figure}
+
 \section{Learning objectives}
 \label{sec:learning-objectives}
 
