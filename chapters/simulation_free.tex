@@ -17,7 +17,7 @@ Figure~\ref{fig:path-overview} provides a visual overview of the paths considere
 \begin{figure}[p]
 \centering
 \includegraphics[width=\linewidth]{plots/simulation_free/ripple_paths_paired_diracs.pdf}
-\caption{Probability-path overview for three paired target (blue) and source (red) points. Each row shows density contours at increasing depth $u$; generation proceeds from right to left. \acs{MR-VP} approaches a Gaussian mixture about the source points, \acs{SB-VE} has exact point-mass endpoints, and \acs{SB-SV} and the flow-matching paths retain Gaussian smoothing at both endpoints. The two \acs{SB-VE} schedules and two flow-matching variances illustrate their effects on the intermediate densities. Here \acs{ICFM} denotes the linear, constant-variance path form used with the displayed pairing, rather than independent endpoint sampling.}
+\caption{Probability-path overview for three paired target (blue) and source (red) points. Each row shows density contours at increasing depth $u$; generation proceeds from right to left. \acs{MR-VP} approaches a Gaussian mixture about the source points, \acs{SB-VE} has exact point-mass endpoints, and \acs{SB-SV} and the flow-matching paths retain Gaussian smoothing at both endpoints. The two \acs{SB-VE} schedules and two flow-matching variances illustrate their effects on the intermediate densities. Here \acs{ICFM} denotes the linear, constant-variance path form used with the displayed pairing, rather than independent endpoint sampling. This figure was produced with code from the OT4ML project \citep{peyrePDE4ML}.}
 \label{fig:path-overview}
 \end{figure}
 \clearpage
@@ -121,7 +121,7 @@ Figure~\ref{fig:dog-gaussian-path} gives an image example of a Gaussian probabil
 \subfigure[Common conditioning mean $Y=0$: standard-normal source]{\includegraphics[width=0.95\linewidth]{plots/simulation_free/bridge_1d_mr_vp_normal.pdf}\label{fig:mrvp-normal}}
 \par\medskip
 \subfigure[Paired conditioning points $y_i$: Coupled Gaussian-mixture source]{\includegraphics[width=0.95\linewidth]{plots/simulation_free/bridge_1d_mr_vp.pdf}\label{fig:mrvp-mixture}}
-\caption{One-dimensional \acs{MR-VP} paths for the same three target Diracs. Left: forward densities; right: marginal probability-flow trajectories towards the data at $u=0$. In (a), $Y=0$ for every data point and the source approaches $\gN(0,1)$. In (b), each target point $x_i$ is paired with a fixed conditioning point $y_i$, with conditional law $Y\mid X=x_i\sim\delta_{y_i}$. The source approaches $\frac{1}{3}\sum_i\gN(y_i,1)$. The conditioning Diracs specify the reversion means; the source itself is a Gaussian mixture. With the finite noise schedule shown, these source distributions are approximate. In practice, the Diracs are a minimal-variance Gaussian mixture.}
+\caption{One-dimensional \acs{MR-VP} paths for the same three target Diracs. Left: forward densities; right: marginal probability-flow trajectories towards the data at $u=0$. In (a), $Y=0$ for every data point and the source approaches $\gN(0,1)$. In (b), each target point $x_i$ is paired with a fixed conditioning point $y_i$, with conditional law $Y\mid X=x_i\sim\delta_{y_i}$. The source approaches $\frac{1}{3}\sum_i\gN(y_i,1)$. The conditioning Diracs specify the reversion means; the source itself is a Gaussian mixture. With the finite noise schedule shown, these source distributions are approximate. In practice, the Diracs are a minimal-variance Gaussian mixture. This figure and subsequent 1D path examples were produced with code from the OT4ML project \citep{peyrePDE4ML}.}
 \label{fig:mean_reverting_sde}
 \end{figure}
 
@@ -633,16 +633,28 @@ There are many examples of these failure cases such as assigning high likelihood
 
 
 \subsection{Text to image}
-Images are a common data type for applying deep learning models as they do not often vary in shape, apart from perhaps to support various resolutions e.g. $512\times 512$ and $1024\times 1024$. A strong proposal is \ac{CFG} with a strong image caption embedding.
+Images are a common data type for applying deep learning models as they do not often vary in shape, apart from perhaps to support various resolutions e.g. $512\times 512$ and $1024\times 1024$. A strong proposal is \ac{CFG} with a strong image caption embedding $\rvc$.
 \[
-p(\rmX_0|\rvy)=\int p(\rmX_0|\rvc)p(\rvc|\rvy)\dd \rvc.
+p(\rmX_0|\rvy)=\int_{\R^d} p(\rmX_0|\rvc)p(\rvc|\rvy)\dd \rvc.
 \]
-\note{Need to complete.}
+Then to make the density compatible with CNF, $\rmX_1$ must be introduced
+\[
+p(\rmX_0|\rvy)=\int_{\R^d}\int_{\R^{h\times w\times c}} p(\rmX_0|\rvc)p(\rmX_1)p(\rvc|\rvy)\dd \rmX_1\dd \rvc,
+\]
+in the image synthesis case, it is typical to use an unconditional source distribution. High resolution synthesis can be difficult to scale, a method to reduce dimensionality is to operate in a latent space such as features from an autoencoder
+\[
+p(\rmX_0|\rvy)=\int_{\R^d}\iint_{\R^{u\times v}} p(\rmX_0|\rmZ_0)p(\rmZ_0|\rmZ_1,\rvc)p(\rmZ_1)p(\rvc|\rvy)\dd \rmZ_0\dd \rmZ_1\dd \rvc.
+\]
+As an example, consider SDXL \citep{podellSDXLImprovingLatent2023}. It uses deterministic text embeddings derived from the CLIP model as conditioning latent diffusion with classifier-free guidance.
+\[
+p(\rmX_0|\rvy)=\int_{\R^d}\iint_{\R^{u\times v}} p_\mathrm{dec}(\rmX_0|\rmZ_0)p_\mathrm{CFG}(\rmZ_0|\rmZ_1,\rvc)\gN(\rmZ_1;\bm 0, \tI)p_\mathrm{CLIP}(\rvc|\rvy)\dd \rmZ_0\dd \rmZ_1\dd \rvc.
+\]
+As can be seen, there are many interacting components beyond CNFs required to achieve high-quality text-to-image generation.
 
 \subsection{Variable-length speech}
 Some data types such as speech have an associated length $\rl$ with each sample $\rmX_0\in\R^{d\times\rl}$, where $d$ is the static dimension of the data e.g. number of Mel-spectrogram channels. This means the sampled terminal distribution $\hat p_1$ must also sample or predict a length to operate in. The length of a sample remains constantly for any $u$, though there exist methods such as jump diffusion that allow trans-dimensional $l$.
 
-The statistical problem outlined in \ac{TTS} is to find the probability of an acoustic feature given a text
+The statistical problem outlined in \ac{TTS} is to find the probability of an acoustic feature given a text, which inherently involves an alignment problem
 
 % working out bayes
 \[
@@ -654,7 +666,7 @@ This density admits many $\rl$ since the same text since speaking rate adjusts t
 p(\rmX_0|\rvy)=\int_{\sZ_+}\int_{\R^{d\times\rl}} p(\rmX_0|\rmX_1)p(\rmX_1|\rvy,\rl)p(\rl|\rvy)\dd\rmX_1\dd\rl.
 \]
 
-For an informed paired law, $\rmX_1$ can be marginalised by introducing an intermediate dimensionality expansion $\rmY$
+For an informed paired law, $\rmX_1$ can be marginalised by introducing an intermediate dimensionality expansion $\rmY$, allowing conditioning on the sampled endpoint $\rmX_1$ and the expanded state $\rmY$
 
 \[
 p(\rmX_0|\rvy)=\int_{\sZ_+}\iint_{\R^{d\times\rl}} p(\rmX_0|\rmX_1,\rmY)p(\rmX_1|\rmY)p(\rmY|\rvy,\rl)p(\rl|\rvy)\dd\rmX_1\dd\rmY\dd\rl.
@@ -663,44 +675,26 @@ p(\rmX_0|\rvy)=\int_{\sZ_+}\iint_{\R^{d\times\rl}} p(\rmX_0|\rmX_1,\rmY)p(\rmX_1
 \note{Should $\int_{\sZ_+}$ be $\sum_{\sZ_+}$?}
 \ainote{Yes, for a positive integer frame count use $\sum_{l=1}^{\infty}$ in all three expressions, and remove $\dd\rl$. Each summand is a density on its own space $\mathbb R^{d\times l}$, weighted by the length probability $p(l\mid\rvy)$; make the length component of the variable-length sample explicit. Retain $\rvy$ and $l$ in the decoder conditioning unless conditional independence has been justified. If the expanded encoder output is deterministic given text and length, $p(\rmY\mid\rvy,l)$ is a Dirac measure, so the integral over $\rmY$ reduces to evaluation at that output.}
 
-Grad-TTS uses a Gaussian source whose mean is predicted from text \citep{popov21gradtts}. The effect of source variance on generation quality and computational cost motivates investigating alternative probability paths.
+Grad-TTS uses a Gaussian source whose mean is predicted from text \citep{popov21gradtts}.
+\[
+p(\rmX_0|\rvy)=\int_{\sZ_+}\iint_{\R^{d\times\rl}} p_\mathrm{MRVP}(\rmX_0|\rmX_1,\rmY)\gN(\rmX_1;\rmY,\tI)p_\mathrm{enc}(\rmY|\rvy,\rl)p_\mathrm{dur}(\rl|\rvy)\dd\rmX_1\dd\rmY\dd\rl.
+\]
+The effect of source variance on generation quality and computational cost motivates investigating alternative probability paths. The $\rmY$-centred Gaussian is essential for quality synthesis, but this is not the case for all models. Matcha-TTS, a flow matching model, succeeds through conditioning on $\rmY$ alone
+\[
+p(\rmX_0|\rvy)=\int_{\sZ_+}\iint_{\R^{d\times\rl}} p_\mathrm{FM}(\rmX_0|\rmX_1,\rmY)\gN(\rmX_1;\bm 0,\tI)p_\mathrm{enc}(\rmY|\rvy,\rl)p_\mathrm{dur}(\rl|\rvy)\dd\rmX_1\dd\rmY\dd\rl.
+\]
+Such design decisions are important as they dictate how constrained the CNF should be, and how expressivity is allocated between the source distribution and conditioning.
 
 % Author outline from gradtts.tex: Equations that describe speech enhancement.
 \subsection{Paired endpoints for noise suppression}
 
 Noisy speech is defined as a clean signal $\rmX$ convolved with a room impulse response $\mR$ and additive noise $\rmZ$
 \[
-\rmY \coloneqq \rmX\ast\mR + \rmZ.
+\rmY \coloneqq \rmX_0\ast\mR + \rmZ.
 \]
-The goal of noise suppression is to retrieve $\rmX$ given $\rmY$.
+The goal of noise suppression is to retrieve $\rmX$ given $\rmY$. Which for CNF solutions admits less components than the previous problems due to the model input and output existing in the same space naturally
 \[
-p(\rmX|\rmY)=\int p(\rmX|\rmY)p(\rmY|\rmX,\rmZ)\dd\rmZ.
-\]
-\note{Need to work on this.}
-\ainote{The preceding integral is not a valid posterior factorisation: it repeats $p(\rmX\mid\rmY)$ on the right and supplies no noise prior. For a fixed known room response and additive noise independent of clean speech, define $p(\mY\mid\mX,\mR)=p_Z(\mY-\mX\ast\mR)$ and use Bayes' rule:
-\[
-p(\mX\mid\mY,\mR)
-=\frac{p_Z(\mY-\mX\ast\mR)\,p_X(\mX)}
-{\int p_Z(\mY-\mX'\ast\mR)\,p_X(\mX')\dd\mX'}.
-\]
-If the room response is unknown, marginalise it under a stated prior or joint model. The following formula for $q_1$ is a valid noisy marginal under the fixed-room and independence assumptions; define $q_0$, $q_1$, and $p_Z$ consistently. Finally, distinguish the observed noisy waveform from the artificial diffusion noise, and state whether the diffusion operates on waveforms or acoustic features.}
-
-\[
-q_1(\rmY)=\int p_z(\rmY - \rmX\ast\mR) q_0(\dd\rmX).
-\]
-
-The paired distributions motivate a conditional path.
-Instead of a variance preserving \ac{SDE}, consider a variance exploding \ac{SDE}
-\[
-\dd\rmX\coloneqq\gamma(\rmY - \rmX_u)\dd u + \sqrt{ck^{2u}}\dd\rmW_u,
-\]
-\[
-\rmM(\mY,\rmX,u;\gamma) = e^{-\gamma u}\rmX + (1- e^{-\gamma u})\mY \qquad \tSigma(u;\gamma,c,k) = \frac{c(k^{2u}-e^{-2\gamma u})}{2(\gamma + \log k)}\tI.
-\]
-
-When $\mR=I$, the flow-matching target also equals the additive-noise residual. With reverberation, this residual is $\rmY-\rmX=\rmX\ast\mR-\rmX+\rmZ$, so it is not the background noise alone:
-\[
-\rmY - \rmX = \rmX\ast\mR-\rmX+\rmZ.
+p(\rmX_0|\rmY)=\int p(\rmX_0|\rmX_1,\rmY)p(\rmX_1|\rmY)\dd\rmX_1.
 \]
 
 
